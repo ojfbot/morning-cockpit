@@ -1,0 +1,16 @@
+{
+  "_comment": "Copy to profile.local.json (gitignored) and fill in YOUR vault + profile. This personalizes the Research-section explainer ('relate this paper to what I already know'). All fields optional; with none set, the cross-link feature simply has no nodes.",
+  "vaultRoot": "/absolute/path/to/your/obsidian-vault",
+  "memoryDir": "/absolute/path/to/your/agent/memory/dir",
+  "seed": {
+    "strengths": [
+      { "key": "your-strength", "label": "Something you already command" }
+    ],
+    "learning": [
+      { "key": "your-learning", "label": "Something you're actively learning" }
+    ]
+  },
+  "domainHubs": [
+    { "key": "a-research-domain", "label": "A Research Domain", "vaultPath": "wiki/concepts/a-research-domain.md", "memoryFile": "project_a_research_domain.md" }
+  ]
+}

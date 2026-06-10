@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Curated reading feeds for the morning cockpit. Import into any RSS reader (e.g. NetNewsWire).
+     Mirrors packages/server/src/config.ts → reading.feeds. -->
+<opml version="2.0">
+  <head><title>ojfbot reading — AI eng + agentic coding</title></head>
+  <body>
+    <outline text="Tier 0 — Anchors">
+      <outline text="Steve Yegge" type="rss" xmlUrl="https://steveyegge.substack.com/feed" htmlUrl="https://steveyegge.substack.com"/>
+      <outline text="Andrej Karpathy" type="rss" xmlUrl="https://karpathy.github.io/feed.xml" htmlUrl="https://karpathy.github.io"/>
+      <outline text="Karpathy (Bear blog)" type="rss" xmlUrl="https://karpathy.bearblog.dev/feed/" htmlUrl="https://karpathy.bearblog.dev"/>
+    </outline>
+    <outline text="Tier 1 — Daily signal">
+      <outline text="Simon Willison" type="rss" xmlUrl="https://simonwillison.net/atom/everything/" htmlUrl="https://simonwillison.net"/>
+      <outline text="Latent Space" type="rss" xmlUrl="https://www.latent.space/feed" htmlUrl="https://www.latent.space"/>
+      <outline text="The Pragmatic Engineer" type="rss" xmlUrl="https://newsletter.pragmaticengineer.com/feed" htmlUrl="https://newsletter.pragmaticengineer.com"/>
+      <outline text="Ahead of AI (Sebastian Raschka)" type="rss" xmlUrl="https://magazine.sebastianraschka.com/feed" htmlUrl="https://magazine.sebastianraschka.com"/>
+    </outline>
+    <outline text="Tier 2 — Depth">
+      <outline text="Lilian Weng" type="rss" xmlUrl="https://lilianweng.github.io/index.xml" htmlUrl="https://lilianweng.github.io"/>
+      <outline text="Eugene Yan" type="rss" xmlUrl="https://eugeneyan.com/rss/" htmlUrl="https://eugeneyan.com"/>
+      <outline text="Chip Huyen" type="rss" xmlUrl="https://huyenchip.com/feed.xml" htmlUrl="https://huyenchip.com"/>
+      <outline text="Import AI (Jack Clark)" type="rss" xmlUrl="https://jack-clark.net/feed" htmlUrl="https://jack-clark.net"/>
+      <outline text="Dwarkesh Patel" type="rss" xmlUrl="https://www.dwarkeshpatel.com/feed" htmlUrl="https://www.dwarkeshpatel.com"/>
+    </outline>
+  </body>
+</opml>

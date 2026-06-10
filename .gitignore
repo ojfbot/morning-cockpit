@@ -1,0 +1,12 @@
+node_modules/
+.data/
+dist/
+
+# Personal reader-profile (vault path, strengths/learning, research domains) — never commit.
+profile.local.json
+**/profile.local.json
+*.tsbuildinfo
+.DS_Store
+*.log
+.env
+.env.*
