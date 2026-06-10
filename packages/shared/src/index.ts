@@ -40,6 +40,35 @@ export type {
 } from './dolt-bead.js';
 export { beadPrefix, parseJsonColumn } from './dolt-bead.js';
 
+export type {
+  ChatRole,
+  ChatMessage,
+  ChatPreload,
+  ChatHistoryEntry,
+  ChatContextType,
+  ChatContextItem,
+  ChatAttachment,
+  ResolvedAttachment,
+} from './chat.js';
+export {
+  buildIndexSkeleton,
+  buildDayGoalBrief,
+  buildChatSystemPrompt,
+  buildChatRegistry,
+  formatAttachmentBlock,
+  chatFallbackText,
+} from './chat.js';
+
+export type { BriefBody, BriefCandidate, BriefValidation, HandoffDraft } from './handoff-brief.js';
+export {
+  briefSlug,
+  briefFilename,
+  isSafeRepoName,
+  validateBriefDraft,
+  candidateBody,
+  renderBriefMarkdown,
+} from './handoff-brief.js';
+
 export type { LaneContext, LaneInput } from './lanes.js';
 export {
   overnightWindowStart,

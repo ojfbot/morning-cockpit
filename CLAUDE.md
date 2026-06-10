@@ -16,9 +16,12 @@ standalone posture:
   the bead type shapes locally (`packages/shared/src/dolt-bead.ts`). Every mirrored block
   carries a `// Mirrors <path> @ <date>` comment. This trades drift-risk for true standalone
   deployability and read-only safety. See ADR-0001.
-- **Read-only.** This app never writes to Dolt, never mutates `.handoff/`, never calls `gh`
-  with side effects. If you find yourself adding a write path, stop — that belongs in the
-  bead system (core) or the Track-R coordination design (ADR-0002 draft).
+- **Read-only, with ONE carve-out.** This app never writes to Dolt, never calls `gh` with
+  side effects. The single exception is Handoff Emission (ADR-0005): the chat sidebar may
+  write a brief bead into `~/ojfbot/<repo>/.handoff/` after explicit per-emission user
+  approval (`packages/server/src/handoff-emit.ts`). Do not "fix" that write path away, and do
+  not add any other write path — anything else belongs in the bead system (core) or the
+  Track-R coordination design (ADR-0002 draft).
 - **Local-first synthesis (ADR-0003).** Lane summaries default to a self-hosted model
   (**Ollama `qwen2.5:7b`**); cloud Claude is opt-in (`COCKPIT_SUMMARY_PROVIDER=claude`) and
   there is **no automatic cloud cascade** — a local failure degrades to the deterministic

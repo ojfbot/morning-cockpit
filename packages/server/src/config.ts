@@ -83,6 +83,20 @@ export const config = {
   },
 
   /**
+   * Cockpit Chat (ADR-0006) — grounded sidebar discussion. Ollama-ONLY (reuses summary.ollama),
+   * even when summary.provider is 'claude': chat never cascades to the cloud. Preload is
+   * deterministic (Index Skeleton + Day-Goal Brief from cached snapshots).
+   */
+  chat: {
+    /** History turns sent to the model per request. */
+    maxTurns: Number(process.env.COCKPIT_CHAT_MAX_TURNS ?? 20),
+    /** Per-attachment content clip (chars) when injecting full items into a prompt. */
+    maxAttachmentChars: Number(process.env.COCKPIT_CHAT_ATTACH_CHARS ?? 12_000),
+    /** Deterministic prompt-size cap for the Index Skeleton. */
+    skeletonItemsPerLane: Number(process.env.COCKPIT_CHAT_SKELETON_PER_LANE ?? 12),
+  },
+
+  /**
    * Reading context — curated RSS feeds surfaced as their own cockpit section. Mirrors
    * morning-cockpit/reading.opml. Read-only: "new" is published-within-sinceHours.
    */

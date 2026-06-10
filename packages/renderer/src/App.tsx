@@ -7,6 +7,7 @@ import { ReadingSection } from './components/ReadingSection.js';
 import { PapersSection } from './components/PapersSection.js';
 import { ThemeToggle } from './components/ThemeToggle.js';
 import { HealthBar } from './components/HealthBar.js';
+import { ChatSidebar } from './components/chat/ChatSidebar.js';
 
 const POLL_MS = 60_000;
 
@@ -62,18 +63,21 @@ export function App() {
         </div>
       </header>
 
-      <main className="sections">
-        <Section title="Beads" subtitle="across all projects — overnight · pickup · available">
-          <div className="lanes">
-            <Lane lane="overnight" items={snapshot?.lanes.overnight ?? []} summary={snapshot?.summaries.overnight} />
-            <Lane lane="pickup" items={snapshot?.lanes.pickup ?? []} summary={snapshot?.summaries.pickup} />
-            <Lane lane="available" items={snapshot?.lanes.available ?? []} summary={snapshot?.summaries.available} />
-          </div>
-        </Section>
-        <ReadingSection />
-        <PapersSection />
-        {/* Add more cockpit sections here as <Section title="…">…</Section> */}
-      </main>
+      <div className="cockpit-body">
+        <main className="sections">
+          <Section title="Beads" subtitle="across all projects — overnight · pickup · available">
+            <div className="lanes">
+              <Lane lane="overnight" items={snapshot?.lanes.overnight ?? []} summary={snapshot?.summaries.overnight} />
+              <Lane lane="pickup" items={snapshot?.lanes.pickup ?? []} summary={snapshot?.summaries.pickup} />
+              <Lane lane="available" items={snapshot?.lanes.available ?? []} summary={snapshot?.summaries.available} />
+            </div>
+          </Section>
+          <ReadingSection />
+          <PapersSection />
+          {/* Add more cockpit sections here as <Section title="…">…</Section> */}
+        </main>
+        <ChatSidebar />
+      </div>
 
       {snapshot && <HealthBar health={snapshot.health} />}
     </div>

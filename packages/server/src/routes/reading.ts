@@ -16,7 +16,12 @@ export const readingRouter: Router = Router();
 const snapshotCache = new TtlCache<{ since: string; sources: ReadingSource[]; snapshot: ReadingSnapshot }>();
 const digestCache = new Map<string, SynthSummary>(); // keyed on new-item-set hash
 
-async function getReading(now: number): Promise<{ since: string; sources: ReadingSource[]; snapshot: ReadingSnapshot }> {
+/** Cached snapshot WITHOUT fetching — for the chat preload's no-new-fetches discipline. */
+export function peekReading(now: number): ReadingSnapshot | undefined {
+  return snapshotCache.get('reading', now)?.snapshot;
+}
+
+export async function getReading(now: number): Promise<{ since: string; sources: ReadingSource[]; snapshot: ReadingSnapshot }> {
   const cached = snapshotCache.get('reading', now);
   if (cached) return cached;
   const { since, sources, health } = await fetchReading();

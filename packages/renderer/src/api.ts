@@ -1,6 +1,12 @@
 import type {
+  ChatAttachment,
+  ChatContextItem,
+  ChatHistoryEntry,
+  ChatMessage,
+  ChatPreload,
   CockpitSnapshot,
   CrossLinkSuggestion,
+  HandoffDraft,
   LaneSummary,
   PaperExplainer,
   PapersSnapshot,
@@ -8,6 +14,7 @@ import type {
   SynthSummary,
   WorkItemLane,
 } from '@cockpit/shared';
+import { streamSse, type SseEvent } from './sse.js';
 
 export async function fetchCockpit(signal?: AbortSignal): Promise<CockpitSnapshot> {
   const res = await fetch('/api/cockpit', { signal });
@@ -108,4 +115,99 @@ export async function stageSuggestion(input: {
 export async function dismissSuggestion(id: string): Promise<void> {
   const res = await fetch(`/api/papers/suggestions/${encodeURIComponent(id)}`, { method: 'DELETE' });
   if (!res.ok) throw new Error(`dismiss ${res.status}`);
+}
+
+// ── Cockpit Chat ───────────────────────────────────────────────────────────
+
+export interface ChatContextResponse {
+  preload: ChatPreload;
+  systemPrompt: string;
+  model: string;
+}
+
+export async function fetchChatContext(signal?: AbortSignal): Promise<ChatContextResponse> {
+  const res = await fetch('/api/chat/context', { signal });
+  if (!res.ok) throw new Error(`chat context ${res.status}`);
+  return (await res.json()) as ChatContextResponse;
+}
+
+export async function fetchChatHistory(signal?: AbortSignal): Promise<ChatHistoryEntry[]> {
+  const res = await fetch('/api/chat/history', { signal });
+  if (!res.ok) throw new Error(`chat history ${res.status}`);
+  return ((await res.json()) as { messages: ChatHistoryEntry[] }).messages;
+}
+
+export async function clearChatHistory(): Promise<void> {
+  const res = await fetch('/api/chat/history', { method: 'DELETE' });
+  if (!res.ok) throw new Error(`chat clear ${res.status}`);
+}
+
+/** POST + parse the SSE stream (meta → token* → fallback? → done). */
+export async function streamChat(
+  messages: ChatMessage[],
+  attachments: ChatAttachment[] = [],
+): Promise<AsyncGenerator<SseEvent>> {
+  const res = await fetch('/api/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ messages, attachments }),
+  });
+  return streamSse(res);
+}
+
+export async function fetchChatRegistry(signal?: AbortSignal): Promise<ChatContextItem[]> {
+  const res = await fetch('/api/chat/registry', { signal });
+  if (!res.ok) throw new Error(`chat registry ${res.status}`);
+  return ((await res.json()) as { items: ChatContextItem[] }).items;
+}
+
+// ── Handoff Emission (ADR-0005) ────────────────────────────────────────────
+
+export type DraftHandoffResponse =
+  | { status: 'ok'; draft: HandoffDraft }
+  | { status: 'failed_validation'; errors: string[]; raw: string }
+  | { status: 'unavailable'; reason: string };
+
+export async function draftHandoff(messages: ChatMessage[]): Promise<DraftHandoffResponse> {
+  const res = await fetch('/api/chat/handoff/draft', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ messages }),
+  });
+  if (!res.ok && res.status !== 422) throw new Error(`handoff draft ${res.status}`);
+  return (await res.json()) as DraftHandoffResponse;
+}
+
+export interface HandoffEdits {
+  title?: string;
+  to?: string;
+  body?: Partial<HandoffDraft['body']>;
+}
+
+export interface ApproveHandoffResponse {
+  written: boolean;
+  path?: string;
+  beadId?: string;
+  errors?: string[];
+}
+
+export async function approveHandoff(draftId: string, edits?: HandoffEdits): Promise<ApproveHandoffResponse> {
+  const res = await fetch('/api/chat/handoff/approve', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ draftId, edits }),
+  });
+  if (!res.ok && res.status !== 400) throw new Error(`handoff approve ${res.status}`);
+  return (await res.json()) as ApproveHandoffResponse;
+}
+
+export async function rejectHandoff(draftId: string): Promise<void> {
+  const res = await fetch(`/api/chat/handoff/draft/${encodeURIComponent(draftId)}`, { method: 'DELETE' });
+  if (!res.ok) throw new Error(`handoff reject ${res.status}`);
+}
+
+export async function fetchHandoffDrafts(signal?: AbortSignal): Promise<HandoffDraft[]> {
+  const res = await fetch('/api/chat/handoff/drafts', { signal });
+  if (!res.ok) throw new Error(`handoff drafts ${res.status}`);
+  return ((await res.json()) as { drafts: HandoffDraft[] }).drafts;
 }

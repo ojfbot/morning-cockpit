@@ -34,7 +34,12 @@ function profileSig(profile: ReaderProfile): string {
   return createHash('sha1').update(parts.sort().join('|')).digest('hex').slice(0, 8);
 }
 
-async function getPapers(now: number) {
+/** Cached snapshot WITHOUT fetching — for the chat preload's no-new-fetches discipline. */
+export function peekPapers(now: number): PapersSnapshot | undefined {
+  return snapshotCache.get('papers', now)?.snapshot;
+}
+
+export async function getPapers(now: number) {
   const cached = snapshotCache.get('papers', now);
   if (cached) return cached;
   const [papersRes, profileRes] = await Promise.all([fetchPapers(), fetchProfile(new Date(now))]);
