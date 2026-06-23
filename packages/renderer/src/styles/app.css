@@ -154,6 +154,238 @@ body {
   color: var(--ink-3);
 }
 
+/* ── 00 · Briefing console ── */
+.briefing { border: 1px solid var(--rule); background: var(--paper-2); }
+.briefing-band { display: grid; grid-template-columns: 300px 1fr; }
+@media (max-width: 880px) { .briefing-band { grid-template-columns: 1fr; } }
+
+/* Left — seeded thread rail */
+.briefing-rail {
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--rule);
+}
+.briefing-rail-head {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  padding: var(--gt-space-3) var(--gt-space-4);
+  border-bottom: 1px solid var(--rule);
+}
+.thread {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--gt-space-1);
+  text-align: left;
+  padding: var(--gt-space-3) var(--gt-space-4);
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--rule);
+  border-left: 3px solid transparent;
+  cursor: pointer;
+  transition: background var(--gt-duration-fast) var(--gt-ease);
+}
+.thread:hover { background: var(--gt-surface-hover); }
+.thread--active { background: var(--card); border-left-color: var(--red); }
+.thread-tag {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 1px 5px;
+}
+.thread-tag--decision { color: var(--red); background: color-mix(in srgb, var(--red) 12%, transparent); }
+.thread-tag--stale { color: var(--amber); background: color-mix(in srgb, var(--amber) 14%, transparent); }
+.thread-tag--quickwin { color: var(--green); background: color-mix(in srgb, var(--green) 14%, transparent); }
+.thread-title { font-size: 14px; font-weight: 700; line-height: 1.25; color: var(--ink); }
+.thread-why { font-family: var(--mono); font-size: 10px; color: var(--ink-3); }
+
+/* Right — conversation */
+.briefing-convo { padding: var(--gt-space-4) var(--gt-space-5); min-width: 0; }
+.convo-head {
+  display: flex;
+  align-items: center;
+  gap: var(--gt-space-2);
+  padding-bottom: var(--gt-space-3);
+  border-bottom: 1px solid var(--rule);
+}
+.convo-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); flex: none; }
+.convo-who {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.convo-id { margin-left: auto; font-family: var(--mono); font-size: 10px; color: var(--ink-3); }
+.convo-kicker {
+  display: block;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin: var(--gt-space-4) 0 var(--gt-space-2);
+}
+.convo-kicker--red { color: var(--red); }
+.convo-catchup p {
+  margin: 0;
+  padding-left: var(--gt-space-3);
+  border-left: 2px solid var(--ink);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+.convo-question {
+  margin: 0 0 var(--gt-space-4);
+  font-size: clamp(17px, 1.8vw, 21px);
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--ink);
+}
+
+/* Decision tree */
+.branches { display: flex; flex-direction: column; gap: var(--gt-space-2); }
+.branch {
+  display: flex;
+  align-items: center;
+  gap: var(--gt-space-3);
+  text-align: left;
+  padding: var(--gt-space-3) var(--gt-space-4);
+  background: var(--card);
+  border: 1px solid var(--rule);
+  cursor: pointer;
+  transition: border-color var(--gt-duration-fast) var(--gt-ease);
+}
+.branch:hover { border-color: var(--red); }
+.branch--chosen { border-color: var(--ink); border-left: 3px solid var(--red); }
+.branch-label { font-size: 14px; font-weight: 600; color: var(--ink); }
+.branch-rec {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--red);
+  border: 1px solid var(--red);
+  padding: 1px 6px;
+}
+
+/* Handoff Artifact card (deliver-branch terminal state) */
+.artifact {
+  margin-top: var(--gt-space-3);
+  border: 1px solid var(--red);
+  background: var(--card);
+  padding: var(--pad-card);
+  display: flex;
+  flex-direction: column;
+  gap: var(--gt-space-2);
+}
+.artifact--emitted { border-color: var(--green); }
+.artifact-head { display: flex; align-items: baseline; gap: var(--gt-space-2); flex-wrap: wrap; }
+.artifact-tag {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--red);
+}
+.artifact--emitted .artifact-tag { color: var(--green); }
+.artifact-target { margin-left: auto; font-family: var(--mono); font-size: 9px; color: var(--ink-3); }
+.artifact-title { margin: var(--gt-space-1) 0; font-size: 15.5px; font-weight: 700; line-height: 1.3; color: var(--ink); }
+.artifact-field { display: flex; flex-direction: column; gap: 2px; }
+.artifact-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.artifact-value { margin: 0; font-size: 13px; line-height: 1.5; color: var(--ink-2); }
+.artifact-criteria { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 3px; }
+.artifact-criteria li { position: relative; padding-left: var(--gt-space-4); font-size: 13px; line-height: 1.45; color: var(--ink-2); }
+.artifact-criteria li::before { content: '☐'; position: absolute; left: 0; color: var(--ink-3); }
+.artifact-foot { margin: var(--gt-space-1) 0 0; font-family: var(--mono); font-size: 10px; color: var(--ink-3); }
+.artifact-errors { margin: 0; padding-left: var(--gt-space-4); font-size: 12px; color: var(--red); }
+.artifact-actions { display: flex; align-items: center; gap: var(--gt-space-3); margin-top: var(--gt-space-1); }
+.artifact-approve {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--card);
+  background: var(--red);
+  border: none;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+.artifact-approve:hover:not(:disabled) { background: var(--gt-accent-hover); }
+.artifact-approve:disabled { opacity: 0.5; cursor: not-allowed; }
+.artifact-blocked { font-family: var(--mono); font-size: 9px; color: var(--amber); }
+.artifact-emitted { display: flex; flex-direction: column; gap: var(--gt-space-2); }
+.artifact-emitted p { margin: 0; font-size: 13px; line-height: 1.55; color: var(--ink-2); }
+.artifact-emitted code { font-family: var(--mono); font-size: 11px; color: var(--green); overflow-wrap: anywhere; }
+.artifact-undo {
+  align-self: flex-start;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-2);
+  background: transparent;
+  border: 1px solid var(--rule-strong);
+  padding: 3px 9px;
+  cursor: pointer;
+}
+.artifact-undo:hover { border-color: var(--red); color: var(--red); }
+
+/* defer / archive outcome note */
+.outcome { margin-top: var(--gt-space-3); border-left: 2px solid var(--amber); padding: var(--gt-space-2) var(--gt-space-4); }
+.outcome-note { margin: 0 0 var(--gt-space-2); font-size: 13px; line-height: 1.55; color: var(--ink-2); }
+.outcome-actions { display: flex; align-items: center; gap: var(--gt-space-3); }
+.outcome-cta {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-2);
+  background: var(--paper-2);
+  border: 1px solid var(--rule-strong);
+  padding: 5px 11px;
+  cursor: pointer;
+}
+.outcome-cta:disabled { opacity: 0.55; cursor: not-allowed; }
+
+/* Composer (attached, full width) */
+.composer { border-top: 1px solid var(--rule); }
+.composer-context {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-3);
+  padding: var(--gt-space-2) var(--gt-space-4) 0;
+}
+.composer-bar { display: flex; align-items: flex-end; gap: var(--gt-space-2); padding: var(--gt-space-2) var(--gt-space-4) var(--gt-space-3); }
+.composer-input {
+  flex: 1;
+  resize: none;
+  font-family: var(--sans);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink);
+  background: var(--card);
+  border: 1px solid var(--rule);
+  padding: var(--gt-space-2) var(--gt-space-3);
+}
+.composer-input:focus { outline: none; border-color: var(--red); }
+.composer-send {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--card);
+  background: var(--red);
+  border: none;
+  padding: 7px 14px;
+  cursor: pointer;
+}
+.composer-send:disabled { opacity: 0.5; cursor: not-allowed; }
+
 /* ── Lanes ── */
 .lanes {
   display: grid;

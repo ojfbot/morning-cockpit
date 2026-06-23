@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { mkdir, readdir, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import {
+  artifactToCandidate,
   briefFilename,
   briefSlug,
   candidateBody,
@@ -9,6 +10,7 @@ import {
   validateBriefDraft,
   type BriefBody,
   type BriefCandidate,
+  type BriefingArtifact,
   type ChatMessage,
   type HandoffDraft,
 } from '@cockpit/shared';
@@ -180,6 +182,41 @@ export async function approveDraft(draftId: string, edits?: DraftEdits): Promise
   const approved: HandoffDraft = { ...merged, status: 'approved', approvedAt: createdAtIso, writtenPath: target };
   await updateDraft(approved);
   return { status: 'ok', path: target, beadId: approved.beadId, draft: approved };
+}
+
+/**
+ * Briefing emit (ADR-0007) — the deliver-branch "Approve & emit". The artifact is already a fully
+ * specified, human-reviewed brief (no LLM drafting needed), so we stage it deterministically and
+ * immediately approve through the SAME gated write path as the chat (approveDraft): validate →
+ * path-safe → write `<repo>/.handoff/`, never overwrite, never create a repo. The explicit Approve
+ * click in the decision tree IS the ADR-0005 per-emission human gate.
+ */
+export async function emitArtifact(artifact: BriefingArtifact): Promise<ApproveResult> {
+  const repos = await listKnownRepos();
+  const candidate: BriefCandidate = artifactToCandidate(artifact);
+  const v = validateBriefDraft(candidate, repos);
+  if (!v.ok) return { status: 'invalid', errors: v.errors };
+
+  const now = new Date();
+  const title = String(candidate.title).trim();
+  const slug = briefSlug(title);
+  const filename = briefFilename(now, slug);
+  const draft: HandoffDraft = {
+    id: randomUUID(),
+    repo: String(candidate.repo).trim(),
+    to: String(candidate.to).trim(),
+    title,
+    slug,
+    filename,
+    beadId: filename.replace(/\.md$/, ''),
+    body: candidateBody(candidate),
+    status: 'staged',
+    createdAt: now.toISOString(),
+    provider: 'briefing',
+    model: 'artifact',
+  };
+  await saveDraft(draft);
+  return approveDraft(draft.id);
 }
 
 /** Reject: tombstone in cockpit .data/ only — zero upstream writes. */

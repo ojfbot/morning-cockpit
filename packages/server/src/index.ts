@@ -6,6 +6,7 @@ import { summaryRouter } from './routes/summary.js';
 import { readingRouter } from './routes/reading.js';
 import { papersRouter } from './routes/papers.js';
 import { chatRouter } from './routes/chat.js';
+import { briefingRouter } from './routes/briefing.js';
 
 const app = express();
 app.use(cors());
@@ -14,6 +15,7 @@ app.use(summaryRouter);
 app.use(readingRouter);
 app.use(papersRouter);
 app.use(chatRouter);
+app.use(briefingRouter);
 
 // Read-only cockpit snapshot: three lanes + per-adapter health.
 app.get('/api/cockpit', async (_req, res) => {

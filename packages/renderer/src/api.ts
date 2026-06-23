@@ -1,4 +1,5 @@
 import type {
+  BriefingArtifact,
   ChatAttachment,
   ChatContextItem,
   ChatHistoryEntry,
@@ -210,4 +211,24 @@ export async function fetchHandoffDrafts(signal?: AbortSignal): Promise<HandoffD
   const res = await fetch('/api/chat/handoff/drafts', { signal });
   if (!res.ok) throw new Error(`handoff drafts ${res.status}`);
   return ((await res.json()) as { drafts: HandoffDraft[] }).drafts;
+}
+
+// ── Briefing console (ADR-0007) — deliver-branch emit reuses the gated handoff write ──
+
+export interface EmitArtifactResponse {
+  written: boolean;
+  path?: string;
+  beadId?: string;
+  errors?: string[];
+}
+
+/** Approve & emit a deliver-branch artifact → POST /api/briefing/emit (validates + writes a brief). */
+export async function emitBriefingArtifact(artifact: BriefingArtifact): Promise<EmitArtifactResponse> {
+  const res = await fetch('/api/briefing/emit', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ artifact }),
+  });
+  if (!res.ok && res.status !== 422) throw new Error(`briefing emit ${res.status}`);
+  return (await res.json()) as EmitArtifactResponse;
 }

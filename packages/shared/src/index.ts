@@ -69,6 +69,16 @@ export {
   renderBriefMarkdown,
 } from './handoff-brief.js';
 
+export type {
+  BriefingTag,
+  BranchType,
+  BriefingArtifact,
+  BriefingBranch,
+  BriefingThread,
+  BriefingSnapshot,
+} from './briefing.js';
+export { artifactRepo, artifactToCandidate } from './briefing.js';
+
 export type { LaneContext, LaneInput } from './lanes.js';
 export {
   overnightWindowStart,
