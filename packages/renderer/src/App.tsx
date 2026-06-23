@@ -1,19 +1,32 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { CockpitSnapshot } from '@cockpit/shared';
 import { fetchCockpit } from './api.js';
 import { Lane } from './components/Lane.js';
 import { Section } from './components/Section.js';
 import { ReadingSection } from './components/ReadingSection.js';
 import { PapersSection } from './components/PapersSection.js';
-import { ThemeToggle } from './components/ThemeToggle.js';
+import { Masthead } from './components/Masthead.js';
 import { HealthBar } from './components/HealthBar.js';
 import { ChatSidebar } from './components/chat/ChatSidebar.js';
+import { applyRootAttributes, loadState, saveState, type CockpitUiState } from './cockpitState.js';
 
 const POLL_MS = 60_000;
 
 export function App() {
   const [snapshot, setSnapshot] = useState<CockpitSnapshot | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [ui, setUi] = useState<CockpitUiState>(loadState);
+
+  // Reflect the presentation axes onto <html> and persist the whole UI state.
+  useEffect(() => {
+    applyRootAttributes(ui);
+    saveState(ui);
+  }, [ui]);
+
+  const toggleTheme = useCallback(
+    () => setUi((s) => ({ ...s, theme: s.theme === 'dark' ? 'light' : 'dark' })),
+    [],
+  );
 
   useEffect(() => {
     let active = true;
@@ -38,30 +51,9 @@ export function App() {
     };
   }, []);
 
-  const overnightSince = snapshot ? new Date(snapshot.overnightSince) : null;
-
   return (
     <div className="cockpit">
-      <header className="cockpit-header">
-        <h1 className="cockpit-title">Morning Cockpit</h1>
-        <div className="cockpit-header-right">
-          <span className="cockpit-meta">
-            {error ? (
-              <span className="accent">read-model unreachable — {error}</span>
-            ) : snapshot ? (
-              <>
-                {snapshot.meta.totalItems} items · overnight since{' '}
-                <span className="accent">
-                  {overnightSince?.toLocaleString([], { weekday: 'short', hour: '2-digit', minute: '2-digit' })}
-                </span>
-              </>
-            ) : (
-              'loading…'
-            )}
-          </span>
-          <ThemeToggle />
-        </div>
-      </header>
+      <Masthead snapshot={snapshot} theme={ui.theme} onToggleTheme={toggleTheme} error={error} />
 
       <div className="cockpit-body">
         <main className="sections">

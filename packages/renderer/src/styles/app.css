@@ -15,58 +15,97 @@ body {
   flex-direction: column;
 }
 
-/* ── Header ── */
-.cockpit-header {
+/* ── Masthead (editorial nameplate, derived cover-line) ── */
+.masthead {
+  padding: clamp(16px, 3vw, 28px) var(--pad-main) 0;
+  border-bottom: 3px solid var(--ink);
+  background: var(--paper);
+}
+.masthead-metarow {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: var(--gt-space-4);
-  padding: var(--gt-space-4) var(--gt-space-6);
-  background: linear-gradient(var(--gt-surface-1), var(--gt-bg));
-  border-bottom: 1px solid var(--gt-border);
-}
-.cockpit-title {
-  font-size: 20px;
-  font-weight: var(--gt-font-weight-black);
-  letter-spacing: -0.02em;
+  padding-bottom: var(--gt-space-2);
+  border-bottom: 1px solid var(--rule);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  margin: 0;
+  color: var(--ink-3);
 }
-.cockpit-header-right {
+.masthead-date { text-align: center; }
+.masthead-meta-right {
   display: flex;
   align-items: center;
   gap: var(--gt-space-3);
+  justify-content: flex-end;
 }
-.cockpit-meta {
-  font-family: var(--gt-font-mono);
+.nameplate {
+  margin: clamp(14px, 2.4vw, 26px) 0 0;
+  font-family: var(--sans);
+  font-weight: 800;
+  font-size: clamp(48px, 9.5vw, 142px);
+  letter-spacing: -0.045em;
+  line-height: 0.82;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.masthead-foot {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--gt-space-6);
+  padding: clamp(14px, 2vw, 22px) 0 clamp(16px, 2.4vw, 26px);
+  flex-wrap: wrap;
+}
+.coverline {
+  margin: 0;
+  max-width: 30ch;
+  flex: 1 1 360px;
+  font-family: var(--sans);
+  font-weight: 700;
+  font-size: clamp(19px, 2.4vw, 30px);
+  line-height: 1.06;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+}
+.coverline .sig { color: var(--red); }
+.masthead-stats {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  font-family: var(--mono);
   font-size: 11px;
-  color: var(--gt-text-muted);
+  letter-spacing: 0.04em;
+  color: var(--ink-3);
+  white-space: nowrap;
 }
-.cockpit-meta .accent { color: var(--gt-accent); }
 .theme-toggle {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  font-size: 14px;
-  line-height: 1;
-  color: var(--gt-text-secondary);
-  background: var(--gt-surface-2);
-  border: 1px solid var(--gt-border);
-  border-radius: var(--gt-radius-sm);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  padding: 3px 8px;
+  color: var(--ink-2);
+  background: transparent;
+  border: 1px solid var(--rule-strong);
+  border-radius: 0;
   cursor: pointer;
   transition: border-color var(--gt-duration-fast) var(--gt-ease), color var(--gt-duration-fast) var(--gt-ease);
 }
-.theme-toggle:hover { border-color: var(--gt-accent); color: var(--gt-accent); }
+.theme-toggle:hover { border-color: var(--red); color: var(--red); }
 
 /* ── Sections (cockpit is a vertical stack of these bubbles) ── */
 .sections {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: var(--gt-space-5);
-  padding: var(--gt-space-5) var(--gt-space-6);
+  gap: var(--gap-section);
+  padding: var(--gap-section) var(--pad-main);
 }
 .panel {
   background: var(--gt-surface-1);
@@ -944,21 +983,23 @@ body {
   .chat-rail-toggle { writing-mode: horizontal-tb; }
 }
 
-/* ── Health bar ── */
+/* ── Health strip (footer) ── */
 .health {
   display: flex;
-  gap: var(--gt-space-3);
-  padding: var(--gt-space-2) var(--gt-space-6);
-  border-top: 1px solid var(--gt-border);
-  background: var(--gt-surface-1);
-  font-family: var(--gt-font-mono);
+  gap: var(--gt-space-5);
+  padding: var(--gt-space-3) var(--pad-main);
+  border-top: 3px solid var(--ink);
+  background: var(--paper-2);
+  font-family: var(--mono);
   font-size: 10px;
-  color: var(--gt-text-secondary);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-2);
   flex-wrap: wrap;
 }
-.health-item { display: flex; align-items: center; gap: 5px; }
+.health-item { display: flex; align-items: center; gap: 6px; }
 .health-dot { width: 7px; height: 7px; border-radius: 50%; }
-.health-dot.up { background: var(--gt-success); }
-.health-dot.down { background: var(--gt-error); }
-.health-dot.degraded { background: var(--gt-warning); }
-.health-dot.disabled { background: var(--gt-border); }
+.health-dot.up { background: var(--green); }
+.health-dot.down { background: var(--red); }
+.health-dot.degraded { background: var(--amber); }
+.health-dot.disabled { background: var(--ink-3); }

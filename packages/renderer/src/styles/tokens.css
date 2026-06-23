@@ -1,39 +1,71 @@
-/* Vendored from GroupThink/src/styles/tokens.css @ 2026-06-07 (see ADR-0001).
- * Dieter Rams: simplicity, rigor, purposefulness. George Lois: wit, delight, purpose.
+/* OJF Editorial token system (redesign 2026-06-22, see decisions/adr/0007).
+ *
+ * Dieter Rams rigor (8px grid, hairline rules, one signal colour) pushed toward
+ * George Lois drama (newspaper masthead, big Helvetica, red used as a weapon).
+ *
+ * This SUPERSEDES the vendored GroupThink palette (was ADR-0001): the OJF tokens
+ * below are the source of truth, and the legacy `--gt-*` names are kept as
+ * **aliases** that point at them so the existing app.css keeps working while the
+ * pods are migrated slice by slice. Do not fork — extend.
  */
 
 :root {
-  /* Surfaces */
-  --gt-bg: #fafafa;
-  --gt-surface-1: #f0f0f0;
-  --gt-surface-2: #e4e4e4;
-  --gt-surface-hover: rgba(0, 0, 0, 0.04);
-  --gt-border: rgba(0, 0, 0, 0.08);
+  /* ── OJF Editorial — light (warm paper, ink, one signal red) ── */
+  --paper: #f2efe7;
+  --paper-2: #e8e4d8;
+  --card: #fcfbf6;
+  --ink: #17140f;
+  --ink-2: #574f44;
+  --ink-3: #938a7c;
+  --rule: rgba(23, 20, 15, 0.16);
+  --rule-strong: rgba(23, 20, 15, 0.62);
+  --red: #e2231a;
+  --green: #2f7d5b;
+  --amber: #a8730f;
 
-  /* Text */
-  --gt-text-primary: #1a1a1a;
-  --gt-text-secondary: #555555;
-  --gt-text-muted: #999999;
+  /* Type */
+  --sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", monospace;
 
-  /* Accent — Lois-bold red */
-  --gt-accent: #e63946;
-  --gt-accent-hover: #d62f3d;
-  --gt-accent-text: #ffffff;
+  /* Layout (8px grid). density=compact overrides below. */
+  --gap-section: 64px;
+  --gap-lane: 18px;
+  --pad-card: 15px;
+  --pad-main: clamp(20px, 4vw, 52px);
 
-  /* Feedback */
-  --gt-success: #2d936c;
-  --gt-warning: #e9a820;
-  --gt-error: #e63946;
+  /* Motion */
+  --gt-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --gt-duration-fast: 140ms;
+  --gt-duration: 220ms;
+  --gt-duration-slow: 400ms;
 
-  /* Typography */
-  --gt-font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-  --gt-font-mono: "JetBrains Mono", "SF Mono", "Fira Code", monospace;
-  --gt-font-weight-normal: 400;
-  --gt-font-weight-medium: 500;
+  /* ── Legacy GroupThink aliases → OJF primitives (kept so app.css works) ── */
+  --gt-bg: var(--paper);
+  --gt-surface-1: var(--paper-2);
+  --gt-surface-2: var(--paper-2);
+  --gt-surface-hover: rgba(23, 20, 15, 0.04);
+  --gt-border: var(--rule);
+
+  --gt-text-primary: var(--ink);
+  --gt-text-secondary: var(--ink-2);
+  --gt-text-muted: var(--ink-3);
+
+  --gt-accent: var(--red);
+  --gt-accent-hover: color-mix(in srgb, var(--red) 84%, black);
+  --gt-accent-text: var(--card);
+
+  --gt-success: var(--green);
+  --gt-warning: var(--amber);
+  --gt-error: var(--red);
+
+  --gt-font-sans: var(--sans);
+  --gt-font-mono: var(--mono);
+  --gt-font-weight-normal: 500;
+  --gt-font-weight-medium: 600;
   --gt-font-weight-bold: 700;
-  --gt-font-weight-black: 900;
+  --gt-font-weight-black: 800;
 
-  /* Spacing (8px grid) */
+  /* 8px grid (unchanged) */
   --gt-space-1: 4px;
   --gt-space-2: 8px;
   --gt-space-3: 12px;
@@ -43,59 +75,68 @@
   --gt-space-7: 48px;
   --gt-space-8: 64px;
 
-  /* Radii */
-  --gt-radius-sm: 4px;
-  --gt-radius-md: 8px;
-  --gt-radius-lg: 12px;
+  /* Sharp, editorial — no border-radius anywhere. */
+  --gt-radius-sm: 0;
+  --gt-radius-md: 0;
+  --gt-radius-lg: 0;
 
-  /* Shadows */
-  --gt-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --gt-shadow-md: 0 2px 8px rgba(0, 0, 0, 0.08);
-  --gt-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
-
-  /* Motion */
-  --gt-ease: cubic-bezier(0.16, 1, 0.3, 1);
-  --gt-duration-fast: 120ms;
-  --gt-duration: 200ms;
-  --gt-duration-slow: 400ms;
+  /* Shadows (used on hover lift) */
+  --gt-shadow-sm: 0 1px 2px rgba(23, 20, 15, 0.06);
+  --gt-shadow-md: 0 4px 14px rgba(23, 20, 15, 0.1);
+  --gt-shadow-lg: 0 10px 30px rgba(23, 20, 15, 0.16);
 }
 
+/* ── Dark theme ── */
 [data-theme="dark"] {
-  --gt-bg: #0a0a0a;
-  --gt-surface-1: #141414;
-  --gt-surface-2: #1e1e1e;
-  --gt-surface-hover: rgba(255, 255, 255, 0.04);
-  --gt-border: rgba(255, 255, 255, 0.08);
+  --paper: #100e08;
+  --paper-2: #191510;
+  --card: #1b1812;
+  --ink: #f3eee3;
+  --ink-2: #a69d8e;
+  --ink-3: #6c6457;
+  --rule: rgba(243, 238, 227, 0.16);
+  --rule-strong: rgba(243, 238, 227, 0.5);
+  --red: #ff463a;
+  --green: #52b083;
+  --amber: #e0a53a;
 
-  --gt-text-primary: #f0f0f0;
-  --gt-text-secondary: #999999;
-  --gt-text-muted: #555555;
-
-  --gt-accent: #ff4d5a;
-  --gt-accent-hover: #ff6b75;
-
-  --gt-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
-  --gt-shadow-md: 0 2px 8px rgba(0, 0, 0, 0.3);
-  --gt-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --gt-surface-hover: rgba(243, 238, 227, 0.05);
+  --gt-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --gt-shadow-md: 0 4px 14px rgba(0, 0, 0, 0.45);
+  --gt-shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.55);
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --gt-bg: #0a0a0a;
-    --gt-surface-1: #141414;
-    --gt-surface-2: #1e1e1e;
-    --gt-surface-hover: rgba(255, 255, 255, 0.04);
-    --gt-border: rgba(255, 255, 255, 0.08);
+    --paper: #100e08;
+    --paper-2: #191510;
+    --card: #1b1812;
+    --ink: #f3eee3;
+    --ink-2: #a69d8e;
+    --ink-3: #6c6457;
+    --rule: rgba(243, 238, 227, 0.16);
+    --rule-strong: rgba(243, 238, 227, 0.5);
+    --red: #ff463a;
+    --green: #52b083;
+    --amber: #e0a53a;
 
-    --gt-text-primary: #f0f0f0;
-    --gt-text-secondary: #999999;
-    --gt-text-muted: #555555;
-
-    --gt-accent: #ff4d5a;
-    --gt-accent-hover: #ff6b75;
-
-    --gt-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
-    --gt-shadow-md: 0 2px 8px rgba(0, 0, 0, 0.3);
-    --gt-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.4);
+    --gt-surface-hover: rgba(243, 238, 227, 0.05);
+    --gt-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --gt-shadow-md: 0 4px 14px rgba(0, 0, 0, 0.45);
+    --gt-shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.55);
   }
+}
+
+/* ── Accent override (data-accent): remaps the single signal colour ── */
+[data-accent="blue"] { --red: #1559c8; }
+[data-accent="blue"][data-theme="dark"] { --red: #5e90f2; }
+[data-accent="green"] { --red: #1c7a47; }
+[data-accent="green"][data-theme="dark"] { --red: #4fbe82; }
+
+/* ── Density override (data-density) ── */
+[data-density="compact"] {
+  --gap-section: 40px;
+  --gap-lane: 12px;
+  --pad-card: 11px;
+  --pad-main: clamp(16px, 3vw, 34px);
 }
