@@ -77,7 +77,7 @@ export type {
   BriefingThread,
   BriefingSnapshot,
 } from './briefing.js';
-export { artifactRepo, artifactToCandidate } from './briefing.js';
+export { artifactRepo, artifactToCandidate, briefingFallback } from './briefing.js';
 
 export type { LaneContext, LaneInput } from './lanes.js';
 export {

@@ -1,5 +1,7 @@
+import { useEffect, useState } from 'react';
 import type { BriefingBranch, BriefingThread, BriefingTag } from '@cockpit/shared';
 import type { CockpitUiState } from '../../cockpitState.js';
+import { fetchBriefing } from '../../api.js';
 import { Section } from '../Section.js';
 import { HandoffArtifactCard } from './HandoffArtifactCard.js';
 import { MOCK_THREADS } from './threads.js';
@@ -27,12 +29,37 @@ function intentFor(branch: BriefingBranch): { verb: string; built: boolean } {
 export function Briefing({
   ui,
   setUi,
-  threads = MOCK_THREADS,
 }: {
   ui: CockpitUiState;
   setUi: (fn: (s: CockpitUiState) => CockpitUiState) => void;
-  threads?: BriefingThread[];
 }) {
+  const [threads, setThreads] = useState<BriefingThread[]>(MOCK_THREADS);
+  const [source, setSource] = useState<'llm' | 'deterministic' | 'loading'>('loading');
+
+  const load = (force = false) => {
+    setSource('loading');
+    fetchBriefing(force)
+      .then((b) => {
+        if (b.threads.length > 0) setThreads(b.threads);
+        setSource(b.source);
+      })
+      .catch(() => setSource('deterministic'));
+  };
+
+  useEffect(() => {
+    let active = true;
+    fetchBriefing()
+      .then((b) => {
+        if (!active) return;
+        if (b.threads.length > 0) setThreads(b.threads);
+        setSource(b.source);
+      })
+      .catch(() => active && setSource('deterministic'));
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const active = threads.find((t) => t.id === ui.activeId) ?? threads[0];
   if (!active) return null;
 
@@ -59,7 +86,18 @@ export function Briefing({
       title="The First Move"
       caption={
         <span className="section-caption">
-          Chief of Staff · caught up on the fleet
+          <button
+            className="briefing-source"
+            onClick={() => load(true)}
+            disabled={source === 'loading'}
+            title="Regenerate the briefing from the latest snapshot"
+          >
+            {source === 'loading'
+              ? '↻ generating…'
+              : source === 'llm'
+                ? '✨ Chief of Staff · ↻'
+                : 'deterministic · ↻'}
+          </button>
           <br />
           every thread ends in a handoff artifact
         </span>

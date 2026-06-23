@@ -1,5 +1,6 @@
 import type {
   BriefingArtifact,
+  BriefingSnapshot,
   ChatAttachment,
   ChatContextItem,
   ChatHistoryEntry,
@@ -220,6 +221,15 @@ export interface EmitArtifactResponse {
   path?: string;
   beadId?: string;
   errors?: string[];
+}
+
+export type BriefingResponse = BriefingSnapshot & { cached?: boolean };
+
+/** The Chief-of-Staff read-model (LLM-generated threads, deterministic fallback). */
+export async function fetchBriefing(force = false, signal?: AbortSignal): Promise<BriefingResponse> {
+  const res = await fetch(`/api/briefing${force ? '?force=1' : ''}`, { signal });
+  if (!res.ok) throw new Error(`briefing ${res.status}`);
+  return (await res.json()) as BriefingResponse;
 }
 
 /** Approve & emit a deliver-branch artifact → POST /api/briefing/emit (validates + writes a brief). */

@@ -9,6 +9,7 @@
  */
 
 import type { BriefCandidate } from './handoff-brief.js';
+import type { CockpitSnapshot } from './work-item.js';
 
 export type BriefingTag = 'decision' | 'stale' | 'quickwin';
 export type BranchType = 'deliver' | 'defer' | 'archive';
@@ -57,6 +58,71 @@ export interface BriefingSnapshot {
   threads: BriefingThread[];
   /** Honesty flag, like SynthSummary.source: 'llm' when the Chief of Staff generated it. */
   source: 'llm' | 'deterministic';
+}
+
+/**
+ * Deterministic fallback (the always-present floor, like summarizeLane). Builds honest threads
+ * from real lane data when the Chief-of-Staff LLM is unavailable or returns junk — every thread
+ * points at a real bead, with a generic-but-true deliver artifact + a defer branch. No fabrication.
+ */
+export function briefingFallback(snapshot: CockpitSnapshot, generatedAt: string): BriefingSnapshot {
+  // Most-stale available first (rot floats up), then pickup — the items most wanting a decision.
+  const stale = snapshot.lanes.available
+    .filter((i) => i.status === 'stale')
+    .sort((a, b) => (b.staleDays ?? 0) - (a.staleDays ?? 0));
+  const picks = [...stale, ...snapshot.lanes.pickup].slice(0, 4);
+
+  const threads: BriefingThread[] = picks.map((item) => {
+    const repo = item.repo ?? 'core';
+    const isStale = item.status === 'stale';
+    const why = isStale
+      ? `${item.staleDays ?? '?'}d stale · ${repo}`
+      : `pickup · ${repo}`;
+    return {
+      id: `fb-${item.nativeId}`,
+      tag: isStale ? 'stale' : 'decision',
+      title: item.title,
+      whyNow: why,
+      catchUp: `${item.title} is ${isStale ? `${item.staleDays ?? '?'} days stale` : 'open for pickup'} in ${repo}. (Deterministic brief — the local Chief-of-Staff model was unavailable, so this is read straight from the lane data.)`,
+      question: `How do you want to move on "${truncate(item.title, 60)}"?`,
+      branches: [
+        {
+          key: 'pickup',
+          label: 'Pick it up now',
+          recommended: true,
+          type: 'deliver',
+          artifact: {
+            title: `Pick up: ${item.title}`,
+            target: `${repo}/.handoff/`,
+            closes: item.nativeId,
+            align: `We agree this ${isStale ? 'stale ' : ''}item needs an owner. This brief hands it to a session with clear acceptance criteria.`,
+            task: `Investigate and resolve "${item.title}" in ${repo}; either complete it or close it with a recorded rationale.`,
+            criteria: [
+              'Item investigated and a clear decision recorded (complete or close)',
+              'If completed: change verified; if closed: one-line rationale on the bead',
+            ],
+          },
+        },
+        deferBranch(),
+      ],
+    };
+  });
+
+  return { generatedAt, threads, source: 'deterministic' };
+}
+
+const deferBranch = (): BriefingBranch => ({
+  key: 'defer',
+  label: 'Defer 7 days',
+  recommended: false,
+  type: 'defer',
+  cta: 'Snooze 7 days',
+  outcome: 'Snoozes the item 7 days and logs the deferral on the bead.',
+  doneText: 'Snoozed 7 days — the bead resurfaces next week.',
+});
+
+function truncate(s: string, n: number): string {
+  return s.length > n ? `${s.slice(0, n - 1)}…` : s;
 }
 
 /** Repo name from an artifact target ("core/.handoff/" → "core"). */

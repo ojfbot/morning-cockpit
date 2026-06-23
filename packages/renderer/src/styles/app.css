@@ -155,6 +155,17 @@ body {
 }
 
 /* ── 00 · Briefing console ── */
+.briefing-source {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-3);
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+.briefing-source:hover:not(:disabled) { color: var(--red); }
+.briefing-source:disabled { opacity: 0.6; cursor: default; }
 .briefing { border: 1px solid var(--rule); background: var(--paper-2); }
 .briefing-band { display: grid; grid-template-columns: 300px 1fr; }
 @media (max-width: 880px) { .briefing-band { grid-template-columns: 1fr; } }
