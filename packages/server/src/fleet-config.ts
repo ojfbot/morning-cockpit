@@ -1,4 +1,4 @@
-import type { DeliveryMilestone, NextMove } from '@cockpit/shared';
+import type { CriticalChain, DeliveryMilestone, NextMove } from '@cockpit/shared';
 
 /**
  * Editorial coordination config (ADR-0007 owns it). Repo role/phase is hand-maintained metadata;
@@ -52,3 +52,57 @@ export const NEXT_MOVES: NextMove[] = [
   { index: 5, title: 'seed-create verb', unblocks: 'capture pre-project chat ideas', effort: 'S', repo: 'core' },
   { index: 6, title: 'gastown reads the queue + liveness', unblocks: 'un-stubs WantedBoard + AgentTree', effort: 'M', repo: 'gastown-pilot' },
 ];
+
+/**
+ * Critical-path chains, hand-read from coordination-design.md §6 (the footer marks this seeded
+ * state). The real work is deriving these from live repo-deps + bead refs — until then briefId
+ * is a best-effort jump target into the Briefing (which may be on generated threads).
+ */
+export const CRITICAL_INTRO =
+  'Four blockers stand between you and the coordination layer. Clearing the top one — {an empty event log} — frees six downstream beads at once.';
+
+export const CRITICAL_CHAINS: CriticalChain[] = [
+  {
+    id: 'bead-events',
+    severity: 'critical',
+    title: 'bead_events writer — the empty log',
+    relation: 'BLOCKS',
+    blocks: ['agent liveness', 'overnight panel', 'Wanted queue', 'gastown AgentTree'],
+    impact: '6 / beads · 3 repos',
+    briefId: 'events',
+    cta: 'Brief ↑',
+  },
+  {
+    id: 'metric',
+    severity: 'high',
+    title: 'core keep/discard metric',
+    relation: 'BLOCKS',
+    blocks: ['renumber ADR', 'resolve catalog', 'liveness binding'],
+    impact: '3 / beads · core',
+    briefId: 'metric',
+    cta: 'Brief ↑',
+  },
+  {
+    id: 'queue-verbs',
+    severity: 'blocked',
+    title: 'queue-post + queue-claim verbs',
+    relation: 'BLOCKS',
+    blocks: ['Available real source', 'Claim → dispatch', 'gastown WantedBoard'],
+    impact: '3 / beads · 2 repos',
+    waitsOn: 'waits on bead_events',
+    briefId: 'events',
+    cta: 'Brief ↑',
+  },
+  {
+    id: 'adr-0002',
+    severity: 'decision',
+    title: 'ADR-0002 — human-pull vs. autonomous',
+    relation: 'GATES',
+    blocks: ['claim strictness', 'convergence direction', 'the whole layer'],
+    impact: 'gates all',
+    cta: 'Settle first',
+  },
+];
+
+export const CRITICAL_NOTE =
+  'Chains hand-read from coordination-design.md — wire live repo deps + bead refs to make this auto-update.';

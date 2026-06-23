@@ -81,6 +81,7 @@ export function Briefing({
 
   return (
     <Section
+      id="briefing"
       index="00"
       kicker="BRIEFING"
       title="The First Move"

@@ -6,6 +6,7 @@ import type { ReactNode } from 'react';
  * ink bottom rule. The cockpit is a vertical stack of these.
  */
 export function Section({
+  id,
   index,
   kicker,
   title,
@@ -14,6 +15,8 @@ export function Section({
   actions,
   children,
 }: {
+  /** DOM id for scroll anchoring (e.g. Critical Path's "Brief ↑" jump). */
+  id?: string;
   /** Department number, e.g. "04". */
   index?: string;
   /** Mono kicker label, e.g. "WORK". Falls back to the upper-cased title. */
@@ -28,7 +31,7 @@ export function Section({
 }) {
   const kick = kicker ?? title.toUpperCase();
   return (
-    <section className="section">
+    <section className="section" id={id}>
       <header className="section-header">
         <div className="section-head-left">
           <span className="section-kicker">

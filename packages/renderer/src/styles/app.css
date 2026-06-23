@@ -441,6 +441,78 @@ body {
 }
 .repo-open { color: var(--red); }
 
+/* ── 02 · Critical Path ── */
+.crit-intro {
+  margin: 0 0 var(--gt-space-5);
+  max-width: 60ch;
+  font-size: clamp(16px, 1.8vw, 20px);
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--ink);
+}
+.crit-intro .sig { color: var(--red); }
+.crit-board { border-top: 2px solid var(--ink); }
+.crit-row {
+  display: flex;
+  align-items: center;
+  gap: var(--gt-space-4);
+  padding: var(--gt-space-3) var(--gt-space-4);
+  border-bottom: 1px solid var(--rule);
+  border-left: 3px solid var(--rule-strong);
+}
+.crit-row--critical, .crit-row--high { border-left-color: var(--red); }
+.crit-row--blocked { border-left-color: var(--amber); }
+.crit-row--decision { border-left-color: var(--ink); }
+.crit-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--gt-space-2); }
+.crit-headline { display: flex; align-items: baseline; gap: var(--gt-space-2); flex-wrap: wrap; }
+.crit-sev {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 1px 6px;
+}
+.crit-sev--critical, .crit-sev--high { color: var(--card); background: var(--red); }
+.crit-sev--blocked { color: var(--card); background: var(--amber); }
+.crit-sev--decision { color: var(--card); background: var(--ink); }
+.crit-title { font-size: 15px; font-weight: 700; color: var(--ink); }
+.crit-waits { font-family: var(--mono); font-size: 10px; color: var(--ink-3); }
+.crit-blocks { display: flex; align-items: center; flex-wrap: wrap; gap: var(--gt-space-2); }
+.crit-rel { font-family: var(--mono); font-size: 9px; letter-spacing: 0.06em; color: var(--ink-3); }
+.crit-chip {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-2);
+  border: 1px solid var(--rule);
+  padding: 1px 7px;
+}
+.crit-impact {
+  flex: none;
+  width: 120px;
+  text-align: right;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-3);
+}
+.crit-cta {
+  flex: none;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--card);
+  background: var(--red);
+  border: none;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+.crit-cta:hover:not(:disabled) { background: var(--gt-accent-hover); }
+.crit-cta--ghost {
+  color: var(--ink-2);
+  background: transparent;
+  border: 1px solid var(--rule-strong);
+  cursor: default;
+}
+.crit-note { margin: var(--gt-space-4) 0 0; font-family: var(--mono); font-size: 10px; color: var(--ink-3); }
+
 /* ── 03 · Delivery ── */
 .phase-track {
   position: relative;

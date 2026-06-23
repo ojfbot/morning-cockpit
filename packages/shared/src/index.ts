@@ -87,6 +87,9 @@ export type {
   DeliveryMilestone,
   NextMove,
   DeliverySnapshot,
+  Severity,
+  CriticalChain,
+  CriticalPathSnapshot,
 } from './fleet.js';
 
 export type { LaneContext, LaneInput } from './lanes.js';

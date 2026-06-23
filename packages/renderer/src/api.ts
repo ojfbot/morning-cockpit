@@ -1,6 +1,7 @@
 import type {
   BriefingArtifact,
   BriefingSnapshot,
+  CriticalPathSnapshot,
   DeliverySnapshot,
   FleetSnapshot,
   ChatAttachment,
@@ -235,6 +236,12 @@ export async function fetchDelivery(signal?: AbortSignal): Promise<DeliverySnaps
   const res = await fetch('/api/delivery', { signal });
   if (!res.ok) throw new Error(`delivery ${res.status}`);
   return (await res.json()) as DeliverySnapshot;
+}
+
+export async function fetchCriticalPath(signal?: AbortSignal): Promise<CriticalPathSnapshot> {
+  const res = await fetch('/api/critical-path', { signal });
+  if (!res.ok) throw new Error(`critical-path ${res.status}`);
+  return (await res.json()) as CriticalPathSnapshot;
 }
 
 export type BriefingResponse = BriefingSnapshot & { cached?: boolean };

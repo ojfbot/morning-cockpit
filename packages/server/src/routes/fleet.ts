@@ -1,7 +1,15 @@
 import { Router } from 'express';
 import type { CockpitSnapshot, Liveness, RepoCard, WorkItem } from '@cockpit/shared';
 import { buildSnapshot } from '../aggregate.js';
-import { DELIVERY_MILESTONES, DELIVERY_PROGRESS, NEXT_MOVES, REPO_META } from '../fleet-config.js';
+import {
+  CRITICAL_CHAINS,
+  CRITICAL_INTRO,
+  CRITICAL_NOTE,
+  DELIVERY_MILESTONES,
+  DELIVERY_PROGRESS,
+  NEXT_MOVES,
+  REPO_META,
+} from '../fleet-config.js';
 
 /**
  * Fleet (01) + Delivery (03) read-models. Fleet merges editorial repo metadata with live signals
@@ -60,6 +68,16 @@ fleetRouter.get('/api/fleet', async (_req, res) => {
   } catch (err) {
     res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
   }
+});
+
+fleetRouter.get('/api/critical-path', (_req, res) => {
+  res.json({
+    generatedAt: new Date().toISOString(),
+    intro: CRITICAL_INTRO,
+    chains: CRITICAL_CHAINS,
+    seeded: true,
+    note: CRITICAL_NOTE,
+  });
 });
 
 fleetRouter.get('/api/delivery', (_req, res) => {

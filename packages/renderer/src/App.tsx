@@ -9,6 +9,7 @@ import { Masthead } from './components/Masthead.js';
 import { HealthBar } from './components/HealthBar.js';
 import { Briefing } from './components/briefing/Briefing.js';
 import { FleetSection } from './components/FleetSection.js';
+import { CriticalPathSection } from './components/CriticalPathSection.js';
 import { DeliverySection } from './components/DeliverySection.js';
 import { ChatSidebar } from './components/chat/ChatSidebar.js';
 import { applyRootAttributes, loadState, saveState, type CockpitUiState } from './cockpitState.js';
@@ -62,6 +63,7 @@ export function App() {
         <main className="sections">
           <Briefing ui={ui} setUi={setUi} />
           <FleetSection />
+          <CriticalPathSection setUi={setUi} />
           <DeliverySection />
           <Section
             index="04"

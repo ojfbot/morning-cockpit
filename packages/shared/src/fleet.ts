@@ -54,3 +54,32 @@ export interface DeliverySnapshot {
   milestones: DeliveryMilestone[];
   nextMoves: NextMove[];
 }
+
+export type Severity = 'critical' | 'high' | 'blocked' | 'decision';
+
+export interface CriticalChain {
+  id: string;
+  severity: Severity;
+  title: string;
+  /** "BLOCKS" or "GATES". */
+  relation: string;
+  /** Downstream items this blocks/gates. */
+  blocks: string[];
+  /** Impact count line, e.g. "6 / beads · 3 repos" or "gates all". */
+  impact: string;
+  /** Greyed note, e.g. "waits on bead_events". */
+  waitsOn?: string;
+  /** Briefing thread id this jumps to (best-effort; null = no brief, e.g. the ADR decision). */
+  briefId?: string;
+  /** CTA label: "Brief ↑" (jump) or "Settle first" (no jump). */
+  cta: string;
+}
+
+export interface CriticalPathSnapshot {
+  generatedAt: string;
+  intro: string;
+  chains: CriticalChain[];
+  /** True while chains are hand-read (not yet derived from live repo-deps + bead refs). */
+  seeded: boolean;
+  note: string;
+}
