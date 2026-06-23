@@ -79,6 +79,16 @@ export type {
 } from './briefing.js';
 export { artifactRepo, artifactToCandidate, briefingFallback } from './briefing.js';
 
+export type {
+  Liveness,
+  RepoCard,
+  FleetSnapshot,
+  Effort,
+  DeliveryMilestone,
+  NextMove,
+  DeliverySnapshot,
+} from './fleet.js';
+
 export type { LaneContext, LaneInput } from './lanes.js';
 export {
   overnightWindowStart,

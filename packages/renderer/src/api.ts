@@ -1,6 +1,8 @@
 import type {
   BriefingArtifact,
   BriefingSnapshot,
+  DeliverySnapshot,
+  FleetSnapshot,
   ChatAttachment,
   ChatContextItem,
   ChatHistoryEntry,
@@ -221,6 +223,18 @@ export interface EmitArtifactResponse {
   path?: string;
   beadId?: string;
   errors?: string[];
+}
+
+export async function fetchFleet(signal?: AbortSignal): Promise<FleetSnapshot> {
+  const res = await fetch('/api/fleet', { signal });
+  if (!res.ok) throw new Error(`fleet ${res.status}`);
+  return (await res.json()) as FleetSnapshot;
+}
+
+export async function fetchDelivery(signal?: AbortSignal): Promise<DeliverySnapshot> {
+  const res = await fetch('/api/delivery', { signal });
+  if (!res.ok) throw new Error(`delivery ${res.status}`);
+  return (await res.json()) as DeliverySnapshot;
 }
 
 export type BriefingResponse = BriefingSnapshot & { cached?: boolean };

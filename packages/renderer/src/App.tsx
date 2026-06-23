@@ -8,6 +8,8 @@ import { PapersSection } from './components/PapersSection.js';
 import { Masthead } from './components/Masthead.js';
 import { HealthBar } from './components/HealthBar.js';
 import { Briefing } from './components/briefing/Briefing.js';
+import { FleetSection } from './components/FleetSection.js';
+import { DeliverySection } from './components/DeliverySection.js';
 import { ChatSidebar } from './components/chat/ChatSidebar.js';
 import { applyRootAttributes, loadState, saveState, type CockpitUiState } from './cockpitState.js';
 
@@ -59,6 +61,8 @@ export function App() {
       <div className="cockpit-body">
         <main className="sections">
           <Briefing ui={ui} setUi={setUi} />
+          <FleetSection />
+          <DeliverySection />
           <Section
             index="04"
             kicker="WORK"

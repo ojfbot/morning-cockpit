@@ -397,6 +397,130 @@ body {
 }
 .composer-send:disabled { opacity: 0.5; cursor: not-allowed; }
 
+/* ── 01 · Fleet ── */
+.fleet-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(212px, 1fr));
+  gap: 12px;
+}
+.repo-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gt-space-2);
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-top: 2px solid var(--ink-3);
+  padding: var(--pad-card);
+}
+.repo-card--here {
+  border: 1px solid var(--red);
+  border-top: 2px solid var(--red);
+  background: color-mix(in srgb, var(--red) 6%, var(--card));
+}
+.repo-top { display: flex; align-items: center; gap: var(--gt-space-2); }
+.repo-name { font-size: 14px; font-weight: 700; color: var(--ink); }
+.repo-phase {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  color: var(--ink-3);
+  border: 1px solid var(--rule);
+  padding: 0 5px;
+}
+.repo-role { font-size: 12px; line-height: 1.4; color: var(--ink-2); flex: 1; }
+.repo-foot {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-3);
+  border-top: 1px solid var(--rule);
+  padding-top: var(--gt-space-2);
+}
+.repo-open { color: var(--red); }
+
+/* ── 03 · Delivery ── */
+.phase-track {
+  position: relative;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: var(--gt-space-3);
+  padding-top: var(--gt-space-4);
+  margin-bottom: var(--gap-section);
+}
+.phase-line, .phase-line-fill {
+  position: absolute;
+  top: calc(var(--gt-space-4) + 5px);
+  left: 0;
+  height: 2px;
+}
+.phase-line { width: 100%; background: var(--rule); }
+.phase-line-fill { width: var(--progress, 58%); background: var(--red); }
+.milestone { position: relative; display: flex; flex-direction: column; gap: 3px; }
+.milestone-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--paper);
+  border: 2px solid var(--ink-3);
+  margin-bottom: var(--gt-space-2);
+}
+.milestone--shipped .milestone-dot, .milestone--now .milestone-dot { background: var(--red); border-color: var(--red); }
+.milestone--next .milestone-dot { border-color: var(--amber); }
+.milestone-marker {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.milestone--now .milestone-marker { color: var(--red); }
+.milestone-title { font-size: 14px; font-weight: 700; line-height: 1.2; color: var(--ink); }
+.milestone-status { font-family: var(--mono); font-size: 10px; color: var(--ink-3); }
+
+.nextmoves-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  border-bottom: 2px solid var(--ink);
+  padding-bottom: var(--gt-space-2);
+  margin-bottom: var(--gt-space-2);
+}
+.nextmoves-label {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.nextmoves-src { font-family: var(--mono); font-size: 10px; color: var(--ink-3); }
+.move {
+  display: flex;
+  align-items: center;
+  gap: var(--gt-space-4);
+  padding: var(--gt-space-3) 0;
+  border-bottom: 1px solid var(--rule);
+}
+.move-index { font-family: var(--mono); font-size: 13px; color: var(--ink-3); flex: none; width: 24px; }
+.move-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.move-title { font-size: 15px; font-weight: 700; color: var(--ink); }
+.move-unblocks { font-family: var(--mono); font-size: 11px; color: var(--ink-3); }
+.move-effort {
+  flex: none;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 1px 8px;
+}
+.move-effort--s { color: var(--green); background: color-mix(in srgb, var(--green) 14%, transparent); }
+.move-effort--m { color: var(--amber); background: color-mix(in srgb, var(--amber) 14%, transparent); }
+.move-effort--l { color: var(--red); background: color-mix(in srgb, var(--red) 14%, transparent); }
+.move-repo { flex: none; width: 130px; text-align: right; font-family: var(--mono); font-size: 11px; color: var(--ink-3); }
+
 /* ── Lanes ── */
 .lanes {
   display: grid;
