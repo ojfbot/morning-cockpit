@@ -31,6 +31,10 @@ export function App() {
     () => setUi((s) => ({ ...s, theme: s.theme === 'dark' ? 'light' : 'dark' })),
     [],
   );
+  const toggleDensity = useCallback(
+    () => setUi((s) => ({ ...s, density: s.density === 'compact' ? 'comfortable' : 'compact' })),
+    [],
+  );
 
   useEffect(() => {
     let active = true;
@@ -57,7 +61,14 @@ export function App() {
 
   return (
     <div className="cockpit">
-      <Masthead snapshot={snapshot} theme={ui.theme} onToggleTheme={toggleTheme} error={error} />
+      <Masthead
+        snapshot={snapshot}
+        theme={ui.theme}
+        onToggleTheme={toggleTheme}
+        density={ui.density}
+        onToggleDensity={toggleDensity}
+        error={error}
+      />
 
       <div className="cockpit-body">
         <main className="sections">

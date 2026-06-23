@@ -153,7 +153,7 @@ export function ChatSidebar() {
     return (
       <aside className="chat-rail">
         <button className="chat-rail-toggle" onClick={() => setOpen(true)} title="Open cockpit chat" aria-label="Open cockpit chat">
-          ❮ chat
+          ▸ Ask the Chief of Staff
         </button>
       </aside>
     );

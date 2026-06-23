@@ -4,6 +4,14 @@ html, body, #root { height: 100%; margin: 0; }
 /* Hard guard: the page never scrolls horizontally — a stray wide child clips, not spills. */
 html, body { max-width: 100%; overflow-x: hidden; }
 
+/* Keyboard accessibility: a visible focus ring on every interactive element (decision tree,
+   thread rail, branches, links, inputs). Mouse clicks don't trigger it (:focus-visible). */
+:focus-visible {
+  outline: 2px solid var(--red);
+  outline-offset: 2px;
+}
+a:focus-visible, button:focus-visible { outline-offset: 1px; }
+
 body {
   background: var(--gt-bg);
   color: var(--gt-text-primary);
@@ -1076,41 +1084,45 @@ body {
 .cockpit-body > .sections { flex: 1; min-width: 0; }
 
 .chat-sidebar {
-  width: 380px;
+  width: 372px;
   flex: none;
   display: flex;
   flex-direction: column;
-  border-left: 1px solid var(--gt-border);
-  background: var(--gt-surface-1);
+  border-left: 1px solid var(--rule);
+  background: var(--paper-2);
   position: sticky;
   top: 0;
   align-self: flex-start;
   height: 100vh;
+  transition: width var(--gt-duration) var(--gt-ease);
 }
 .chat-rail {
   flex: none;
-  border-left: 1px solid var(--gt-border);
-  background: var(--gt-surface-1);
+  width: 48px;
+  border-left: 1px solid var(--rule);
+  background: var(--paper-2);
   position: sticky;
   top: 0;
   align-self: flex-start;
   height: 100vh;
   display: flex;
+  justify-content: center;
   align-items: flex-start;
 }
 .chat-rail-toggle {
   writing-mode: vertical-rl;
-  padding: var(--gt-space-3) 6px;
-  font-family: var(--gt-font-mono);
+  padding: var(--gt-space-4) 0;
+  margin-top: var(--gt-space-4);
+  font-family: var(--mono);
   font-size: 11px;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--gt-text-secondary);
+  letter-spacing: 0.12em;
+  color: var(--ink-2);
   background: transparent;
   border: none;
   cursor: pointer;
 }
-.chat-rail-toggle:hover { color: var(--gt-accent); }
+.chat-rail-toggle:hover { color: var(--red); }
 
 .chat-head {
   display: flex;
@@ -1478,11 +1490,11 @@ body {
 .chat-send:hover:not(:disabled) { background: var(--gt-accent-hover); }
 .chat-send:disabled { opacity: 0.5; cursor: default; }
 
-@media (max-width: 1100px) {
+@media (max-width: 900px) {
   .cockpit-body { flex-direction: column; }
-  .chat-sidebar, .chat-rail { width: 100%; height: auto; position: static; border-left: none; border-top: 1px solid var(--gt-border); }
+  .chat-sidebar, .chat-rail { width: 100%; height: auto; position: static; border-left: none; border-top: 3px solid var(--ink); justify-content: flex-start; }
   .chat-messages { max-height: 50vh; }
-  .chat-rail-toggle { writing-mode: horizontal-tb; }
+  .chat-rail-toggle { writing-mode: horizontal-tb; margin-top: 0; padding: var(--gt-space-3) var(--gt-space-4); }
 }
 
 /* ── Health strip (footer) ── */

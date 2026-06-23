@@ -1,5 +1,5 @@
 import type { CockpitSnapshot } from '@cockpit/shared';
-import type { Theme } from '../cockpitState.js';
+import type { Density, Theme } from '../cockpitState.js';
 import { ThemeToggle } from './ThemeToggle.js';
 
 const WORDS = [
@@ -32,11 +32,15 @@ export function Masthead({
   snapshot,
   theme,
   onToggleTheme,
+  density,
+  onToggleDensity,
   error,
 }: {
   snapshot: CockpitSnapshot | null;
   theme: Theme;
   onToggleTheme: () => void;
+  density: Density;
+  onToggleDensity: () => void;
   error: string | null;
 }) {
   const now = new Date();
@@ -61,6 +65,14 @@ export function Masthead({
         <span className="masthead-date">{dateLine}</span>
         <span className="masthead-meta-right">
           <span className="masthead-time">{timeLine}</span>
+          <button
+            className="theme-toggle"
+            onClick={onToggleDensity}
+            title={`Switch to ${density === 'compact' ? 'comfortable' : 'compact'} density`}
+            aria-label={`Switch to ${density === 'compact' ? 'comfortable' : 'compact'} density`}
+          >
+            {density === 'compact' ? 'COZY' : 'DENSE'}
+          </button>
           <ThemeToggle theme={theme} onToggle={onToggleTheme} />
         </span>
       </div>
