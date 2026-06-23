@@ -27,7 +27,7 @@ function initialOpen(): boolean {
   } catch {
     /* localStorage unavailable */
   }
-  return true;
+  return false; // default collapsed (design: the rail is an open line, not a panel that eats width)
 }
 
 interface DisplayMessage extends ChatMessage {

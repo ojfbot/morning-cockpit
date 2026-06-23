@@ -1,6 +1,8 @@
 * { box-sizing: border-box; }
 
 html, body, #root { height: 100%; margin: 0; }
+/* Hard guard: the page never scrolls horizontally — a stray wide child clips, not spills. */
+html, body { max-width: 100%; overflow-x: hidden; }
 
 body {
   background: var(--gt-bg);
