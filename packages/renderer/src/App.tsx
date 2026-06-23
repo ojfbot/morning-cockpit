@@ -57,7 +57,18 @@ export function App() {
 
       <div className="cockpit-body">
         <main className="sections">
-          <Section title="Beads" subtitle="across all projects — overnight · pickup · available">
+          <Section
+            index="04"
+            kicker="WORK"
+            title="Beads"
+            caption={
+              <span className="section-caption">
+                across all projects
+                <br />
+                overnight · pickup · available
+              </span>
+            }
+          >
             <div className="lanes">
               <Lane lane="overnight" items={snapshot?.lanes.overnight ?? []} summary={snapshot?.summaries.overnight} />
               <Lane lane="pickup" items={snapshot?.lanes.pickup ?? []} summary={snapshot?.summaries.pickup} />

@@ -69,7 +69,18 @@ export function ReadingSection() {
   const newCount = withNew.reduce((n, s) => n + s.items.filter((i) => i.isNew).length, 0);
 
   return (
-    <Section title="Reading" subtitle={`curated feeds — ${newCount} new since ${snap ? '48h' : '…'}`}>
+    <Section
+      index="05"
+      kicker="INTEL"
+      title="Reading"
+      caption={
+        <span className="section-caption">
+          curated feeds
+          <br />
+          {newCount} new since {snap ? '48h' : '…'}
+        </span>
+      }
+    >
       <SummaryView
         tag="Digest"
         summary={digest?.digest ?? floor}
@@ -97,6 +108,7 @@ export function ReadingSection() {
                 .map((i) => (
                   <a className="reading-item" key={i.id} href={i.url} target="_blank" rel="noreferrer">
                     <span className="reading-item-title">{i.title}</span>
+                    <span className="reading-leader" aria-hidden="true" />
                     <span className="reading-item-meta">{relativeTime(i.publishedAt)}</span>
                   </a>
                 ))}

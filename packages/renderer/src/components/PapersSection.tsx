@@ -241,7 +241,18 @@ export function PapersSection() {
   const stagedKeys = new Set(suggestions.map((s) => `${s.paperId}:${s.nodeKey}`));
 
   return (
-    <Section title="Research" subtitle={`HF Daily Papers — top ${papers.length} · explained for you`}>
+    <Section
+      index="06"
+      kicker="SIGNAL"
+      title="Research"
+      caption={
+        <span className="section-caption">
+          HF Daily Papers — top {papers.length}
+          <br />
+          explained for you
+        </span>
+      }
+    >
       {profile && <ProfileStrip profile={profile} />}
 
       <div className="papers-grid">

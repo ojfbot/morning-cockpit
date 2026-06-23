@@ -13,7 +13,12 @@ function relativeTime(iso: string): string {
 export function WorkItemCard({ item }: { item: WorkItem }) {
   const convoy = item.detail.kind === 'convoy' ? item.detail : undefined;
   return (
-    <a className="card" href={item.url} target={item.url?.startsWith('http') ? '_blank' : undefined} rel="noreferrer">
+    <a
+      className={`card card--${item.status}`}
+      href={item.url}
+      target={item.url?.startsWith('http') ? '_blank' : undefined}
+      rel="noreferrer"
+    >
       <div className="card-top">
         <span className={`dot ${item.status}`} title={item.status} />
         <span className="card-kind">{item.kind.replace('_', ' ')}</span>

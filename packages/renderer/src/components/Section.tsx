@@ -1,28 +1,47 @@
 import type { ReactNode } from 'react';
 
 /**
- * A cockpit "bubble" — a titled container that groups related content. The cockpit is a
- * vertical stack of these; add a new section by rendering another <Section> in App.
+ * A numbered cockpit department. Editorial section-header pattern: a mono red kicker
+ * (`04 — WORK`) above a big headline, a two-line mono caption on the right, and a 3px
+ * ink bottom rule. The cockpit is a vertical stack of these.
  */
 export function Section({
+  index,
+  kicker,
   title,
   subtitle,
+  caption,
   actions,
   children,
 }: {
+  /** Department number, e.g. "04". */
+  index?: string;
+  /** Mono kicker label, e.g. "WORK". Falls back to the upper-cased title. */
+  kicker?: string;
   title: string;
+  /** Single-line caption (legacy callers). Ignored when `caption` is given. */
   subtitle?: string;
+  /** Rich right-hand caption (two mono lines). */
+  caption?: ReactNode;
   actions?: ReactNode;
   children: ReactNode;
 }) {
+  const kick = kicker ?? title.toUpperCase();
   return (
-    <section className="panel">
-      <header className="panel-head">
-        <h2 className="panel-title">{title}</h2>
-        {subtitle && <span className="panel-sub">{subtitle}</span>}
-        {actions && <div className="panel-actions">{actions}</div>}
+    <section className="section">
+      <header className="section-header">
+        <div className="section-head-left">
+          <span className="section-kicker">
+            {index ? `${index} — ${kick}` : kick}
+          </span>
+          <h2 className="section-headline">{title}</h2>
+        </div>
+        <div className="section-head-right">
+          {caption ?? (subtitle && <span className="section-caption">{subtitle}</span>)}
+          {actions}
+        </div>
       </header>
-      <div className="panel-body">{children}</div>
+      <div className="section-body">{children}</div>
     </section>
   );
 }
