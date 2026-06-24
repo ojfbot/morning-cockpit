@@ -58,6 +58,13 @@ export interface WorkItem {
   /** Whole days since the relevant timestamp; undefined if N/A. */
   staleDays?: number;
 
+  /**
+   * True when this is a REAL unassigned-queue item (`labels.queue === 'available'`, posted via
+   * core `queue-post` — ADR-0002/S3), vs an Available-lane item synthesized from open issues/briefs
+   * or an unhooked task. Drives the "posted" badge; synthesized items are labelled as such.
+   */
+  posted?: boolean;
+
   /** Deep link: GitHub URL, file:// path to a .handoff md, or in-app anchor. */
   url?: string;
 

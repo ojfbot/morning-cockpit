@@ -7,6 +7,15 @@
  *
  * These shapes describe rows of the Dolt `beads` table (dolt-schema.sql). Treat every
  * field as untrusted: labels JSON may be partial or malformed, so adapters parse defensively.
+ *
+ * Reserved unassigned-queue labels (ADR-0002, set by core `queue-post` — S3; mirrors
+ * core dolt-schema.sql + bead-emit.mjs RESERVED_QUEUE_LABELS @ 2026-06-24):
+ *   labels.queue      'available' | 'claimed' | 'expired' | 'incubating'  — 'available' = a real
+ *                     deliberately-posted task (the cockpit Available lane's REAL source; surfaced
+ *                     as WorkItem.posted), vs default-'created' cruft / synthesized items.
+ *   labels.kind       's' | 'm' | 'l'   labels.autonomy  'human_only' (default) | 'agent_eligible' | 'either'
+ *   labels.posted_at / labels.expires_at  ISO; expires_at = posted_at + (s=2d/m=5d/l=10d).
+ * The cockpit READS these (never writes — ADR-0005). Claiming is S4.
  */
 
 // Mirrors bead.ts BeadType — kept loose; unknown values map to a 'generic' WorkItem.
