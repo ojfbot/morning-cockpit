@@ -198,6 +198,8 @@ export async function fetchDolt(ctx: LaneContext): Promise<{ items: WorkItem[]; 
         updatedAt: toIso(row.updated_at),
         closedAt: toIso(row.closed_at),
         activityAt,
+        // Real unassigned-queue item (ADR-0002/S3) — deliberately posted, vs synthesized Available.
+        posted: labels['queue'] === 'available',
         url: `#bead/${row.id}`,
         detail,
         provenance: { labels, refs },

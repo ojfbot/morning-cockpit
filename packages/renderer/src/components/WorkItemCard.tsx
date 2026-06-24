@@ -22,6 +22,17 @@ export function WorkItemCard({ item }: { item: WorkItem }) {
       <div className="card-top">
         <span className={`dot ${item.status}`} title={item.status} />
         <span className="card-kind">{item.kind.replace('_', ' ')}</span>
+        {item.posted ? (
+          <span className="card-queue card-queue--posted" title="Posted to the unassigned queue (queue=available)">
+            POSTED
+          </span>
+        ) : (
+          item.lane === 'available' && (
+            <span className="card-queue card-queue--synth" title="Synthesized from open issues/briefs — not a real queue post">
+              synth
+            </span>
+          )
+        )}
         {item.repo && <span className="card-repo">{item.repo}</span>}
       </div>
       <div className="card-title">{item.title}</div>

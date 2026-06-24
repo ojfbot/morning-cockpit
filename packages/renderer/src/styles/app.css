@@ -686,6 +686,24 @@ body {
   color: var(--ink-3);
   margin-left: auto;
 }
+/* Queue provenance (S3): real posted item vs synthesized Available. */
+.card-queue {
+  font-family: var(--mono);
+  font-size: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 1px 4px;
+  border: 1px solid currentColor;
+}
+.card-queue--posted {
+  color: var(--red);
+}
+.card-queue--synth {
+  color: var(--ink-3);
+  font-weight: 500;
+  border-style: dashed;
+}
 .card-title {
   font-size: 14px;
   font-weight: 700;
