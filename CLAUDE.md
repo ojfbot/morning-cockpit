@@ -66,4 +66,8 @@ TCP socket (`mysql2`) and (later) GitHub needs to shell out to `gh`. Adapters fa
 - There is **no real unassigned-task pool** yet — tasks are born already-assigned in a convoy.
   The Available lane is *synthesized* from open issues + open briefs. The real write-path is
   designed in `decisions/adr/0002-*` (Track R). Until then, show truthful empty states.
-- `agent_status` is not liveness. Treat timestamps as truth.
+- `agent_status` is not liveness — agent liveness is **derived** from `agent-*` `bead_events`
+  recency (live/idle/dark, `deriveAgentLiveness`; S1 writer + S2 derivation, ADR-0008). Live
+  agents surface in Overnight; idle/dark are tallied in the dolt health note. Treat timestamps
+  as truth. (The Critical Path seeded chains still name "bead_events the empty log" — stale since
+  S1; flagged for a Critical Path refresh.)

@@ -10,8 +10,10 @@ const WORDS = [
 const word = (n: number) => WORDS[n] ?? String(n);
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
-/** Pull "N beads scanned · M agents · K overnight events" off the dolt adapter health note. */
-function statBlock(snapshot: CockpitSnapshot): { beads: number; agents: number | null; events: number | null } {
+/** Pull "N beads scanned · X live · Y idle · Z dark agents · K overnight events" off the health note. */
+function statBlock(
+  snapshot: CockpitSnapshot,
+): { beads: number; agentsLive: number | null; agentsIdle: number | null; events: number | null } {
   const note = snapshot.health.find((h) => /beads scanned/.test(h.note ?? ''))?.note ?? '';
   const num = (re: RegExp): number | null => {
     const m = note.match(re);
@@ -19,7 +21,8 @@ function statBlock(snapshot: CockpitSnapshot): { beads: number; agents: number |
   };
   return {
     beads: num(/(\d+) beads scanned/) ?? snapshot.meta.totalItems,
-    agents: num(/(\d+) agents/),
+    agentsLive: num(/(\d+) live/), // derived liveness (S2), no longer "liveness unknown"
+    agentsIdle: num(/(\d+) idle/),
     events: num(/(\d+) overnight events/) ?? snapshot.lanes.overnight.length,
   };
 }
@@ -109,7 +112,7 @@ export function Masthead({
           <div className="masthead-stats">
             <span>{stats.beads} BEADS SCANNED</span>
             <span>
-              {stats.agents ?? '—'} AGENTS · {stats.events ?? 0} OVERNIGHT EVENTS
+              {stats.agentsLive ?? '—'} LIVE · {stats.agentsIdle ?? 0} IDLE AGENTS · {stats.events ?? 0} OVERNIGHT EVENTS
             </span>
           </div>
         )}

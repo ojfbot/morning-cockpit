@@ -2,9 +2,9 @@
  * Fleet (01) + Delivery (03) coordination read-models (decisions/adr/0007 redesign).
  *
  * Fleet repo metadata (role, phase) is editorial config the server owns; the live signals
- * (openCount, lastActivity, liveness) are derived from the CockpitSnapshot. Liveness is a
- * **last-activity fallback** — `bead_events` is empty (coordination-design §0), so "live/stale/dark"
- * is a freshness heuristic, not a real liveness signal. The UI must label it as such.
+ * (openCount, lastActivity, liveness) are derived from the CockpitSnapshot. Repo liveness is
+ * event-derived freshness — `bead_events` now flows (S1) and `activityAt` prefers event time;
+ * agent liveness is derived per-actor (`deriveAgentLiveness`, S2). See ADR-0008.
  */
 
 export type Liveness = 'live' | 'stale' | 'dark';
