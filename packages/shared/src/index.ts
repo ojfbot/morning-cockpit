@@ -79,6 +79,9 @@ export type {
 } from './briefing.js';
 export { artifactRepo, artifactToCandidate, briefingFallback } from './briefing.js';
 
+export type { AgentLivenessState, AgentLiveness, LivenessWindows } from './liveness.js';
+export { deriveAgentLiveness, livenessForAgents, DEFAULT_LIVENESS_WINDOWS } from './liveness.js';
+
 export type {
   Liveness,
   RepoCard,

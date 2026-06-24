@@ -13,7 +13,7 @@ import {
 
 /**
  * Fleet (01) + Delivery (03) read-models. Fleet merges editorial repo metadata with live signals
- * derived from the snapshot; liveness is a last-activity fallback (bead_events is empty — §0).
+ * derived from the snapshot; repo liveness is event-derived freshness (bead_events flows — S1/S2).
  */
 export const fleetRouter: Router = Router();
 

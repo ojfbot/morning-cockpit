@@ -72,10 +72,10 @@ export function classifyLane(input: LaneInput, ctx: LaneContext): WorkItemLane |
   const { kind, status } = input;
 
   // ── OVERNIGHT: activity demonstrably within the window ──
-  // "running" alone is NOT trusted — Dolt 'live'/'active' status is permanently stale and
-  // bead_events is empty, so a 57-day-old "live" session is not credibly running. We require
-  // the activity timestamp to fall inside the window; stale-running items are dropped (and
-  // counted in the adapter health note) rather than faked into the overnight lane.
+  // "running" alone is NOT trusted — Dolt 'live'/'active' status is permanently stale, so a
+  // 57-day-old "live" session is not credibly running. We require the activity timestamp to fall
+  // inside the window; stale-running items are dropped (and counted in the adapter health note)
+  // rather than faked into the overnight lane.
   if (isWithinOvernight(input.activityAt, ctx)) {
     if (status === 'running' || status === 'done' || status === 'failed') return 'overnight';
   }
