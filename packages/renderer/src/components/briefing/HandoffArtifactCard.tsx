@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { BriefingArtifact } from '@cockpit/shared';
-import { emitBriefingArtifact } from '../../api.js';
+import { emitBriefingArtifact, claimTask } from '../../api.js';
 
 type EmitState =
   | { phase: 'draft' }
@@ -34,6 +34,9 @@ export function HandoffArtifactCard({
     try {
       const res = await emitBriefingArtifact(artifact);
       if (res.written) {
+        // Emit defines + delegates the work; also TAKE OWNERSHIP of the bead it closes (S4
+        // auto-claim). Best-effort: a lost/failed claim doesn't undo the written brief.
+        if (artifact.closes) void claimTask(artifact.closes).catch(() => {});
         setState({ phase: 'emitted', path: res.path, beadId: res.beadId });
         onApprove();
       } else {

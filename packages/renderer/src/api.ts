@@ -263,3 +263,23 @@ export async function emitBriefingArtifact(artifact: BriefingArtifact): Promise<
   if (!res.ok && res.status !== 422) throw new Error(`briefing emit ${res.status}`);
   return (await res.json()) as EmitArtifactResponse;
 }
+
+export interface ClaimResponse {
+  claimed: boolean;
+  beadId?: string;
+  hook?: string;
+  leaseUntil?: string;
+  reason?: 'lost';
+  error?: string;
+}
+
+/** Claim a queued task → POST /api/claim (triggers core queue-claim; ADR-0010/S4). 409 = lost (normal). */
+export async function claimTask(beadId: string): Promise<ClaimResponse> {
+  const res = await fetch('/api/claim', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ beadId }),
+  });
+  if (!res.ok && res.status !== 409) throw new Error(`claim ${res.status}`);
+  return (await res.json()) as ClaimResponse;
+}

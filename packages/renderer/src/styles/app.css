@@ -710,11 +710,58 @@ body {
   line-height: 1.3;
   color: var(--ink);
 }
+.card-title--link {
+  display: block;
+  text-decoration: none;
+  color: var(--ink);
+}
+.card-title--link:hover {
+  text-decoration: underline;
+  text-decoration-color: var(--red);
+}
 .card-foot {
   margin-top: var(--gt-space-3);
   display: flex;
   align-items: center;
   gap: var(--gt-space-2);
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-3);
+}
+
+/* Claim affordance (S4): button on unclaimed posted queue items; badge on claimed ones. */
+.card-claim {
+  margin-top: var(--gt-space-3);
+  display: flex;
+  align-items: center;
+  gap: var(--gt-space-2);
+}
+.card-claim-btn {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--card);
+  background: var(--red);
+  border: none;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+.card-claim-btn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--red) 84%, black);
+}
+.card-claim-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.card-claim--held {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--green);
+}
+.card-claim--lost,
+.card-claim-err {
   font-family: var(--mono);
   font-size: 10px;
   color: var(--ink-3);

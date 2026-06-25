@@ -18,10 +18,13 @@ export function Lane({
   lane,
   items,
   summary,
+  onClaimed,
 }: {
   lane: WorkItemLane;
   items: WorkItem[];
   summary: LaneSummary | undefined;
+  /** Refetch callback passed to cards so a claim reflects immediately (Available lane). */
+  onClaimed?: () => void;
 }) {
   return (
     <section className="lane">
@@ -34,7 +37,7 @@ export function Lane({
         {items.length === 0 ? (
           <div className="lane-empty">{EMPTY[lane]}</div>
         ) : (
-          items.map((item) => <WorkItemCard key={item.id} item={item} />)
+          items.map((item) => <WorkItemCard key={item.id} item={item} onClaimed={onClaimed} />)
         )}
       </div>
       {summary && <LaneSummaryPanel lane={lane} items={items} deterministic={summary} />}
