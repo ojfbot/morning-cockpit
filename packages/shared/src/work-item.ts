@@ -65,6 +65,15 @@ export interface WorkItem {
    */
   posted?: boolean;
 
+  /**
+   * Claim state (ADR-0002/S4): when a queue item has been claimed, `claimedBy` is the holder
+   * (the bead `hook`), `claimedByKind` is human|agent, and `leaseUntil` is the self-expiring hold.
+   * Set by core `queue-claim`; surfaced read-only here. Drives the "claimed by X · lease" badge.
+   */
+  claimedBy?: string;
+  claimedByKind?: 'human' | 'agent';
+  leaseUntil?: string;
+
   /** Deep link: GitHub URL, file:// path to a .handoff md, or in-app anchor. */
   url?: string;
 

@@ -200,6 +200,10 @@ export async function fetchDolt(ctx: LaneContext): Promise<{ items: WorkItem[]; 
         activityAt,
         // Real unassigned-queue item (ADR-0002/S3) — deliberately posted, vs synthesized Available.
         posted: labels['queue'] === 'available',
+        // Claim state (ADR-0002/S4) — surfaced read-only; the write happens in core via queue-claim.
+        claimedBy: row.hook ?? undefined,
+        claimedByKind: labels['claimed_by_kind'] === 'agent' ? 'agent' : labels['claimed_by_kind'] === 'human' ? 'human' : undefined,
+        leaseUntil: labels['lease_until'],
         url: `#bead/${row.id}`,
         detail,
         provenance: { labels, refs },

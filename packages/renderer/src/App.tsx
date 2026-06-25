@@ -36,28 +36,23 @@ export function App() {
     [],
   );
 
-  useEffect(() => {
-    let active = true;
-    const load = async () => {
-      const controller = new AbortController();
-      try {
-        const snap = await fetchCockpit(controller.signal);
-        if (active) {
-          setSnapshot(snap);
-          setError(null);
-        }
-      } catch (err) {
-        if (active) setError(err instanceof Error ? err.message : String(err));
-      }
-      return () => controller.abort();
-    };
-    void load();
-    const timer = setInterval(() => void load(), POLL_MS);
-    return () => {
-      active = false;
-      clearInterval(timer);
-    };
+  // Refetch the snapshot — used by the 60s poll AND as the onClaimed callback so a claim
+  // reflects immediately rather than waiting for the next tick (no mutation→refetch path existed).
+  const reload = useCallback(async () => {
+    try {
+      const snap = await fetchCockpit();
+      setSnapshot(snap);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
   }, []);
+
+  useEffect(() => {
+    void reload();
+    const timer = setInterval(() => void reload(), POLL_MS);
+    return () => clearInterval(timer);
+  }, [reload]);
 
   return (
     <div className="cockpit">
@@ -91,7 +86,7 @@ export function App() {
             <div className="lanes">
               <Lane lane="overnight" items={snapshot?.lanes.overnight ?? []} summary={snapshot?.summaries.overnight} />
               <Lane lane="pickup" items={snapshot?.lanes.pickup ?? []} summary={snapshot?.summaries.pickup} />
-              <Lane lane="available" items={snapshot?.lanes.available ?? []} summary={snapshot?.summaries.available} />
+              <Lane lane="available" items={snapshot?.lanes.available ?? []} summary={snapshot?.summaries.available} onClaimed={reload} />
             </div>
           </Section>
           <ReadingSection />
