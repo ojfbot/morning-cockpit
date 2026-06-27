@@ -17,6 +17,13 @@ function frames(...items: BriefingSnapshot[]) {
   })();
 }
 
+/** A stream that never yields — keeps the component in its loading state. */
+function pending() {
+  return (async function* (): AsyncGenerator<BriefingSnapshot> {
+    await new Promise<void>(() => {});
+  })();
+}
+
 function uiWith(repo: string): CockpitUiState {
   return {
     theme: 'light', density: 'comfortable', accent: 'red',
@@ -81,7 +88,7 @@ describe('Briefing (F2/F3) — repo-scoped swap', () => {
     streamBriefing.mockImplementation(() => frames(empty('lean-canvas')));
     render(<Briefing ui={uiWith('lean-canvas')} setUi={noop} />);
 
-    expect(await screen.findByText(/lean-canvas is quiet/i)).toBeInTheDocument();
+    expect(await screen.findByText('All quiet')).toBeInTheDocument();
     expect(screen.queryByText(/Seeded threads/i)).not.toBeInTheDocument();
   });
 
@@ -96,7 +103,37 @@ describe('Briefing (F2/F3) — repo-scoped swap', () => {
   it('wraps the empty First Move in a .briefing-swap container too', async () => {
     streamBriefing.mockImplementation(() => frames(empty('lean-canvas')));
     const { container } = render(<Briefing ui={uiWith('lean-canvas')} setUi={noop} />);
-    await screen.findByText(/lean-canvas is quiet/i);
+    await screen.findByText('All quiet');
     expect(container.querySelector('.briefing-swap')).toBeTruthy();
+  });
+});
+
+describe('Briefing (F4) — designed truthful empty', () => {
+  beforeEach(() => streamBriefing.mockReset());
+
+  it('renders a designed empty First Move (headline) for a quiet repo, with zero threads', async () => {
+    streamBriefing.mockImplementation(() => frames(empty('lean-canvas')));
+    const { container } = render(<Briefing ui={uiWith('lean-canvas')} setUi={noop} />);
+    expect(await screen.findByText('All quiet')).toBeInTheDocument(); // designed headline
+    expect(container.querySelectorAll('.thread')).toHaveLength(0); // honesty: no fabricated thread
+    expect(screen.getByText(/lean-canvas has no pickup/i)).toBeInTheDocument(); // truthful: names the repo
+  });
+
+  it('shows a distinct LOADING state, not the quiet/empty copy', async () => {
+    streamBriefing.mockImplementation(() => pending());
+    const { container } = render(<Briefing ui={uiWith('core')} setUi={noop} />);
+    expect(container.querySelector('.briefing--loading')).toBeTruthy();
+    expect(screen.queryByText(/all quiet/i)).not.toBeInTheDocument();
+  });
+
+  it('fabricated-thread = 0 across a populated→quiet swap (no leak)', async () => {
+    streamBriefing.mockImplementation(() => frames(briefing('core', 'core move')));
+    const { container, rerender } = render(<Briefing ui={uiWith('core')} setUi={noop} />);
+    await screen.findByText('core move');
+
+    streamBriefing.mockImplementation(() => frames(empty('lean-canvas')));
+    rerender(<Briefing ui={uiWith('lean-canvas')} setUi={noop} />);
+    await screen.findByText('All quiet');
+    expect(container.querySelectorAll('.thread')).toHaveLength(0); // no core thread leaks into quiet
   });
 });

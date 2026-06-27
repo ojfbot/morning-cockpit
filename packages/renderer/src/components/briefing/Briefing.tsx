@@ -73,8 +73,10 @@ export function Briefing({
 
   const active = threads.find((t) => t.id === ui.activeId) ?? threads[0];
 
-  // Honest empty / loading state (F2; F4 designs it). A quiet repo shows no fabricated thread.
+  // F4 — designed truthful empty, distinct from loading. A quiet repo shows NO fabricated thread; the
+  // richer "suggested entrypoints" empty state is a design-review item (research/empty-state-design-followup.md).
   if (!active) {
+    const loading = source === 'loading';
     return (
       <Section
         id="briefing"
@@ -85,16 +87,27 @@ export function Briefing({
           <span className="section-caption">
             scoped to {repo}
             <br />
-            {source === 'loading' ? 'reading the scan…' : 'quiet right now'}
+            {loading ? 'reading the scan…' : 'all quiet'}
           </span>
         }
       >
-        <div key={repo} className="briefing briefing--empty briefing-swap">
-          <p className="briefing-empty-note">
-            {source === 'loading'
-              ? `Reading ${repo}'s overnight scan…`
-              : `${repo} is quiet — no pickup or stale work wants a decision. Nothing to fabricate.`}
-          </p>
+        <div
+          key={repo}
+          className={`briefing briefing-swap ${loading ? 'briefing--loading' : 'briefing--empty'}`}
+        >
+          {loading ? (
+            <p className="briefing-loading-note">Reading {repo}'s overnight scan…</p>
+          ) : (
+            <div className="briefing-empty">
+              <p className="briefing-empty-headline">All quiet</p>
+              <p className="briefing-empty-sub">
+                {repo} has no pickup or stale work waiting on a decision.
+              </p>
+              <p className="briefing-empty-foot">
+                Nothing to fabricate — the cockpit only surfaces real beads.
+              </p>
+            </div>
+          )}
         </div>
       </Section>
     );
