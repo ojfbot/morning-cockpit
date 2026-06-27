@@ -62,7 +62,11 @@ import-vs-mirror dilemma: you neither hand-mirror nor runtime-import — you **g
 1. **Core is the schema authority.** The canonical read-model **SDL** is a committed artifact in
    **core** (where fleet-wide agents reference one shape). This is net-new — core has no GraphQL
    today. The SDL covers the dashboard-UX surface: repo card, repo-scoped briefing, tile links,
-   liveness, popover payload.
+   liveness, popover payload. **(G0, resolved 2026-06-26: the SDL lives in a dedicated
+   `@core/read-model-contract` workspace package — `schema.graphql` — not a loose `contracts/` file.
+   The operator chose the heavier package home for a hardened contract identity. It stays
+   workspace-internal: no `publishConfig`, never published, consumed only via CI git-clone — the
+   no-publish / no-runtime-import invariant below is unchanged.)**
 
 2. **Cockpit generates its types from that SDL — it does not import a core package.** The GraphQL
    facade (`packages/server`, ADR-0011) has its resolver + client TypeScript types produced by

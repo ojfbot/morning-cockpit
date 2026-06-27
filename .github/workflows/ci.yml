@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout cockpit
+        uses: actions/checkout@v4
+
+      # The read-model contract is authored in core (ADR-0013). We git-clone core (no runtime
+      # dependency, no publish — the ADR-0030 sibling-clone precedent) so the vendored-parity and
+      # regenerate-diff gates can verify the cockpit SDL has not drifted from core's authority.
+      - name: Clone core (read-model contract source)
+        uses: actions/checkout@v4
+        with:
+          repository: ojfbot/core
+          path: .core-checkout
+          token: ${{ secrets.CORE_REPO_TOKEN || github.token }}
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm typecheck
+      - run: pnpm build
+
+      # Drift gates (ADR-0013 C2). CORE_REPO points the vendored-parity test + sync at the clone.
+      - name: Contract drift gates
+        env:
+          CORE_REPO: ${{ github.workspace }}/.core-checkout
+        run: |
+          pnpm test
+          pnpm --filter @cockpit/server contract:check

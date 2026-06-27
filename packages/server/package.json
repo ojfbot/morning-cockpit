@@ -8,7 +8,10 @@
     "start": "tsx src/index.ts",
     "build": "tsc --noEmit -p tsconfig.json",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "vitest run"
+    "test": "vitest run",
+    "contract:sync": "node scripts/sync-sdl.mjs",
+    "contract:codegen": "graphql-codegen --config codegen.ts",
+    "contract:check": "graphql-codegen --config codegen.ts && git diff --exit-code -- src/schema/__generated__"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
@@ -20,9 +23,12 @@
     "yaml": "^2.6.1"
   },
   "devDependencies": {
+    "@graphql-codegen/cli": "^5.0.3",
+    "@graphql-codegen/typescript": "^4.1.2",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
     "@types/node": "^22.10.2",
+    "graphql": "^16.9.0",
     "tsx": "^4.19.2",
     "typescript": "^5.6.3",
     "vitest": "^2.1.8"
