@@ -178,6 +178,18 @@ body {
 .briefing-band { display: grid; grid-template-columns: 300px 1fr; }
 @media (max-width: 880px) { .briefing-band { grid-template-columns: 1fr; } }
 
+/* F3 — animated Section-00 swap (ADR-0012 #5). The content area is keyed by repo, so selecting a
+   Fleet tile remounts it and plays this entrance once. Transform/opacity only (no reflow jank).
+   Honors prefers-reduced-motion: reduce — the swap is instant for users who ask for less motion. */
+@keyframes briefing-enter {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.briefing-swap { animation: briefing-enter var(--gt-duration) var(--gt-ease); }
+@media (prefers-reduced-motion: reduce) {
+  .briefing-swap { animation: none; }
+}
+
 /* Left — seeded thread rail */
 .briefing-rail {
   display: flex;
