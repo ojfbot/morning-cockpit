@@ -1,7 +1,10 @@
 import express from 'express';
 import cors from 'cors';
+import { createYoga } from 'graphql-yoga';
 import { config } from './config.js';
 import { buildSnapshot } from './aggregate.js';
+import { buildReadModelGraphSchema } from './schema/graph.js';
+import { cockpitReadModelSource } from './schema/source.js';
 import { summaryRouter } from './routes/summary.js';
 import { readingRouter } from './routes/reading.js';
 import { papersRouter } from './routes/papers.js';
@@ -10,8 +13,18 @@ import { briefingRouter } from './routes/briefing.js';
 import { fleetRouter } from './routes/fleet.js';
 import { claimRouter } from './routes/claim.js';
 
+// Read-model GraphQL facade (ADR-0011/0013) — query-only, beside REST. Yoga does its own body
+// parsing, so it is mounted BEFORE express.json() (which would otherwise consume the request stream).
+// GraphiQL explorer is dev-only.
+const yoga = createYoga({
+  schema: buildReadModelGraphSchema(cockpitReadModelSource),
+  graphqlEndpoint: '/graphql',
+  graphiql: process.env.NODE_ENV !== 'production',
+});
+
 const app = express();
 app.use(cors());
+app.use(yoga.graphqlEndpoint, yoga);
 app.use(express.json());
 app.use(summaryRouter);
 app.use(readingRouter);
