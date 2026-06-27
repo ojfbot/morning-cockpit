@@ -190,6 +190,33 @@ body {
   .briefing-swap { animation: none; }
 }
 
+/* F4 — designed truthful empty + a distinct loading state (ADR-0012 #4). A quiet repo gets a calm,
+   intentional empty First Move (never a fabricated thread); loading is visibly its own state. */
+.briefing--empty,
+.briefing--loading {
+  display: grid;
+  place-items: center;
+  min-height: 200px;
+  padding: 48px 32px;
+}
+.briefing-empty { text-align: center; max-width: 46ch; }
+.briefing-empty-headline {
+  font-size: 1.35rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--ink);
+}
+.briefing-empty-sub { margin-top: 10px; color: var(--ink-2); }
+.briefing-empty-foot { margin-top: 18px; font-size: 0.82rem; font-style: italic; color: var(--ink-3); }
+.briefing-loading-note {
+  color: var(--ink-2);
+  animation: briefing-pulse 1.2s var(--gt-ease) infinite;
+}
+@keyframes briefing-pulse { 0%, 100% { opacity: 0.45; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .briefing-loading-note { animation: none; }
+}
+
 /* Left — seeded thread rail */
 .briefing-rail {
   display: flex;

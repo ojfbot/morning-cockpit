@@ -25,8 +25,8 @@ properties:
   - id: P3
     name: "The cockpit pivots focus across the active fleet"
     target: "Selecting a fleet app re-scopes the briefing to that app — start on home base, toggle across the fleet to triage each app's first move. (The dashboard-ux Fleet→Briefing work.)"
-    current: 45
-    verification: "Fleet tile selection drives Section 00; recorded run toggling focus across ≥2 apps; the dashboard-ux G/F/L slices delivered. (2026-06-27: G0 contract+drift-gate [core#178+cockpit#14], G1 GraphQL facade [#16], F1 selection [#17], F2 repo-scoped briefing — the focus-swap WORKS end-to-end: a recorded Playwright run toggled morning-cockpit→lean-canvas[honest empty]→core. Remaining: F3 animation, F4 designed empty, L1/L2/L3 launch surface.)"
+    current: 55
+    verification: "Fleet tile selection drives Section 00; recorded run toggling focus across ≥2 apps; the dashboard-ux G/F/L slices delivered. (2026-06-27: Flow 01 COMPLETE — G0 contract+drift-gate [core#178+cockpit#14], G1 GraphQL facade [#16], F1 selection [#17], F2 repo-scoped briefing [#18], F3 animated swap [#20], F4 designed truthful empty. Plus a perf fix [#22]: first-nav 45s→1.3ms (deterministic-first + SSE). Recorded Playwright runs of the swap + the designed empty. Remaining for 100%: Track L launch surface [L1/L2/L3] + the empty-state-entrypoints design review [ADR-0014 persistence too].)"
     ladders_up_to: "ns:l2-ojfbot#P1"
     okr_drivers: []
 ---
@@ -56,9 +56,11 @@ is live; S5/S6 mature shadow-first. The cockpit never holds a truth parallel to 
 
 Ladders to `ns:l2-ojfbot#P1` (the fleet ships demoable surfaces). This is the `dashboard-ux-flows`
 Fleet→Briefing focus-swap — the in-flight feature this whole day-runner effort is dogfooding to
-deliver. 45% = **the focus-swap works end-to-end.** Track G shipped the contract spine (G0
-`@core/read-model-contract` SDL + codegen + 3-part drift gate [core#178+cockpit#14]; G1 the GraphQL
-read facade [#16]); F1 made Fleet a selector [#17]; **F2 made the Briefing repo-scoped** — selecting a
-tile re-scopes Section 00, with a truthful empty for quiet repos. A recorded Playwright run toggled
-morning-cockpit→lean-canvas(honest empty)→core. Remaining for 100%: F3 (animated swap), F4 (designed
-empty state), L1/L2/L3 (tile launch surface + popover).
+deliver. 55% = **Flow 01 (the focus-swap) is complete + fast.** Track G shipped the contract spine
+(G0 `@core/read-model-contract` SDL + codegen + 3-part drift gate [core#178+cockpit#14]; G1 the
+GraphQL read facade [#16]). Track F is done: F1 made Fleet a selector [#17]; F2 made the Briefing
+repo-scoped [#18]; F3 animated the swap (reduced-motion honored) [#20]; F4 designed the truthful empty
+First Move. A perf fix [#22] took first-navigation from ~45s to 1.3ms (deterministic-first + async SSE
+upgrade; ADR-0014 mitigation). Recorded Playwright runs of the swap + the designed empty. Remaining
+for 100%: Track L — the tile launch surface (L1 links, L2 live-probe, L3 popover) — plus the deferred
+design-review items (empty-state suggested entrypoints; ADR-0014 persistent read-model).
