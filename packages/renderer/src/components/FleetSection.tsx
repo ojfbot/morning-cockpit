@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import type { FleetSnapshot, RepoCard } from '@cockpit/shared';
+import type { FleetSnapshot } from '@cockpit/shared';
 import { fetchFleet } from '../api.js';
 import { Section } from './Section.js';
+import { RepoCardView } from './RepoCardView.js';
 
 const POLL_MS = 5 * 60_000;
 
@@ -16,7 +17,13 @@ function relativeTime(iso: string | null): string {
 }
 
 /** 01 · Fleet — one card per repo: liveness dot, phase tag, role, open count, last activity. */
-export function FleetSection() {
+export function FleetSection({
+  selectedRepo,
+  onSelectRepo,
+}: {
+  selectedRepo: string;
+  onSelectRepo: (name: string) => void;
+}) {
   const [snap, setSnap] = useState<FleetSnapshot | null>(null);
 
   useEffect(() => {
@@ -49,26 +56,15 @@ export function FleetSection() {
     >
       <div className="fleet-grid">
         {(snap?.repos ?? []).map((r) => (
-          <RepoCardView key={r.name} repo={r} relativeTime={relativeTime} />
+          <RepoCardView
+            key={r.name}
+            repo={r}
+            selected={selectedRepo === r.name}
+            onSelect={onSelectRepo}
+            relativeTime={relativeTime}
+          />
         ))}
       </div>
     </Section>
-  );
-}
-
-function RepoCardView({ repo, relativeTime }: { repo: RepoCard; relativeTime: (iso: string | null) => string }) {
-  return (
-    <div className={`repo-card${repo.here ? ' repo-card--here' : ''}`}>
-      <div className="repo-top">
-        <span className={`dot ${repo.liveness === 'live' ? 'running' : repo.liveness === 'stale' ? 'stale' : 'unknown'}`} />
-        <span className="repo-name">{repo.name}</span>
-        <span className="repo-phase">{repo.phase}</span>
-      </div>
-      <div className="repo-role">{repo.here ? '★ ' : ''}{repo.role}</div>
-      <div className="repo-foot">
-        <span className="repo-open">{repo.openCount} open</span>
-        <span className="repo-last">{repo.here ? 'now' : relativeTime(repo.lastActivity)}</span>
-      </div>
-    </div>
   );
 }

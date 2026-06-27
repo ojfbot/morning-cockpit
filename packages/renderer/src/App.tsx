@@ -68,7 +68,10 @@ export function App() {
       <div className="cockpit-body">
         <main className="sections">
           <Briefing ui={ui} setUi={setUi} />
-          <FleetSection />
+          <FleetSection
+            selectedRepo={ui.selectedRepo}
+            onSelectRepo={(name) => setUi((s) => ({ ...s, selectedRepo: name }))}
+          />
           <CriticalPathSection setUi={setUi} />
           <DeliverySection />
           <Section
