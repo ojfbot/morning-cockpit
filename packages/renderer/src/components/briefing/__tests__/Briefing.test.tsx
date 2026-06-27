@@ -65,4 +65,20 @@ describe('Briefing (F2) — repo-scoped swap', () => {
     expect(await screen.findByText(/lean-canvas is quiet/i)).toBeInTheDocument();
     expect(screen.queryByText(/Seeded threads/i)).not.toBeInTheDocument();
   });
+
+  // F3 — animated swap: the content sits in a repo-keyed .briefing-swap container that re-animates on
+  // selection change (the CSS keyframe + reduced-motion live in app.css; here we assert the hook).
+  it('wraps populated content in a .briefing-swap container', async () => {
+    fetchBriefing.mockResolvedValue(briefing('core', 'core first move'));
+    const { container } = render(<Briefing ui={uiWith('core')} setUi={noop} />);
+    await screen.findByText('core first move');
+    expect(container.querySelector('.briefing-swap')).toBeTruthy();
+  });
+
+  it('wraps the empty First Move in a .briefing-swap container too', async () => {
+    fetchBriefing.mockResolvedValue({ generatedAt: 'x', repo: 'lean-canvas', source: 'deterministic', threads: [] });
+    const { container } = render(<Briefing ui={uiWith('lean-canvas')} setUi={noop} />);
+    await screen.findByText(/lean-canvas is quiet/i);
+    expect(container.querySelector('.briefing-swap')).toBeTruthy();
+  });
 });

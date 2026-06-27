@@ -81,7 +81,7 @@ export function Briefing({
           </span>
         }
       >
-        <div className="briefing briefing--empty">
+        <div key={repo} className="briefing briefing--empty briefing-swap">
           <p className="briefing-empty-note">
             {source === 'loading'
               ? `Reading ${repo}'s overnight scan…`
@@ -133,7 +133,7 @@ export function Briefing({
         </span>
       }
     >
-      <div className="briefing">
+      <div key={repo} className="briefing briefing-swap">
         <div className="briefing-band">
         {/* Left — seeded thread rail */}
         <nav className="briefing-rail">
