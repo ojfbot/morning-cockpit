@@ -22,6 +22,11 @@ export interface CockpitUiState {
   approved: Record<string, string>;
   /** Chat rail expanded (Slice 6). */
   chatOpen: boolean;
+  /**
+   * The Fleet tile currently in focus (F1, ADR-0012). Default = morning-cockpit (fixed home).
+   * Drives the Fleet highlight; F2 will scope the Briefing to it.
+   */
+  selectedRepo: string;
 }
 
 export const STATE_KEY = 'mc.cockpit.v1';
@@ -34,6 +39,7 @@ const DEFAULTS: CockpitUiState = {
   chosen: {},
   approved: {},
   chatOpen: false,
+  selectedRepo: 'morning-cockpit',
 };
 
 /** Merge persisted state over defaults; tolerate corrupt / absent storage. */
