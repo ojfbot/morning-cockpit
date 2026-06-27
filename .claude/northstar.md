@@ -25,8 +25,8 @@ properties:
   - id: P3
     name: "The cockpit pivots focus across the active fleet"
     target: "Selecting a fleet app re-scopes the briefing to that app — start on home base, toggle across the fleet to triage each app's first move. (The dashboard-ux Fleet→Briefing work.)"
-    current: 20
-    verification: "Fleet tile selection drives Section 00; recorded run toggling focus across ≥2 apps; the dashboard-ux G/F/L slices delivered. (G0 shipped 2026-06-27: core-authored read-model SDL + codegen + 3-part drift gate — the contract the repo-scoped briefing rides on; core#178 + cockpit#14 merged.)"
+    current: 45
+    verification: "Fleet tile selection drives Section 00; recorded run toggling focus across ≥2 apps; the dashboard-ux G/F/L slices delivered. (2026-06-27: G0 contract+drift-gate [core#178+cockpit#14], G1 GraphQL facade [#16], F1 selection [#17], F2 repo-scoped briefing — the focus-swap WORKS end-to-end: a recorded Playwright run toggled morning-cockpit→lean-canvas[honest empty]→core. Remaining: F3 animation, F4 designed empty, L1/L2/L3 launch surface.)"
     ladders_up_to: "ns:l2-ojfbot#P1"
     okr_drivers: []
 ---
@@ -56,7 +56,9 @@ is live; S5/S6 mature shadow-first. The cockpit never holds a truth parallel to 
 
 Ladders to `ns:l2-ojfbot#P1` (the fleet ships demoable surfaces). This is the `dashboard-ux-flows`
 Fleet→Briefing focus-swap — the in-flight feature this whole day-runner effort is dogfooding to
-deliver. 20% = specs + gated-slice plan landed on main, **and G0 (the contract foundation) shipped**:
-core authors the read-model SDL (`@core/read-model-contract`), the cockpit codegens its facade types
-from it, and a 3-part drift gate makes the contract strict at compile + run time (core#178 +
-cockpit#14). No user-facing focus-swap yet — that's F2, gated by G1.
+deliver. 45% = **the focus-swap works end-to-end.** Track G shipped the contract spine (G0
+`@core/read-model-contract` SDL + codegen + 3-part drift gate [core#178+cockpit#14]; G1 the GraphQL
+read facade [#16]); F1 made Fleet a selector [#17]; **F2 made the Briefing repo-scoped** — selecting a
+tile re-scopes Section 00, with a truthful empty for quiet repos. A recorded Playwright run toggled
+morning-cockpit→lean-canvas(honest empty)→core. Remaining for 100%: F3 (animated swap), F4 (designed
+empty state), L1/L2/L3 (tile launch surface + popover).

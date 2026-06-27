@@ -17,20 +17,25 @@ function snapshotKey(snap: { lanes: { pickup: { id: string }[]; available: { id:
   const avail = snap.lanes.available.map((i) => `${i.id}:${i.status}`).join(',');
   return `${pick}|${avail}`;
 }
-let cache: { key: string; snapshot: BriefingSnapshot } | null = null;
+// Cache per repo (F2) — keyed by `repo` (or '__global__'), so toggling Fleet tiles doesn't thrash
+// a single cache cell. Each entry is invalidated by snapshot content like before.
+const cache = new Map<string, { key: string; snapshot: BriefingSnapshot }>();
 
-// The Chief-of-Staff read-model. force=1 regenerates; otherwise cached by snapshot content.
+// The Chief-of-Staff read-model. `?repo=` scopes it to one repo (F2); force=1 regenerates.
 briefingRouter.get('/api/briefing', async (req, res) => {
   try {
+    const repo = typeof req.query.repo === 'string' && req.query.repo ? req.query.repo : undefined;
     const snapshot = await buildSnapshot();
     const key = snapshotKey(snapshot);
     const force = req.query.force === '1';
-    if (!force && cache?.key === key) {
-      res.json({ ...cache.snapshot, cached: true });
+    const cacheKey = repo ?? '__global__';
+    const hit = cache.get(cacheKey);
+    if (!force && hit?.key === key) {
+      res.json({ ...hit.snapshot, cached: true });
       return;
     }
-    const briefing = await generateBriefing(snapshot, snapshot.generatedAt);
-    cache = { key, snapshot: briefing };
+    const briefing = await generateBriefing(snapshot, snapshot.generatedAt, repo);
+    cache.set(cacheKey, { key, snapshot: briefing });
     res.json({ ...briefing, cached: false });
   } catch (err) {
     res.status(500).json({ error: err instanceof Error ? err.message : String(err) });

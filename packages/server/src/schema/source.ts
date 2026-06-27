@@ -25,10 +25,11 @@ export interface ReadModelSource {
 /** Production source — backed by the cockpit aggregate (today's data path). */
 export const cockpitReadModelSource: ReadModelSource = {
   snapshot: () => buildSnapshot(),
-  // Delegates to the same generator REST `/api/briefing` uses → parity is structural. repo ignored (F2).
-  briefing: async () => {
+  // Delegates to the same generator REST `/api/briefing` uses → parity is structural. `repo` scopes
+  // the briefing to that repo (F2); undefined = global.
+  briefing: async (repo?: string) => {
     const snap = await buildSnapshot();
-    return generateBriefing(snap, snap.generatedAt);
+    return generateBriefing(snap, snap.generatedAt, repo);
   },
   // TODO(G1+): surface derived liveness via a read-only dolt accessor. The derivation already exists
   // inside `adapters/dolt.ts fetchDolt` (deriveAgentLiveness over agent-* events) but is not exported;

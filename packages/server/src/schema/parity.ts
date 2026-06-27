@@ -27,7 +27,7 @@ export const MIRRORED_TYPES = [
 export const FORWARD_DECLARED = new Set<string>([
   'RepoCard.links',
   'RepoCard.popover',
-  'BriefingSnapshot.repo',
+  // BriefingSnapshot.repo — backed by @cockpit/shared as of F2; no longer forward-declared.
 ]);
 
 export interface Mismatch {

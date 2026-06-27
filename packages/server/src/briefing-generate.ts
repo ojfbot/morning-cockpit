@@ -1,6 +1,7 @@
 import {
   artifactToCandidate,
   briefingFallback,
+  scopeSnapshotToRepo,
   validateBriefDraft,
   type BriefingArtifact,
   type BriefingBranch,
@@ -124,24 +125,45 @@ function toThread(raw: RawThread, repos: string[], i: number): BriefingThread | 
   };
 }
 
-/** Generate (or fall back to) the briefing for a snapshot. Caller owns caching. */
-export async function generateBriefing(snapshot: CockpitSnapshot, generatedAt: string): Promise<BriefingSnapshot> {
-  if (config.summary.provider === 'off') return briefingFallback(snapshot, generatedAt);
+/**
+ * Generate (or fall back to) the briefing for a snapshot. Caller owns caching. When `repo` is set
+ * the snapshot is scoped to that repo first (F2, ADR-0012) — the LLM grounding + the deterministic
+ * fallback then see only that repo's items, and the result is tagged with `repo`. A quiet repo
+ * scopes to empty lanes → an honest empty briefing (no threads).
+ */
+export async function generateBriefing(
+  snapshot: CockpitSnapshot,
+  generatedAt: string,
+  repo?: string,
+): Promise<BriefingSnapshot> {
+  const scoped = repo ? scopeSnapshotToRepo(snapshot, repo) : snapshot;
+  const tag = (b: BriefingSnapshot): BriefingSnapshot => (repo ? { ...b, repo } : b);
 
-  const repos = await listKnownRepos();
+  // Truthful empty (F2/F4): a repo scoped to no items gets the deterministic empty — never an LLM
+  // pass, which could fabricate threads for other repos from its allowed-repo list.
+  const scopedEmpty =
+    scoped.lanes.overnight.length === 0 &&
+    scoped.lanes.pickup.length === 0 &&
+    scoped.lanes.available.length === 0;
+  if (config.summary.provider === 'off' || scopedEmpty) return tag(briefingFallback(scoped, generatedAt));
+
+  // When scoped, constrain the model + the emit-gate to ONLY that repo, so threads can't leak in
+  // for other repos (the bug the global allowed-list caused).
+  const known = await listKnownRepos();
+  const repos = repo ? known.filter((r) => r === repo) : known;
   let raw: string;
   try {
-    const res = await ollamaChat(SYSTEM(repos), `Overnight scan:\n\n${groundingFacts(snapshot)}`);
+    const res = await ollamaChat(SYSTEM(repos), `Overnight scan:\n\n${groundingFacts(scoped)}`);
     raw = res.text;
   } catch {
-    return briefingFallback(snapshot, generatedAt);
+    return tag(briefingFallback(scoped, generatedAt));
   }
 
   let parsed: { threads?: unknown };
   try {
     parsed = JSON.parse(raw) as { threads?: unknown };
   } catch {
-    return briefingFallback(snapshot, generatedAt);
+    return tag(briefingFallback(scoped, generatedAt));
   }
 
   const rawThreads = Array.isArray(parsed.threads) ? (parsed.threads as RawThread[]) : [];
@@ -150,6 +172,6 @@ export async function generateBriefing(snapshot: CockpitSnapshot, generatedAt: s
     .map((t, i) => toThread(t, repos, i))
     .filter((t): t is BriefingThread => t !== null);
 
-  if (threads.length === 0) return briefingFallback(snapshot, generatedAt);
-  return { generatedAt, threads, source: 'llm' };
+  if (threads.length === 0) return tag(briefingFallback(scoped, generatedAt));
+  return tag({ generatedAt, threads, source: 'llm' });
 }
