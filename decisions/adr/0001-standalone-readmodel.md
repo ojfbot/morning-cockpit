@@ -3,6 +3,10 @@
 - **Status:** Accepted
 - **Date:** 2026-06-07
 - **Deciders:** Yuri (Jim Green), code-claude
+- **Extended by:** ADR-0013 (2026-06-26) — the GraphQL **read-model contract** is **codegen'd from
+  core's canonical SDL** (generated at CI, *not* hand-mirrored and *not* a runtime import).
+  Decision #2 below (mirror-don't-import for bead/Dolt shapes) and the standalone-deploy posture are
+  **preserved**; ADR-0013 only adds a generated-contract path for the shared schema. **Not superseded.**
 
 ## Context
 
