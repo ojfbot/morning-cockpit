@@ -25,8 +25,8 @@ properties:
   - id: P3
     name: "The cockpit pivots focus across the active fleet"
     target: "Selecting a fleet app re-scopes the briefing to that app — start on home base, toggle across the fleet to triage each app's first move. (The dashboard-ux Fleet→Briefing work.)"
-    current: 10
-    verification: "Fleet tile selection drives Section 00; recorded run toggling focus across ≥2 apps; the dashboard-ux G/F/L slices delivered."
+    current: 20
+    verification: "Fleet tile selection drives Section 00; recorded run toggling focus across ≥2 apps; the dashboard-ux G/F/L slices delivered. (G0 shipped 2026-06-27: core-authored read-model SDL + codegen + 3-part drift gate — the contract the repo-scoped briefing rides on; core#178 + cockpit#14 merged.)"
     ladders_up_to: "ns:l2-ojfbot#P1"
     okr_drivers: []
 ---
@@ -56,4 +56,7 @@ is live; S5/S6 mature shadow-first. The cockpit never holds a truth parallel to 
 
 Ladders to `ns:l2-ojfbot#P1` (the fleet ships demoable surfaces). This is the `dashboard-ux-flows`
 Fleet→Briefing focus-swap — the in-flight feature this whole day-runner effort is dogfooding to
-deliver. 10% = specs + gated-slice plan exist on the branch, no code yet.
+deliver. 20% = specs + gated-slice plan landed on main, **and G0 (the contract foundation) shipped**:
+core authors the read-model SDL (`@core/read-model-contract`), the cockpit codegens its facade types
+from it, and a 3-part drift gate makes the contract strict at compile + run time (core#178 +
+cockpit#14). No user-facing focus-swap yet — that's F2, gated by G1.
