@@ -246,9 +246,20 @@ export async function fetchCriticalPath(signal?: AbortSignal): Promise<CriticalP
 
 export type BriefingResponse = BriefingSnapshot & { cached?: boolean };
 
-/** The Chief-of-Staff read-model (LLM-generated threads, deterministic fallback). */
-export async function fetchBriefing(force = false, signal?: AbortSignal): Promise<BriefingResponse> {
-  const res = await fetch(`/api/briefing${force ? '?force=1' : ''}`, { signal });
+/**
+ * The Chief-of-Staff read-model (LLM threads, deterministic fallback). `repo` scopes it to one repo
+ * (F2); omit for the global briefing. force=1 regenerates.
+ */
+export async function fetchBriefing(
+  repo?: string,
+  force = false,
+  signal?: AbortSignal,
+): Promise<BriefingResponse> {
+  const params = new URLSearchParams();
+  if (repo) params.set('repo', repo);
+  if (force) params.set('force', '1');
+  const qs = params.toString();
+  const res = await fetch(`/api/briefing${qs ? `?${qs}` : ''}`, { signal });
   if (!res.ok) throw new Error(`briefing ${res.status}`);
   return (await res.json()) as BriefingResponse;
 }

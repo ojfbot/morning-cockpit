@@ -4,7 +4,6 @@ import type { CockpitUiState } from '../../cockpitState.js';
 import { fetchBriefing } from '../../api.js';
 import { Section } from '../Section.js';
 import { HandoffArtifactCard } from './HandoffArtifactCard.js';
-import { MOCK_THREADS } from './threads.js';
 
 const TAG_LABEL: Record<BriefingTag, string> = {
   decision: 'Decision needed',
@@ -33,35 +32,65 @@ export function Briefing({
   ui: CockpitUiState;
   setUi: (fn: (s: CockpitUiState) => CockpitUiState) => void;
 }) {
-  const [threads, setThreads] = useState<BriefingThread[]>(MOCK_THREADS);
+  const [threads, setThreads] = useState<BriefingThread[]>([]);
   const [source, setSource] = useState<'llm' | 'deterministic' | 'loading'>('loading');
+  const repo = ui.selectedRepo;
 
   const load = (force = false) => {
     setSource('loading');
-    fetchBriefing(force)
+    fetchBriefing(repo, force)
       .then((b) => {
-        if (b.threads.length > 0) setThreads(b.threads);
+        setThreads(b.threads);
         setSource(b.source);
       })
       .catch(() => setSource('deterministic'));
   };
 
+  // Refetch whenever the focused repo changes (F2 swap). Clear first so a quiet repo never shows the
+  // previous repo's threads; abort the in-flight fetch on a fast toggle.
   useEffect(() => {
-    let active = true;
-    fetchBriefing()
+    const ctrl = new AbortController();
+    setThreads([]);
+    setSource('loading');
+    fetchBriefing(repo, false, ctrl.signal)
       .then((b) => {
-        if (!active) return;
-        if (b.threads.length > 0) setThreads(b.threads);
+        setThreads(b.threads);
         setSource(b.source);
       })
-      .catch(() => active && setSource('deterministic'));
-    return () => {
-      active = false;
-    };
-  }, []);
+      .catch(() => {
+        if (!ctrl.signal.aborted) setSource('deterministic');
+      });
+    return () => ctrl.abort();
+  }, [repo]);
 
   const active = threads.find((t) => t.id === ui.activeId) ?? threads[0];
-  if (!active) return null;
+
+  // Honest empty / loading state (F2; F4 designs it). A quiet repo shows no fabricated thread.
+  if (!active) {
+    return (
+      <Section
+        id="briefing"
+        index="00"
+        kicker="BRIEFING"
+        title="The First Move"
+        caption={
+          <span className="section-caption">
+            scoped to {repo}
+            <br />
+            {source === 'loading' ? 'reading the scan…' : 'quiet right now'}
+          </span>
+        }
+      >
+        <div className="briefing briefing--empty">
+          <p className="briefing-empty-note">
+            {source === 'loading'
+              ? `Reading ${repo}'s overnight scan…`
+              : `${repo} is quiet — no pickup or stale work wants a decision. Nothing to fabricate.`}
+          </p>
+        </div>
+      </Section>
+    );
+  }
 
   const recommended = active.branches.find((b) => b.recommended) ?? active.branches[0];
   const chosenKey = ui.chosen[active.id] ?? recommended?.key;
@@ -100,7 +129,7 @@ export function Briefing({
                 : 'deterministic · ↻'}
           </button>
           <br />
-          every thread ends in a handoff artifact
+          scoped to {repo} · every thread ends in a handoff artifact
         </span>
       }
     >

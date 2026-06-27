@@ -11,6 +11,24 @@
 import type { BriefCandidate } from './handoff-brief.js';
 import type { CockpitSnapshot } from './work-item.js';
 
+/**
+ * Scope a snapshot to a single repo (F2, ADR-0012) — keep only lane items whose `repo` matches.
+ * Pure: returns a new snapshot, never mutates the input. The briefing generator + deterministic
+ * fallback then produce a per-repo First Move with no generator rewrite (one code path, global vs
+ * scoped). A repo with no items yields empty lanes → an honest empty briefing.
+ */
+export function scopeSnapshotToRepo(snapshot: CockpitSnapshot, repo: string): CockpitSnapshot {
+  const byRepo = (items: CockpitSnapshot['lanes']['overnight']) => items.filter((i) => i.repo === repo);
+  return {
+    ...snapshot,
+    lanes: {
+      overnight: byRepo(snapshot.lanes.overnight),
+      pickup: byRepo(snapshot.lanes.pickup),
+      available: byRepo(snapshot.lanes.available),
+    },
+  };
+}
+
 export type BriefingTag = 'decision' | 'stale' | 'quickwin';
 export type BranchType = 'deliver' | 'defer' | 'archive';
 
@@ -55,6 +73,8 @@ export interface BriefingThread {
 
 export interface BriefingSnapshot {
   generatedAt: string;
+  /** The repo this briefing is scoped to (F2, ADR-0012); undefined = global/unscoped. */
+  repo?: string;
   threads: BriefingThread[];
   /** Honesty flag, like SynthSummary.source: 'llm' when the Chief of Staff generated it. */
   source: 'llm' | 'deterministic';
