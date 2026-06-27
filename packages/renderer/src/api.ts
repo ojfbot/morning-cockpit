@@ -264,6 +264,26 @@ export async function fetchBriefing(
   return (await res.json()) as BriefingResponse;
 }
 
+/**
+ * Deterministic-first briefing over SSE (ADR-0014 mitigation). Yields the deterministic floor frame
+ * IMMEDIATELY, then the LLM-upgraded frame when ready — so navigation never blocks on the model. Abort
+ * the `signal` to close the stream (e.g. on repo change).
+ */
+export async function* streamBriefing(
+  repo?: string,
+  force = false,
+  signal?: AbortSignal,
+): AsyncGenerator<BriefingResponse> {
+  const params = new URLSearchParams();
+  if (repo) params.set('repo', repo);
+  if (force) params.set('force', '1');
+  const qs = params.toString();
+  const res = await fetch(`/api/briefing/stream${qs ? `?${qs}` : ''}`, { signal });
+  for await (const evt of streamSse(res)) {
+    if (evt.event === 'briefing') yield evt.data as BriefingResponse;
+  }
+}
+
 /** Approve & emit a deliver-branch artifact → POST /api/briefing/emit (validates + writes a brief). */
 export async function emitBriefingArtifact(artifact: BriefingArtifact): Promise<EmitArtifactResponse> {
   const res = await fetch('/api/briefing/emit', {

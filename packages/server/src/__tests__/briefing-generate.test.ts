@@ -10,7 +10,7 @@ vi.mock('../handoff-emit.js', () => ({
   listKnownRepos: vi.fn().mockResolvedValue(['core', 'cv-builder']),
 }));
 
-import { generateBriefing } from '../briefing-generate.js';
+import { briefingFrames, generateBriefing } from '../briefing-generate.js';
 
 function item(repo: string, lane: WorkItemLane, id: string, stale = false): WorkItem {
   return {
@@ -78,5 +78,33 @@ describe('generateBriefing — repo scoping (F2)', () => {
     expect(b.repo).toBe('no-such-repo');
     expect(b.threads).toHaveLength(0);
     expect(ollamaChat).not.toHaveBeenCalled(); // empty scope short-circuits — no fabrication
+  });
+});
+
+describe('briefingFrames — deterministic-first + async upgrade (ADR-0014)', () => {
+  beforeEach(() => ollamaChat.mockReset());
+
+  async function collect(repo: string) {
+    const frames = [];
+    for await (const f of briefingFrames(snap(), AT, repo)) frames.push(f);
+    return frames;
+  }
+
+  it('yields ONLY the deterministic floor when the model gives junk', async () => {
+    ollamaChat.mockResolvedValue({ text: 'not json' });
+    const frames = await collect('core');
+    expect(frames.map((f) => f.source)).toEqual(['deterministic']);
+    expect(frames.every((f) => f.repo === 'core')).toBe(true);
+  });
+
+  it('yields the floor FIRST, then the llm upgrade when the model beats it', async () => {
+    ollamaChat.mockResolvedValue({ text: JSON.stringify({ threads: [llmThread('core', 'a2')] }) });
+    const frames = await collect('core');
+    expect(frames.map((f) => f.source)).toEqual(['deterministic', 'llm']); // floor first, then upgrade
+  });
+
+  it('yields a single floor frame for a quiet repo (no redundant upgrade)', async () => {
+    const frames = await collect('no-such-repo');
+    expect(frames.map((f) => f.source)).toEqual(['deterministic']);
   });
 });

@@ -175,3 +175,24 @@ export async function generateBriefing(
   if (threads.length === 0) return tag(briefingFallback(scoped, generatedAt));
   return tag({ generatedAt, threads, source: 'llm' });
 }
+
+/**
+ * Deterministic-first frames (ADR-0014 mitigation). Yields the deterministic floor IMMEDIATELY (never
+ * blocks on the model — ADR-0003), then yields the LLM-upgraded briefing only if the model actually
+ * beat the floor. A quiet/off repo yields a single floor frame. The SSE route pipes these frames; the
+ * renderer renders the floor instantly and swaps to the upgrade when it arrives.
+ */
+export async function* briefingFrames(
+  snapshot: CockpitSnapshot,
+  generatedAt: string,
+  repo?: string,
+): AsyncGenerator<BriefingSnapshot> {
+  const scoped = repo ? scopeSnapshotToRepo(snapshot, repo) : snapshot;
+  const floor: BriefingSnapshot = repo
+    ? { ...briefingFallback(scoped, generatedAt), repo }
+    : briefingFallback(scoped, generatedAt);
+  yield floor; // instant deterministic floor — never blocks on the model (ADR-0003)
+
+  const full = await generateBriefing(snapshot, generatedAt, repo);
+  if (full.source === 'llm') yield full; // upgrade only if the model actually beat the floor
+}
