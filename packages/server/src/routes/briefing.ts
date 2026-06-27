@@ -2,7 +2,8 @@ import { Router } from 'express';
 import type { BriefingArtifact, BriefingSnapshot } from '@cockpit/shared';
 import { buildSnapshot } from './../aggregate.js';
 import { emitArtifact } from '../handoff-emit.js';
-import { generateBriefing } from '../briefing-generate.js';
+import { briefingFrames, generateBriefing } from '../briefing-generate.js';
+import { sseEnd, sseInit, sseSend } from '../sse.js';
 
 /**
  * Briefing console (ADR-0007). GET /api/briefing = the Chief-of-Staff read-model (LLM-generated,
@@ -39,6 +40,41 @@ briefingRouter.get('/api/briefing', async (req, res) => {
     res.json({ ...briefing, cached: false });
   } catch (err) {
     res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
+  }
+});
+
+// Deterministic-first + async upgrade over SSE (ADR-0014 mitigation). Sends the deterministic floor
+// IMMEDIATELY (never blocks on the model — ADR-0003), then the LLM upgrade when ready. `?repo=` scopes
+// it (F2); `?force=1` bypasses the per-repo cache. The non-stream GET above stays for agents / the
+// GraphQL facade.
+briefingRouter.get('/api/briefing/stream', async (req, res) => {
+  const repo = typeof req.query.repo === 'string' && req.query.repo ? req.query.repo : undefined;
+  const force = req.query.force === '1';
+  const cacheKey = repo ?? '__global__';
+  sseInit(res);
+  try {
+    const snapshot = await buildSnapshot();
+    const key = snapshotKey(snapshot);
+
+    // Fresh cached briefing → send it instantly, done (still a single frame, instant).
+    const hit = cache.get(cacheKey);
+    if (!force && hit?.key === key) {
+      sseSend(res, 'briefing', hit.snapshot);
+      sseEnd(res);
+      return;
+    }
+
+    // Cold: stream the deterministic floor first, then the LLM upgrade; cache the best (last) frame.
+    let last: BriefingSnapshot | undefined;
+    for await (const frame of briefingFrames(snapshot, snapshot.generatedAt, repo)) {
+      sseSend(res, 'briefing', frame);
+      last = frame;
+    }
+    if (last) cache.set(cacheKey, { key, snapshot: last });
+    sseEnd(res);
+  } catch (err) {
+    sseSend(res, 'error', { message: err instanceof Error ? err.message : String(err) });
+    sseEnd(res);
   }
 });
 

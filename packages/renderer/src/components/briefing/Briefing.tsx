@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { BriefingBranch, BriefingThread, BriefingTag } from '@cockpit/shared';
 import type { CockpitUiState } from '../../cockpitState.js';
-import { fetchBriefing } from '../../api.js';
+import { streamBriefing } from '../../api.js';
 import { Section } from '../Section.js';
 import { HandoffArtifactCard } from './HandoffArtifactCard.js';
 
@@ -38,28 +38,36 @@ export function Briefing({
 
   const load = (force = false) => {
     setSource('loading');
-    fetchBriefing(repo, force)
-      .then((b) => {
-        setThreads(b.threads);
-        setSource(b.source);
-      })
-      .catch(() => setSource('deterministic'));
+    void (async () => {
+      try {
+        for await (const b of streamBriefing(repo, force)) {
+          setThreads(b.threads);
+          setSource(b.source);
+        }
+      } catch {
+        setSource('deterministic');
+      }
+    })();
   };
 
-  // Refetch whenever the focused repo changes (F2 swap). Clear first so a quiet repo never shows the
-  // previous repo's threads; abort the in-flight fetch on a fast toggle.
+  // Stream whenever the focused repo changes (F2 swap; ADR-0014 deterministic-first). The first frame
+  // (deterministic floor) renders INSTANTLY; the LLM upgrade swaps in when ready — navigation never
+  // blocks on the model. Clear first so a quiet repo never shows the previous repo's threads; abort
+  // closes the stream on a fast toggle.
   useEffect(() => {
     const ctrl = new AbortController();
     setThreads([]);
     setSource('loading');
-    fetchBriefing(repo, false, ctrl.signal)
-      .then((b) => {
-        setThreads(b.threads);
-        setSource(b.source);
-      })
-      .catch(() => {
+    void (async () => {
+      try {
+        for await (const b of streamBriefing(repo, false, ctrl.signal)) {
+          setThreads(b.threads);
+          setSource(b.source);
+        }
+      } catch {
         if (!ctrl.signal.aborted) setSource('deterministic');
-      });
+      }
+    })();
     return () => ctrl.abort();
   }, [repo]);
 
