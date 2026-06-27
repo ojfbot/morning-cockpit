@@ -1,0 +1,124 @@
+"""
+Canonical read-model contract — the fleet-wide GraphQL SDL (ADR-0013).
+
+One typed shape for the morning-cockpit human UI and agent readers alike (ADR-0011). Authored here
+in core as the authority; the cockpit facade's types are codegen'd from this file (fetched at CI via
+git-clone — no runtime import, ADR-0001 extended). Query-only: there is NO Mutation type — the sole
+upstream write path stays Handoff Emission (ADR-0005).
+
+Field shapes mirror morning-cockpit `@cockpit/shared` view-models; an SDL<->shared parity test in the
+cockpit keeps them from diverging (a deliberate drift breaks CI).
+"""
+
+# ── Liveness (mirrors fleet.ts `Liveness`, liveness.ts `AgentLivenessState`) ──
+enum Liveness { LIVE STALE DARK }
+enum AgentLivenessState { LIVE IDLE DARK }
+
+# ── Fleet (01) — RepoCard (mirrors fleet.ts `RepoCard`) ──
+"""A per-tile launch link. `links` is forward-declared for Slice L1 (extensible list)."""
+type RepoLink {
+  kind: String!
+  url: String!
+  label: String!
+}
+
+"""Hover/focus popover payload. Contents are deferred to the L3s spike (ADR-0012 #7) — placeholder."""
+type RepoPopover {
+  placeholder: Boolean!
+}
+
+type RepoCard {
+  name: String!
+  role: String!
+  phase: String!
+  openCount: Int!
+  lastActivity: String
+  liveness: Liveness!
+  here: Boolean
+  "Forward-declared (L1) — empty until the tile link set lands."
+  links: [RepoLink!]!
+  "Forward-declared (L3/L3s) — null until the popover contents spike resolves."
+  popover: RepoPopover
+}
+
+# ── Derived agent liveness (mirrors liveness.ts `AgentLiveness`, ADR-0008) ──
+type AgentLiveness {
+  agentId: String!
+  state: AgentLivenessState!
+  lastEventAt: String!
+  lastEventType: String!
+}
+
+# ── Briefing (00) — Chief-of-Staff console (mirrors briefing.ts) ──
+type BriefingArtifact {
+  title: String!
+  target: String!
+  closes: String!
+  align: String!
+  task: String!
+  criteria: [String!]!
+}
+
+type BriefingBranch {
+  key: String!
+  label: String!
+  recommended: Boolean!
+  type: String!
+  artifact: BriefingArtifact
+  cta: String
+  outcome: String
+  doneText: String
+}
+
+type BriefingThread {
+  id: String!
+  tag: String!
+  title: String!
+  whyNow: String!
+  catchUp: String!
+  question: String!
+  branches: [BriefingBranch!]!
+}
+
+type BriefingSnapshot {
+  generatedAt: String!
+  "Forward-declared (F2) — the repo this briefing is scoped to; null while global."
+  repo: String
+  source: String!
+  threads: [BriefingThread!]!
+}
+
+# ── WorkItem — the unified lane view-model (mirrors work-item.ts `WorkItem`, core fields) ──
+type WorkItem {
+  id: String!
+  nativeId: String!
+  source: String!
+  kind: String!
+  status: String!
+  lane: String!
+  title: String!
+  repo: String
+  actor: String
+  createdAt: String
+  updatedAt: String
+  closedAt: String
+  activityAt: String!
+  staleDays: Int
+  posted: Boolean
+  claimedBy: String
+  claimedByKind: String
+  leaseUntil: String
+  url: String
+}
+
+# ── The read surface (query-only) ──
+type Query {
+  "Fleet (01) repo cards."
+  fleet: [RepoCard!]!
+  "Briefing (00). `repo` arg forward-declared for Slice F2 (repo-scoped briefing); null = global."
+  briefing(repo: String): BriefingSnapshot!
+  "Derived agent liveness (ADR-0008)."
+  agentLiveness: [AgentLiveness!]!
+  "Lane work-items: overnight | pickup | available."
+  workItems(lane: String!): [WorkItem!]!
+}
