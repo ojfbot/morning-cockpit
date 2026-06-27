@@ -18,6 +18,7 @@
     "@cockpit/shared": "workspace:*",
     "cors": "^2.8.5",
     "express": "^4.21.2",
+    "graphql-yoga": "^5.10.0",
     "mysql2": "^3.11.5",
     "rss-parser": "^3.13.0",
     "yaml": "^2.6.1"
