@@ -39,6 +39,20 @@
   --gt-duration: 220ms;
   --gt-duration-slow: 400ms;
 
+  /* Motion system — curves + durations adapted from IBM @carbon/motion (motion math ONLY; the visual
+     language stays GroupThink/Rams-Lois per ADR-0001 — no Carbon components, no Carbon look).
+     Carbon principle: productive = fast/subtle for frequent actions; expressive = for prominent
+     moments; duration scales with the size of the change; entrance decelerates, exit accelerates. */
+  --motion-fast-01: 70ms;
+  --motion-fast-02: 110ms;
+  --motion-moderate-01: 150ms;
+  --motion-moderate-02: 240ms;
+  --motion-slow-01: 400ms;
+  --motion-entrance-productive: cubic-bezier(0, 0, 0.38, 0.9);
+  --motion-entrance-expressive: cubic-bezier(0, 0, 0.3, 1);
+  --motion-standard-expressive: cubic-bezier(0.4, 0.14, 0.3, 1);
+  --motion-exit-expressive: cubic-bezier(0.4, 0.14, 1, 1);
+
   /* ── Legacy GroupThink aliases → OJF primitives (kept so app.css works) ── */
   --gt-bg: var(--paper);
   --gt-surface-1: var(--paper-2);

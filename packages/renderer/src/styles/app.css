@@ -178,16 +178,41 @@ body {
 .briefing-band { display: grid; grid-template-columns: 300px 1fr; }
 @media (max-width: 880px) { .briefing-band { grid-template-columns: 1fr; } }
 
-/* F3 — animated Section-00 swap (ADR-0012 #5). The content area is keyed by repo, so selecting a
-   Fleet tile remounts it and plays this entrance once. Transform/opacity only (no reflow jank).
-   Honors prefers-reduced-motion: reduce — the swap is instant for users who ask for less motion. */
+/* F3 + Carbon-motion (ADR-0012 #5). Selecting a Fleet tile remounts Section 00 (key={repo}) and plays
+   a CHOREOGRAPHED expressive entrance — the block fades in, then the thread rail cascades and the
+   conversation follows, in a focal order rather than one flat fade. Curves + durations are adapted
+   from IBM @carbon/motion (see tokens.css — motion math only; the look stays GroupThink). A whole-
+   section re-scope is an "expressive" moment (decelerate-in); the small cascading threads use the
+   faster "productive" curve. Transform/opacity only (no reflow jank); reduced-motion makes it instant. */
 @keyframes briefing-enter {
-  from { opacity: 0; transform: translateY(6px); }
+  from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-.briefing-swap { animation: briefing-enter var(--gt-duration) var(--gt-ease); }
+@keyframes briefing-fade { from { opacity: 0; } to { opacity: 1; } }
+
+/* The block appears with a quick expressive fade; its regions carry the slide + stagger. */
+.briefing-swap { animation: briefing-fade var(--motion-fast-02) var(--motion-entrance-expressive) both; }
+.briefing-swap .briefing-rail {
+  animation: briefing-enter var(--motion-moderate-02) var(--motion-entrance-expressive) 40ms both;
+}
+.briefing-swap .briefing-convo {
+  animation: briefing-enter var(--motion-slow-01) var(--motion-entrance-expressive) 90ms both;
+}
+.briefing-swap .briefing-empty {
+  animation: briefing-enter var(--motion-slow-01) var(--motion-entrance-expressive) 40ms both;
+}
+
+/* The thread rail cascades — productive (fast/subtle) for these small, sequential elements. */
+.briefing-swap .thread { animation: briefing-enter var(--motion-fast-02) var(--motion-entrance-productive) both; }
+.briefing-swap .thread:nth-of-type(1) { animation-delay: 80ms; }
+.briefing-swap .thread:nth-of-type(2) { animation-delay: 120ms; }
+.briefing-swap .thread:nth-of-type(3) { animation-delay: 160ms; }
+.briefing-swap .thread:nth-of-type(4) { animation-delay: 200ms; }
+.briefing-swap .thread:nth-of-type(5) { animation-delay: 240ms; }
+
 @media (prefers-reduced-motion: reduce) {
-  .briefing-swap { animation: none; }
+  .briefing-swap,
+  .briefing-swap * { animation: none !important; }
 }
 
 /* F4 — designed truthful empty + a distinct loading state (ADR-0012 #4). A quiet repo gets a calm,
