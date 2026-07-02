@@ -1,17 +1,10 @@
 import { Router } from 'express';
 import { buildSnapshot } from '../aggregate.js';
 import { deriveFleet, fleetTotals } from '../fleet-derive.js';
-import {
-  CRITICAL_CHAINS,
-  CRITICAL_INTRO,
-  CRITICAL_NOTE,
-  DELIVERY_MILESTONES,
-  DELIVERY_PROGRESS,
-  NEXT_MOVES,
-} from '../fleet-config.js';
+import { CRITICAL_CHAINS, CRITICAL_INTRO, CRITICAL_NOTE } from '../fleet-config.js';
 
 /**
- * Fleet (01) + Delivery (03) read-models. Fleet merges editorial repo metadata with live signals
+ * Fleet (01) + Critical Path (02) read-models. Fleet merges editorial repo metadata with live signals
  * derived from the snapshot; repo liveness is event-derived freshness (bead_events flows — S1/S2).
  * The repo-card derivation is shared with the GraphQL `fleet` resolver via `deriveFleet` (G1), so
  * REST and GraphQL cannot diverge.
@@ -37,14 +30,5 @@ fleetRouter.get('/api/critical-path', (_req, res) => {
     chains: CRITICAL_CHAINS,
     seeded: true,
     note: CRITICAL_NOTE,
-  });
-});
-
-fleetRouter.get('/api/delivery', (_req, res) => {
-  res.json({
-    generatedAt: new Date().toISOString(),
-    progress: DELIVERY_PROGRESS,
-    milestones: DELIVERY_MILESTONES,
-    nextMoves: NEXT_MOVES,
   });
 });

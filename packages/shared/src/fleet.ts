@@ -1,5 +1,6 @@
 /**
- * Fleet (01) + Delivery (03) coordination read-models (decisions/adr/0007 redesign).
+ * Fleet (01) + Critical Path (02) coordination read-models (decisions/adr/0007 redesign).
+ * (The Delivery (03) read-model moved to delivery.ts when it went roadmap-driven.)
  *
  * Fleet repo metadata (role, phase) is editorial config the server owns; the live signals
  * (openCount, lastActivity, liveness) are derived from the CockpitSnapshot. Repo liveness is
@@ -27,32 +28,6 @@ export interface FleetSnapshot {
   generatedAt: string;
   repos: RepoCard[];
   totals: { repos: number; openBeads: number; live: number; stale: number; dark: number };
-}
-
-export type Effort = 'S' | 'M' | 'L';
-
-export interface DeliveryMilestone {
-  /** PHASE 1 / PHASE 2 / NOW / NEXT / LATER */
-  marker: string;
-  title: string;
-  status: string;
-  state: 'shipped' | 'now' | 'next' | 'later';
-}
-
-export interface NextMove {
-  index: number;
-  title: string;
-  unblocks: string;
-  effort: Effort;
-  repo: string;
-}
-
-export interface DeliverySnapshot {
-  generatedAt: string;
-  /** Progress fraction 0–1 for the red line on the phase track. */
-  progress: number;
-  milestones: DeliveryMilestone[];
-  nextMoves: NextMove[];
 }
 
 export type Severity = 'critical' | 'high' | 'blocked' | 'decision';

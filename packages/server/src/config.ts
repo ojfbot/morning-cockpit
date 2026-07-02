@@ -62,6 +62,16 @@ export const config = {
   },
 
   /**
+   * Delivery pane (roadmap S5) — the northstar→roadmap→dispatch pipeline, read-only.
+   * Registry + northstar/roadmap files + status.jsonl live in (or resolve relative to)
+   * the core repo; the queue projection is a read-only Dolt query.
+   */
+  delivery: {
+    coreRoot: process.env.COCKPIT_CORE_ROOT ?? path.join(os.homedir(), 'ojfbot', 'core'),
+    ttlMs: Number(process.env.COCKPIT_DELIVERY_TTL_MS ?? 10_000),
+  },
+
+  /**
    * Lane-summary synthesis. Local-first: default provider is self-hosted Ollama, so the
    * read-model stays offline by default (ADR-0003). Claude is explicit opt-in; there is NO
    * automatic cloud cascade — a local failure falls back to the deterministic summary.
