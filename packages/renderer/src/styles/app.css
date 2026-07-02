@@ -597,47 +597,8 @@ body {
 }
 .crit-note { margin: var(--gt-space-4) 0 0; font-family: var(--mono); font-size: 10px; color: var(--ink-3); }
 
-/* ── 03 · Delivery ── */
-.phase-track {
-  position: relative;
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: 1fr;
-  gap: var(--gt-space-3);
-  padding-top: var(--gt-space-4);
-  margin-bottom: var(--gap-section);
-}
-.phase-line, .phase-line-fill {
-  position: absolute;
-  top: calc(var(--gt-space-4) + 5px);
-  left: 0;
-  height: 2px;
-}
-.phase-line { width: 100%; background: var(--rule); }
-.phase-line-fill { width: var(--progress, 58%); background: var(--red); }
-.milestone { position: relative; display: flex; flex-direction: column; gap: 3px; }
-.milestone-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: var(--paper);
-  border: 2px solid var(--ink-3);
-  margin-bottom: var(--gt-space-2);
-}
-.milestone--shipped .milestone-dot, .milestone--now .milestone-dot { background: var(--red); border-color: var(--red); }
-.milestone--next .milestone-dot { border-color: var(--amber); }
-.milestone-marker {
-  font-family: var(--mono);
-  font-size: 9px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--ink-3);
-}
-.milestone--now .milestone-marker { color: var(--red); }
-.milestone-title { font-size: 14px; font-weight: 700; line-height: 1.2; color: var(--ink); }
-.milestone-status { font-family: var(--mono); font-size: 10px; color: var(--ink-3); }
-
-.nextmoves-head {
+/* ── 03 · Delivery (roadmap S5 — northstar gaps · slice pipeline · movement feed) ── */
+.delivery-block-head {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
@@ -645,7 +606,8 @@ body {
   padding-bottom: var(--gt-space-2);
   margin-bottom: var(--gt-space-2);
 }
-.nextmoves-label {
+.ns-gaps, .rm-pipeline, .movement-feed { margin-bottom: var(--gt-space-6, 32px); }
+.delivery-block-label {
   font-family: var(--mono);
   font-size: 12px;
   font-weight: 500;
@@ -653,29 +615,103 @@ body {
   text-transform: uppercase;
   color: var(--ink);
 }
-.nextmoves-src { font-family: var(--mono); font-size: 10px; color: var(--ink-3); }
-.move {
+.delivery-block-src { font-family: var(--mono); font-size: 10px; color: var(--ink-3); }
+.delivery-empty { margin: var(--gt-space-3) 0; font-family: var(--mono); font-size: 11px; color: var(--ink-3); }
+.delivery-health-note { margin: var(--gt-space-3) 0 0; font-family: var(--mono); font-size: 10px; color: var(--amber); }
+
+/* Property gap bars — honest current % vs the 100% target (target prose on hover). */
+.gap-row {
+  display: flex;
+  align-items: center;
+  gap: var(--gt-space-4);
+  padding: var(--gt-space-2) 0;
+  border-bottom: 1px solid var(--rule);
+}
+.gap-id { flex: none; width: 24px; font-family: var(--mono); font-size: 12px; color: var(--red); }
+.gap-name { flex: 1; min-width: 0; font-size: 14px; font-weight: 700; color: var(--ink); }
+.gap-bar {
+  flex: none;
+  width: 180px;
+  height: 8px;
+  background: var(--paper-2);
+  border: 1px solid var(--rule-strong);
+}
+.gap-bar-fill { display: block; height: 100%; background: var(--red); }
+.gap-pct { flex: none; width: 42px; text-align: right; font-family: var(--mono); font-size: 12px; color: var(--ink-2); }
+
+/* Slice pipeline, grouped by phase. */
+.rm-phase { margin-top: var(--gt-space-3); }
+.rm-phase-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--gt-space-2);
+  padding-bottom: 2px;
+  border-bottom: 1px solid var(--rule-strong);
+}
+.rm-phase-id { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; color: var(--red); }
+.rm-phase-name { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-2); }
+.slice-row {
   display: flex;
   align-items: center;
   gap: var(--gt-space-4);
   padding: var(--gt-space-3) 0;
   border-bottom: 1px solid var(--rule);
 }
-.move-index { font-family: var(--mono); font-size: 13px; color: var(--ink-3); flex: none; width: 24px; }
-.move-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.move-title { font-size: 15px; font-weight: 700; color: var(--ink); }
-.move-unblocks { font-family: var(--mono); font-size: 11px; color: var(--ink-3); }
-.move-effort {
+.slice-id { flex: none; width: 24px; font-family: var(--mono); font-size: 13px; color: var(--ink-3); }
+.slice-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.slice-title { font-size: 15px; font-weight: 700; color: var(--ink); }
+.slice-meta { font-family: var(--mono); font-size: 11px; color: var(--ink-3); overflow-wrap: anywhere; }
+.slice-gate {
   flex: none;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-2);
+  border: 1px solid var(--rule-strong);
+  padding: 1px 6px;
+}
+.slice-drift {
+  flex: none;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--amber);
+  border: 1px solid var(--amber);
+  padding: 1px 6px;
+}
+.slice-chip {
+  flex: none;
+  width: 76px;
+  text-align: center;
   font-family: var(--mono);
   font-size: 11px;
   font-weight: 500;
-  padding: 1px 8px;
+  padding: 2px 8px;
+  color: var(--ink-3);
+  background: color-mix(in srgb, var(--ink-3) 10%, transparent);
 }
-.move-effort--s { color: var(--green); background: color-mix(in srgb, var(--green) 14%, transparent); }
-.move-effort--m { color: var(--amber); background: color-mix(in srgb, var(--amber) 14%, transparent); }
-.move-effort--l { color: var(--red); background: color-mix(in srgb, var(--red) 14%, transparent); }
-.move-repo { flex: none; width: 130px; text-align: right; font-family: var(--mono); font-size: 11px; color: var(--ink-3); }
+.slice-chip--ready { color: var(--ink-2); background: color-mix(in srgb, var(--ink-2) 14%, transparent); }
+.slice-chip--available { color: var(--amber); background: color-mix(in srgb, var(--amber) 14%, transparent); }
+.slice-chip--claimed { color: var(--red); background: color-mix(in srgb, var(--red) 14%, transparent); }
+.slice-chip--delivered { color: var(--green); background: color-mix(in srgb, var(--green) 14%, transparent); }
+.slice-chip--merged { color: var(--card); background: var(--green); }
+.slice-chip--dropped { color: var(--ink-3); text-decoration: line-through; }
+
+/* Movement feed — the odometer, most recent first. */
+.movement-row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--gt-space-4);
+  padding: var(--gt-space-2) 0;
+  border-bottom: 1px solid var(--rule);
+  font-family: var(--mono);
+  font-size: 11px;
+}
+.movement-date { flex: none; width: 84px; color: var(--ink-3); }
+.movement-ref { flex: none; color: var(--red); }
+.movement-delta { flex: none; font-weight: 700; color: var(--ink); }
+.movement-evidence { flex: 1; min-width: 0; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.movement-actor { flex: none; color: var(--ink-3); }
 
 /* ── Lanes ── */
 .lanes {

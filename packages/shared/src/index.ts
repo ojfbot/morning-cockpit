@@ -86,14 +86,29 @@ export type {
   Liveness,
   RepoCard,
   FleetSnapshot,
-  Effort,
-  DeliveryMilestone,
-  NextMove,
-  DeliverySnapshot,
   Severity,
   CriticalChain,
   CriticalPathSnapshot,
 } from './fleet.js';
+
+export type {
+  Frontmatter,
+  FrontmatterItem,
+  FrontmatterScalar,
+  NorthstarProperty,
+  DeliveryNorthstar,
+  RoadmapPhase,
+  SliceFileStatus,
+  SliceQueueState,
+  SliceDisplayState,
+  DeliverySlice,
+  DeliveryRoadmap,
+  Movement,
+  DeliveryHealth,
+  DeliverySnapshot,
+  QueueProjection,
+} from './delivery.js';
+export { parseFrontmatter, deriveSliceState, parseMovementLines } from './delivery.js';
 
 export type { LaneContext, LaneInput } from './lanes.js';
 export {
