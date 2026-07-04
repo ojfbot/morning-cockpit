@@ -92,6 +92,8 @@ body {
   color: var(--ink-3);
   white-space: nowrap;
 }
+/* Problems-view agent states (F5): stalled/zombie tallies read as a signal, not furniture. */
+.masthead-stats .sig { color: var(--red); }
 .theme-toggle {
   display: inline-flex;
   align-items: center;
@@ -549,6 +551,16 @@ body {
 .crit-sev--decision { color: var(--card); background: var(--ink); }
 .crit-title { font-size: 15px; font-weight: 700; color: var(--ink); }
 .crit-waits { font-family: var(--mono); font-size: 10px; color: var(--ink-3); }
+/* Seeded (hand-authored) marker — quiet hairline chip, so editorial data never reads as derived. */
+.crit-editorial {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  border: 1px solid var(--rule);
+  padding: 1px 5px;
+}
 .crit-blocks { display: flex; align-items: center; flex-wrap: wrap; gap: var(--gt-space-2); }
 .crit-rel { font-family: var(--mono); font-size: 9px; letter-spacing: 0.06em; color: var(--ink-3); }
 .crit-chip {

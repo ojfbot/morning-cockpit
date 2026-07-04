@@ -10,10 +10,18 @@ const WORDS = [
 const word = (n: number) => WORDS[n] ?? String(n);
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
-/** Pull "N beads scanned · X live · Y idle · Z dark agents · K overnight events" off the health note. */
-function statBlock(
-  snapshot: CockpitSnapshot,
-): { beads: number; agentsLive: number | null; agentsIdle: number | null; events: number | null } {
+/**
+ * Pull "N beads scanned · A live · B stalled · C idle · D zombie · E dark agents · K overnight
+ * events" off the health note (S2 derived liveness + the F5 problems-view states).
+ */
+function statBlock(snapshot: CockpitSnapshot): {
+  beads: number;
+  agentsLive: number | null;
+  agentsStalled: number | null;
+  agentsIdle: number | null;
+  agentsZombie: number | null;
+  events: number | null;
+} {
   const note = snapshot.health.find((h) => /beads scanned/.test(h.note ?? ''))?.note ?? '';
   const num = (re: RegExp): number | null => {
     const m = note.match(re);
@@ -22,7 +30,9 @@ function statBlock(
   return {
     beads: num(/(\d+) beads scanned/) ?? snapshot.meta.totalItems,
     agentsLive: num(/(\d+) live/), // derived liveness (S2), no longer "liveness unknown"
+    agentsStalled: num(/(\d+) stalled/),
     agentsIdle: num(/(\d+) idle/),
+    agentsZombie: num(/(\d+) zombie/),
     events: num(/(\d+) overnight events/) ?? snapshot.lanes.overnight.length,
   };
 }
@@ -112,7 +122,11 @@ export function Masthead({
           <div className="masthead-stats">
             <span>{stats.beads} BEADS SCANNED</span>
             <span>
-              {stats.agentsLive ?? '—'} LIVE · {stats.agentsIdle ?? 0} IDLE AGENTS · {stats.events ?? 0} OVERNIGHT EVENTS
+              {stats.agentsLive ?? '—'} LIVE · {stats.agentsIdle ?? 0} IDLE
+              {/* Problems-view states (F5): only shown when non-zero — quiet mornings stay quiet. */}
+              {(stats.agentsStalled ?? 0) > 0 && <span className="sig"> · {stats.agentsStalled} STALLED</span>}
+              {(stats.agentsZombie ?? 0) > 0 && <span className="sig"> · {stats.agentsZombie} ZOMBIE</span>}
+              {' '}AGENTS · {stats.events ?? 0} OVERNIGHT EVENTS
             </span>
           </div>
         )}
