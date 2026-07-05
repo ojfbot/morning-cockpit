@@ -3,6 +3,7 @@ import {
   beadPrefix,
   classifyLane,
   deriveAgentLiveness,
+  DEFAULT_LIVENESS_WINDOWS,
   parseJsonColumn,
   type AdapterHealth,
   type AgentLiveness,
@@ -21,8 +22,9 @@ import { config } from '../config.js';
  * "Overnight" is timestamp-driven: a bead surfaces there if it is running, finished in the
  * window, or has a bead_events row in the window. We still do NOT trust agent_status (it reads
  * permanently 'active'); instead agent liveness is DERIVED from agent-* bead_events keyed by
- * actor (S2): agents classified `live` are emitted as Overnight lane items, idle/dark agents are
- * tallied in the health note. This supersedes the old "all agents hidden" behaviour (ADR-0008).
+ * actor (S2, extended with the F5 problems-view states): agents classified `live` are emitted as
+ * Overnight lane items; stalled/idle/zombie/dark agents are tallied in the health note. This
+ * supersedes the old "all agents hidden" behaviour (ADR-0008).
  */
 
 interface BeadRow {
@@ -210,7 +212,10 @@ export async function fetchDolt(ctx: LaneContext): Promise<{ items: WorkItem[]; 
       });
     }
 
-    // ── Agent liveness (S2): live/idle/dark derived from agent-* events, keyed by actor ──
+    // ── Agent liveness (S2 + F5): live/stalled/idle/zombie/dark from agent-* events, keyed by
+    // actor. openClaims = agent beads still holding a hook (already fetched) — the caller-supplied
+    // signal that turns a would-be dark agent into a zombie (store says it has work; events say
+    // it's gone). agent_status is NOT used: it reads 'active' forever (ADR-0008).
     const agentEvents = agentEventRows.map((e) => ({
       event_type: e.event_type,
       actor: e.actor,
@@ -218,18 +223,25 @@ export async function fetchDolt(ctx: LaneContext): Promise<{ items: WorkItem[]; 
       summary: null,
       timestamp: toIso(e.timestamp) ?? ctx.now.toISOString(),
     }));
+    const openClaims = new Set(agentRows.filter((r) => r.hook).map((r) => r.id));
     const derived = new Map<string, AgentLiveness>(
-      deriveAgentLiveness(agentEvents, ctx.now.getTime()).map((a) => [a.agentId, a]),
+      deriveAgentLiveness(agentEvents, ctx.now.getTime(), DEFAULT_LIVENESS_WINDOWS, openClaims).map(
+        (a) => [a.agentId, a],
+      ),
     );
     let liveAgents = 0;
+    let stalledAgents = 0;
     let idleAgents = 0;
+    let zombieAgents = 0;
     let darkAgents = 0;
     for (const row of agentRows) {
-      const state = derived.get(row.id)?.state ?? 'dark';
+      const state = derived.get(row.id)?.state ?? (openClaims.has(row.id) ? 'zombie' : 'dark');
       if (state === 'live') liveAgents++;
+      else if (state === 'stalled') stalledAgents++;
       else if (state === 'idle') idleAgents++;
+      else if (state === 'zombie') zombieAgents++;
       else darkAgents++;
-      if (state !== 'live') continue; // idle/dark are tallied in the note, not surfaced as lane items
+      if (state !== 'live') continue; // stalled/idle/zombie/dark are tallied in the note, not surfaced as lane items
 
       const labels = parseJsonColumn<Record<string, string>>(row.labels, {});
       const activityAt = derived.get(row.id)?.lastEventAt ?? toIso(row.updated_at) ?? ctx.now.toISOString();
@@ -262,7 +274,8 @@ export async function fetchDolt(ctx: LaneContext): Promise<{ items: WorkItem[]; 
     health.status = 'up';
     health.itemCount = items.length;
     health.note =
-      `${beadRows.length} beads scanned · ${liveAgents} live · ${idleAgents} idle · ${darkAgents} dark agents · ` +
+      `${beadRows.length} beads scanned · ${liveAgents} live · ${stalledAgents} stalled · ` +
+      `${idleAgents} idle · ${zombieAgents} zombie · ${darkAgents} dark agents · ` +
       `${eventRows.length} overnight events` +
       (staleRunningHidden ? ` · ${staleRunningHidden} stale-"live" hidden` : '');
     return { items, health };

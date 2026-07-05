@@ -58,8 +58,8 @@ TCP socket (`mysql2`) and (later) GitHub needs to shell out to `gh`. Adapters fa
 |--------|---------|-------|-------|
 | Dolt beads (agent/convoy/task/pr/session) | `adapters/dolt.ts` | 0 ✅ | "Overnight" is **timestamp-driven** off `bead_events` + created/closed_at — NOT `agent_status` (all agents read permanently `active`). |
 | Per-repo `.handoff/*.md` briefs | `adapters/handoff.ts` | 0 ✅ | Open-hook logic ported from core's `orient.py`. Only ~3 repos have `.handoff/` today. |
-| GitHub PRs + issues | `adapters/github.ts` | 1 | Copy collectors from daily-logger `collect-context.ts` (gh CLI). |
-| frame-standup priorities | `adapters/standup.ts` | 2 | Read artifacts (`~/.claude/standup-telemetry.jsonl`), don't invoke the LLM skill. |
+| GitHub PRs + issues | `adapters/github.ts` | 1 | **NOT BUILT** (planned, Slice 1). The file does not exist and `aggregate.ts` wires only dolt + handoff. Plan: copy collectors from daily-logger `collect-context.ts` (gh CLI). |
+| frame-standup priorities | `adapters/standup.ts` | 2 | **NOT BUILT** (planned, Slice 2). The file does not exist. Plan: read artifacts (`~/.claude/standup-telemetry.jsonl`), don't invoke the LLM skill. |
 
 ## Honest gaps (do not paper over)
 
@@ -67,7 +67,10 @@ TCP socket (`mysql2`) and (later) GitHub needs to shell out to `gh`. Adapters fa
   The Available lane is *synthesized* from open issues + open briefs. The real write-path is
   designed in `decisions/adr/0002-*` (Track R). Until then, show truthful empty states.
 - `agent_status` is not liveness — agent liveness is **derived** from `agent-*` `bead_events`
-  recency (live/idle/dark, `deriveAgentLiveness`; S1 writer + S2 derivation, ADR-0008). Live
-  agents surface in Overnight; idle/dark are tallied in the dolt health note. Treat timestamps
-  as truth. (The Critical Path seeded chains still name "bead_events the empty log" — stale since
-  S1; flagged for a Critical Path refresh.)
+  recency (live/stalled/idle/zombie/dark, `deriveAgentLiveness`; S1 writer + S2 derivation,
+  ADR-0008; stalled/zombie problems-view states added 2026-07-04). Live agents surface in
+  Overnight; the other states are tallied in the dolt health note. Treat timestamps as truth.
+  (The stale "bead_events — the empty log" seeded chain was removed from the Critical Path on
+  2026-07-04; the remaining hand-authored chains carry an "editorial" badge in the UI. Several
+  seeded next-moves — queue-post, queue-claim, the liveness binding — have also since shipped
+  (S2/S3/S4) and await the same refresh.)

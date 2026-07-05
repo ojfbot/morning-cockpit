@@ -64,6 +64,12 @@ export function CriticalPathSection({ setUi }: { setUi: (fn: (s: CockpitUiState)
               <div className="crit-headline">
                 <span className={`crit-sev crit-sev--${c.severity}`}>{c.severity}</span>
                 <span className="crit-title">{c.title}</span>
+                {/* Hand-authored (seeded) chains are labelled so they are never mistaken for derived data. */}
+                {snap.seeded && (
+                  <span className="crit-editorial" title="Hand-authored (seeded) — not derived from live repo deps">
+                    editorial
+                  </span>
+                )}
                 {c.waitsOn && <span className="crit-waits">{c.waitsOn}</span>}
               </div>
               <div className="crit-blocks">

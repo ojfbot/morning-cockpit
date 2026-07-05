@@ -43,14 +43,17 @@ export const DELIVERY_MILESTONES: DeliveryMilestone[] = [
   { marker: 'LATER', title: 'Autonomous fleet', status: 'gated', state: 'later' },
 ];
 
-/** Prioritized work from coordination-design.md §6 (effort S/M/L). */
+/**
+ * Prioritized work from coordination-design.md §6 (effort S/M/L). "Stand up the bead_events
+ * writer" was removed 2026-07-04 — it shipped as S1 (this repo's dolt adapter consumes the
+ * flowing event stream); a resolved move is deleted, not kept for padding.
+ */
 export const NEXT_MOVES: NextMove[] = [
-  { index: 1, title: 'Stand up the bead_events writer', unblocks: 'agent liveness · "did it run overnight"', effort: 'S', repo: 'core' },
-  { index: 2, title: 'queue-post + reserved-label doc', unblocks: 'the unassigned / Wanted lane', effort: 'S', repo: 'core' },
-  { index: 3, title: 'queue-claim — atomic compare-and-swap', unblocks: "the cockpit's first Claim → dispatch", effort: 'S', repo: 'core' },
-  { index: 4, title: 'Liveness derivation query + cockpit binding', unblocks: 'replaces the lying agent_status flag', effort: 'M', repo: 'morning-cockpit' },
-  { index: 5, title: 'seed-create verb', unblocks: 'capture pre-project chat ideas', effort: 'S', repo: 'core' },
-  { index: 6, title: 'gastown reads the queue + liveness', unblocks: 'un-stubs WantedBoard + AgentTree', effort: 'M', repo: 'gastown-pilot' },
+  { index: 1, title: 'queue-post + reserved-label doc', unblocks: 'the unassigned / Wanted lane', effort: 'S', repo: 'core' },
+  { index: 2, title: 'queue-claim — atomic compare-and-swap', unblocks: "the cockpit's first Claim → dispatch", effort: 'S', repo: 'core' },
+  { index: 3, title: 'Liveness derivation query + cockpit binding', unblocks: 'replaces the lying agent_status flag', effort: 'M', repo: 'morning-cockpit' },
+  { index: 4, title: 'seed-create verb', unblocks: 'capture pre-project chat ideas', effort: 'S', repo: 'core' },
+  { index: 5, title: 'gastown reads the queue + liveness', unblocks: 'un-stubs WantedBoard + AgentTree', effort: 'M', repo: 'gastown-pilot' },
 ];
 
 /**
@@ -59,19 +62,11 @@ export const NEXT_MOVES: NextMove[] = [
  * is a best-effort jump target into the Briefing (which may be on generated threads).
  */
 export const CRITICAL_INTRO =
-  'Four blockers stand between you and the coordination layer. Clearing the top one — {an empty event log} — frees six downstream beads at once.';
+  'Three blockers stand between you and the coordination layer. The chokepoint is {the core keep/discard metric} — three downstream beads wait on it.';
 
+// The "bead_events writer" chain was removed 2026-07-04: it resolved when S1 shipped (the event
+// log flows; this repo's dolt adapter reads it). Fewer honest entries beat padded stale ones.
 export const CRITICAL_CHAINS: CriticalChain[] = [
-  {
-    id: 'bead-events',
-    severity: 'critical',
-    title: 'bead_events writer — the empty log',
-    relation: 'BLOCKS',
-    blocks: ['agent liveness', 'overnight panel', 'Wanted queue', 'gastown AgentTree'],
-    impact: '6 / beads · 3 repos',
-    briefId: 'events',
-    cta: 'Brief ↑',
-  },
   {
     id: 'metric',
     severity: 'high',
@@ -89,7 +84,7 @@ export const CRITICAL_CHAINS: CriticalChain[] = [
     relation: 'BLOCKS',
     blocks: ['Available real source', 'Claim → dispatch', 'gastown WantedBoard'],
     impact: '3 / beads · 2 repos',
-    waitsOn: 'waits on bead_events',
+    // waitsOn 'bead_events' dropped 2026-07-04 — that dependency resolved when S1 shipped.
     briefId: 'events',
     cta: 'Brief ↑',
   },
