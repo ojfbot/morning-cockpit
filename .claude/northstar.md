@@ -11,7 +11,7 @@ properties:
   - id: P1
     name: "The cockpit is the morning's single legible pane"
     target: "One glance answers: what ran overnight, what I should pick up, what's available — every lane sourced from ground truth (Dolt events, real handoff/queue state), never synthesized filler."
-    current: 60
+    current: 66
     verification: "Overnight/Daily-pickup/Available lanes render from real bead_events + queue; no lane is a mock; staleness flagged honestly."
     ladders_up_to: "ns:l2-ojfbot#P2"
     okr_drivers: []

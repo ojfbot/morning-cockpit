@@ -82,7 +82,7 @@ slices:
     autonomy: gate-0
     claimable_by: either
     kind: m
-    status: dispatched
+    status: merged
   - id: S6
     phase: PH3
     title: "Track L launch surface — L1 tile links"
