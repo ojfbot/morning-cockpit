@@ -9,6 +9,8 @@ projects into a vertical stack of visually-distinct **context blocks**:
 - **Reading** — curated RSS/Atom feeds with a local-model "what's worth your attention" digest.
 - **Research** — trending Hugging Face Daily Papers, each with a leveled AI explainer that relates
   the paper to concepts you already command (plus an opt-in full-PDF Claude deep-dive).
+- **Delivery** — a read-only projection of northstar gaps, slice pipeline status, and recent
+  movement across repos.
 
 Deliberately **outside the Frame OS ecosystem** (not a Module Federation remote, not Carbon) —
 it borrows GroupThink's design tokens and stays read-only on its sources. See `CLAUDE.md` and
