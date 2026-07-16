@@ -65,6 +65,7 @@ TCP socket (`mysql2`) and (later) GitHub needs to shell out to `gh`. Adapters fa
 | Per-repo `.handoff/*.md` briefs | `adapters/handoff.ts` | 0 ✅ | Open-hook logic ported from core's `orient.py`. Only ~3 repos have `.handoff/` today. |
 | GitHub PRs + issues | `adapters/github.ts` | 1 | **NOT BUILT** (planned, Slice 1). The file does not exist and `aggregate.ts` wires only dolt + handoff. Plan: copy collectors from daily-logger `collect-context.ts` (gh CLI). |
 | frame-standup priorities | `adapters/standup.ts` | 2 | **NOT BUILT** (planned, Slice 2). The file does not exist. Plan: read artifacts (`~/.claude/standup-telemetry.jsonl`), don't invoke the LLM skill. |
+| Self-improvement telemetry (OPAV skill dispositions + odometer + audit freshness) | `adapters/loop.ts` | ✅ 2026-07-16 | Loop pane (07), own endpoint `/api/loop`. Reads `~/selfco/tracking/skill-dispositions.jsonl` (core's shadow-mode hooks, ADR-0095), re-reads `status.jsonl` independently of the delivery adapter, mtime-probes `~/.claude/skill-architecture-audit.jsonl`. Renders the funnel's zeros explicitly — the pane observes the loop, closing it happens in core. |
 
 ## Honest gaps (do not paper over)
 

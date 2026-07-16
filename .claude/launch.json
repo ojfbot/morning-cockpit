@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "cockpit-server",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["dev:server"],
+      "port": 3040
+    },
+    {
+      "name": "cockpit-renderer",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["dev:renderer"],
+      "port": 5180
+    }
+  ]
+}

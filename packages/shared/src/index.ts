@@ -110,6 +110,23 @@ export type {
 } from './delivery.js';
 export { parseFrontmatter, deriveSliceState, parseMovementLines } from './delivery.js';
 
+export type {
+  DispositionEvent,
+  DispositionCounts,
+  CaptureHealth,
+  SkillRow,
+  OdometerFreshness,
+  LoopHealth,
+  LoopSnapshot,
+} from './loop.js';
+export {
+  parseDispositionLines,
+  buildCaptureHealth,
+  countDispositions,
+  buildSkillBreakdown,
+  buildOdometerFreshness,
+} from './loop.js';
+
 export type { LaneContext, LaneInput } from './lanes.js';
 export {
   overnightWindowStart,

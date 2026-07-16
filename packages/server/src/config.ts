@@ -72,6 +72,22 @@ export const config = {
   },
 
   /**
+   * Loop pane — the self-improvement telemetry loop, read-only. Capture health + the
+   * disposition funnel come from core's shadow-mode OPAV hooks (ADR-0095) writing into
+   * the selfco tracking dir; odometer freshness re-reads status.jsonl (delivery.coreRoot);
+   * audit freshness is an mtime probe of the weekly skill-architecture-audit output.
+   */
+  loop: {
+    trackingRoot: process.env.COCKPIT_TRACKING_ROOT ?? path.join(os.homedir(), 'selfco', 'tracking'),
+    auditFile:
+      process.env.COCKPIT_AUDIT_FILE ?? path.join(os.homedir(), '.claude', 'skill-architecture-audit.jsonl'),
+    /** Days without a new disposition event before capture is flagged stale. */
+    staleDays: Number(process.env.COCKPIT_LOOP_STALE_DAYS ?? 3),
+    topSkills: Number(process.env.COCKPIT_LOOP_TOP_SKILLS ?? 8),
+    ttlMs: Number(process.env.COCKPIT_LOOP_TTL_MS ?? 30_000),
+  },
+
+  /**
    * Lane-summary synthesis. Local-first: default provider is self-hosted Ollama, so the
    * read-model stays offline by default (ADR-0003). Claude is explicit opt-in; there is NO
    * automatic cloud cascade — a local failure falls back to the deterministic summary.

@@ -12,6 +12,7 @@ import { chatRouter } from './routes/chat.js';
 import { briefingRouter } from './routes/briefing.js';
 import { fleetRouter } from './routes/fleet.js';
 import { deliveryRouter } from './routes/delivery.js';
+import { loopRouter } from './routes/loop.js';
 import { claimRouter } from './routes/claim.js';
 
 // Read-model GraphQL facade (ADR-0011/0013) — query-only, beside REST. Yoga does its own body
@@ -34,6 +35,7 @@ app.use(chatRouter);
 app.use(briefingRouter);
 app.use(fleetRouter);
 app.use(deliveryRouter);
+app.use(loopRouter);
 app.use(claimRouter);
 
 // Read-only cockpit snapshot: three lanes + per-adapter health.
