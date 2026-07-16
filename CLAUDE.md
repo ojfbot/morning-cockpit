@@ -30,6 +30,11 @@ standalone posture:
 
 ## Commands
 
+**Node ≥ 20.19 required** (`.nvmrc` pins fleet-standard 24.11.1; `fnm use`/`nvm use` selects it).
+The renderer's jsdom-29 test env transitively `require()`s an ESM-only module, which only works on
+runtimes with `require(ESM)` support — Node 20.19+/22.12+. On Node ≤ 20.18 `pnpm --filter
+@cockpit/renderer test` dies at env setup with `ERR_REQUIRE_ESM` (the tests themselves are fine).
+
 ```bash
 pnpm install
 pnpm build            # build all packages
