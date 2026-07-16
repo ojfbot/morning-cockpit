@@ -13,6 +13,7 @@ import type {
   CrossLinkSuggestion,
   HandoffDraft,
   LaneSummary,
+  LoopSnapshot,
   PaperExplainer,
   PapersSnapshot,
   ReadingSnapshot,
@@ -236,6 +237,12 @@ export async function fetchDelivery(signal?: AbortSignal): Promise<DeliverySnaps
   const res = await fetch('/api/delivery', { signal });
   if (!res.ok) throw new Error(`delivery ${res.status}`);
   return (await res.json()) as DeliverySnapshot;
+}
+
+export async function fetchLoop(signal?: AbortSignal): Promise<LoopSnapshot> {
+  const res = await fetch('/api/loop', { signal });
+  if (!res.ok) throw new Error(`loop ${res.status}`);
+  return (await res.json()) as LoopSnapshot;
 }
 
 export async function fetchCriticalPath(signal?: AbortSignal): Promise<CriticalPathSnapshot> {

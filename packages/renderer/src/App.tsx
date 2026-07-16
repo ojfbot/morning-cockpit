@@ -11,6 +11,7 @@ import { Briefing } from './components/briefing/Briefing.js';
 import { FleetSection } from './components/FleetSection.js';
 import { CriticalPathSection } from './components/CriticalPathSection.js';
 import { DeliverySection } from './components/DeliverySection.js';
+import { LoopSection } from './components/LoopSection.js';
 import { ChatSidebar } from './components/chat/ChatSidebar.js';
 import { applyRootAttributes, loadState, saveState, type CockpitUiState } from './cockpitState.js';
 
@@ -94,6 +95,7 @@ export function App() {
           </Section>
           <ReadingSection />
           <PapersSection />
+          <LoopSection />
           {/* Add more cockpit sections here as <Section title="…">…</Section> */}
         </main>
         <ChatSidebar />

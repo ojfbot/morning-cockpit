@@ -713,6 +713,60 @@ body {
 .movement-evidence { flex: 1; min-width: 0; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .movement-actor { flex: none; color: var(--ink-3); }
 
+/* ── 07 · Loop (self-improvement telemetry — capture · funnel · odometer) ── */
+.loop-capture, .loop-funnel, .loop-skills, .loop-odometer { margin-bottom: var(--gt-space-6, 32px); }
+.loop-capture-row {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--gt-space-5, 24px);
+  padding: var(--gt-space-3) 0;
+  border-bottom: 1px solid var(--rule);
+}
+.loop-stat { font-family: var(--mono); font-size: 11px; color: var(--ink-2); }
+.loop-stat-num { font-size: 15px; font-weight: 700; color: var(--ink); }
+.loop-stale-badge {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--amber);
+  border: 1px solid var(--amber);
+  padding: 1px 6px;
+}
+.loop-funnel-row {
+  display: flex;
+  align-items: center;
+  gap: var(--gt-space-4);
+  padding: var(--gt-space-2) 0;
+  border-bottom: 1px solid var(--rule);
+}
+.loop-funnel-label { flex: none; width: 120px; font-size: 13px; font-weight: 700; color: var(--ink); }
+.loop-funnel-bar {
+  flex: 1;
+  min-width: 0;
+  height: 8px;
+  background: var(--paper-2);
+  border: 1px solid var(--rule-strong);
+}
+.loop-funnel-fill { display: block; height: 100%; background: var(--red); }
+/* A zero row keeps its (empty) bar — the zero is the finding, never hidden. */
+.loop-funnel-fill--zero { background: transparent; }
+.loop-funnel-count { flex: none; width: 42px; text-align: right; font-family: var(--mono); font-size: 12px; font-weight: 700; color: var(--ink); }
+.loop-funnel-window { flex: none; width: 64px; text-align: right; font-family: var(--mono); font-size: 10px; color: var(--ink-3); }
+.loop-skill-row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--gt-space-4);
+  padding: var(--gt-space-2) 0;
+  border-bottom: 1px solid var(--rule);
+  font-family: var(--mono);
+  font-size: 11px;
+}
+.loop-skill-name { flex: 1; min-width: 0; color: var(--ink); font-weight: 500; }
+.loop-skill-num { flex: none; width: 42px; text-align: right; color: var(--ink-2); }
+.loop-skill-rate { flex: none; width: 42px; text-align: right; color: var(--ink-3); }
+
 /* ── Lanes ── */
 .lanes {
   display: grid;
