@@ -110,6 +110,20 @@ slices:
     kind: l
     status: queued
     depends_on: "rm:rm-l1-morning-cockpit#S6"
+  - id: S8
+    phase: PH2
+    title: "Decision->delivery seam: derive decided-in-flight from closes: refs (read-side)"
+    advances: "ns:l1-morning-cockpit#P2"
+    moves_from: 50
+    moves_to: 56
+    deliverable: "PR: handoff adapter builds a closes:-ref index over open beads; a live bead referenced by an open successor derives decided-in-flight (pure logic + tests in packages/shared); such beads leave the Briefing decision pool immediately and render chained with their successor as ONE Pickup item; behavior reverts when the successor closes at delivery. Regression fixture: the real 20260628-2015 / 20260717-1717 bead pair."
+    entrance: "Operator-verified defect 2026-07-17: after Approve & emit, Pickup counted both beads (16->17), the Briefing re-seeded the identical DECISION NEEDED thread, and the item rendered 8x — closes: is write-only, nothing on the read side consumes it. Design settled: derivation, never bead mutation (ADR-0005 single write path)."
+    success: "With the real pair on disk: the decided item leaves DECISION NEEDED, Pickup shows one chained item (count drops by 1), dangling closes: refs and closed successors are covered by tests; full suite green."
+    check: "pnpm test"
+    autonomy: gate-0
+    claimable_by: agent_eligible
+    kind: m
+    status: ready
 ---
 
 # Roadmap — morning-cockpit (l1-morning-cockpit)
