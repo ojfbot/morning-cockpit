@@ -69,6 +69,12 @@ TCP socket (`mysql2`) and (later) GitHub needs to shell out to `gh`. Adapters fa
 
 ## Honest gaps (do not paper over)
 
+- **The decision→delivery seam is open (rm:rm-l1-morning-cockpit#S8, registered 2026-07-17):**
+  Approve & emit records `closes:<old-id>` on the successor brief, but nothing on the read side
+  consumes it — deciding *increases* the Pickup count and the Briefing re-asks the decided
+  question until delivery closes the old bead. Fix is read-side derivation (`decided-in-flight`),
+  never bead mutation. Until S8 lands, read Pickup as "open + decided-but-unstarted, with
+  decided pairs double-counted."
 - There is **no real unassigned-task pool** yet — tasks are born already-assigned in a convoy.
   The Available lane is *synthesized* from open issues + open briefs. The real write-path is
   designed in `decisions/adr/0002-*` (Track R). Until then, show truthful empty states.
