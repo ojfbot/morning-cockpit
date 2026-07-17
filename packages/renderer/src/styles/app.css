@@ -896,6 +896,45 @@ body {
   color: var(--ink-3);
 }
 
+/* Decided-in-flight chain (S8): the folded predecessor riding under its successor. */
+.card-chain {
+  margin-top: var(--gt-space-2);
+  padding-top: var(--gt-space-2);
+  border-top: 1px dashed var(--rule);
+  display: flex;
+  align-items: baseline;
+  gap: var(--gt-space-2);
+  min-width: 0;
+}
+.card-chain-marker {
+  font-family: var(--mono);
+  font-size: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--green);
+  white-space: nowrap;
+}
+.card-chain-preds {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.card-chain-pred {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-3);
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+a.card-chain-pred:hover {
+  text-decoration: underline;
+  text-decoration-color: var(--red);
+}
+
 /* Claim affordance (S4): button on unclaimed posted queue items; badge on claimed ones. */
 .card-claim {
   margin-top: var(--gt-space-3);

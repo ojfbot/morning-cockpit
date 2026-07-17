@@ -3,6 +3,8 @@
  * frame-standup) normalizes into this shape so the renderer is source-agnostic.
  */
 
+import type { ChainedPredecessor } from './decided.js';
+
 export type WorkItemSource = 'dolt-bead' | 'handoff-bead' | 'github' | 'standup';
 
 export type WorkItemLane = 'overnight' | 'pickup' | 'available';
@@ -73,6 +75,14 @@ export interface WorkItem {
   claimedBy?: string;
   claimedByKind?: 'human' | 'agent';
   leaseUntil?: string;
+
+  /**
+   * Derived read-side (S8): decided-in-flight predecessors folded under this item because this
+   * bead's open `closes:` ref points at them (transitively — nearest link first). Never stored:
+   * the predecessor beads are not mutated, and they reappear as normal items when this
+   * successor closes at delivery.
+   */
+  chain?: ChainedPredecessor[];
 
   /** Deep link: GitHub URL, file:// path to a .handoff md, or in-app anchor. */
   url?: string;

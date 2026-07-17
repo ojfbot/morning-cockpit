@@ -3,7 +3,10 @@ import path from 'node:path';
 import { parse as parseYaml } from 'yaml';
 import {
   classifyLane,
+  deriveDecidedInFlight,
+  foldedChainFor,
   type AdapterHealth,
+  type ChainedPredecessor,
   type LaneContext,
   type LaneInput,
   type WorkItem,
@@ -30,8 +33,20 @@ interface ParsedBead {
   status?: string;
   created_at?: string;
   responding_to?: string;
+  refs?: string[];
   filePath: string;
   mtimeIso: string;
+}
+
+/** A parsed bead plus its per-repo derived facts, collected across all scanned dirs. */
+interface ScannedBead {
+  bead: ParsedBead;
+  repo: string;
+  kind: WorkItemKind;
+  status: WorkItemStatus;
+  openHook: boolean;
+  createdIso: string;
+  activityAt: string;
 }
 
 function toIso(v: unknown, fallback: string): string {
@@ -67,6 +82,7 @@ export async function fetchHandoff(ctx: LaneContext): Promise<{ items: WorkItem[
   let skipped = 0;
   let repoCount = 0;
   const items: WorkItem[] = [];
+  const scanned: ScannedBead[] = [];
 
   try {
     const dirs = await listHandoffDirs(config.handoff.repoRoot);
@@ -98,6 +114,7 @@ export async function fetchHandoff(ctx: LaneContext): Promise<{ items: WorkItem[
             continue;
           }
           const mtimeIso = (await stat(full)).mtime.toISOString();
+          const rawRefs = fm['refs'];
           beads.push({
             id: fm['id'] as string | undefined,
             type: fm['type'] as string | undefined,
@@ -107,6 +124,7 @@ export async function fetchHandoff(ctx: LaneContext): Promise<{ items: WorkItem[
             status: fm['status'] as string | undefined,
             created_at: fm['created_at'] as string | undefined,
             responding_to: fm['responding_to'] as string | undefined,
+            refs: Array.isArray(rawRefs) ? rawRefs.filter((r): r is string => typeof r === 'string') : undefined,
             filePath: full,
             mtimeIso,
           });
@@ -134,39 +152,92 @@ export async function fetchHandoff(ctx: LaneContext): Promise<{ items: WorkItem[
           status = 'done';
         }
 
-        const input: LaneInput = {
-          source: 'handoff-bead',
-          kind,
-          status,
-          activityAt,
-          openHook,
-        };
-        const lane = classifyLane(input, ctx);
-        if (!lane) continue;
-
-        items.push({
-          id: `handoff-bead:${b.id ?? b.filePath}`,
-          nativeId: b.id ?? path.basename(b.filePath),
-          source: 'handoff-bead',
-          kind,
-          status,
-          lane,
-          title: b.title ?? path.basename(b.filePath),
-          repo,
-          actor: b.actor,
-          createdAt: createdIso,
-          updatedAt: b.mtimeIso,
-          activityAt,
-          url: `file://${b.filePath}`,
-          detail: { kind: 'brief', to: b.to, openHook },
-          provenance: { sourcePath: b.filePath },
-        });
+        scanned.push({ bead: b, repo, kind, status, openHook, createdIso, activityAt });
       }
+    }
+
+    // S8 decision→delivery seam: index the `closes:` refs carried by open beads across every
+    // scanned repo (emission may target a different repo than the bead it closes). A live bead
+    // an open successor closes derives decided-in-flight: folded under the successor below,
+    // never mutated on disk.
+    const decided = deriveDecidedInFlight(
+      scanned.map((s) => ({
+        id: s.bead.id,
+        status: s.bead.status,
+        open: s.openHook,
+        refs: s.bead.refs,
+        createdAt: s.createdIso,
+      })),
+    );
+    const byId = new Map<string, ScannedBead>();
+    for (const s of scanned) {
+      if (s.bead.id) byId.set(s.bead.id, s);
+    }
+    let folded = 0;
+
+    for (const s of scanned) {
+      const { bead: b, kind, status, openHook } = s;
+
+      // A decided-in-flight predecessor is not a standalone item — it rides on its successor.
+      if (b.id && decided.has(b.id)) {
+        folded++;
+        continue;
+      }
+
+      const input: LaneInput = {
+        source: 'handoff-bead',
+        kind,
+        status,
+        activityAt: s.activityAt,
+        openHook,
+      };
+      const lane = classifyLane(input, ctx);
+      if (!lane) continue;
+
+      // If this bead is a winning successor, carry its folded predecessors (transitive: a folded
+      // bead may itself have folded a bead) as the chain, nearest link first.
+      let chain: ChainedPredecessor[] | undefined;
+      if (b.id) {
+        const foldedIds = foldedChainFor(b.id, decided);
+        if (foldedIds.length > 0) {
+          chain = foldedIds.flatMap((id) => {
+            const pred = byId.get(id);
+            if (!pred) return [];
+            return [{
+              nativeId: id,
+              title: pred.bead.title ?? path.basename(pred.bead.filePath),
+              url: `file://${pred.bead.filePath}`,
+              createdAt: pred.createdIso,
+              state: 'decided-in-flight' as const,
+            }];
+          });
+          if (chain.length === 0) chain = undefined;
+        }
+      }
+
+      items.push({
+        id: `handoff-bead:${b.id ?? b.filePath}`,
+        nativeId: b.id ?? path.basename(b.filePath),
+        source: 'handoff-bead',
+        kind,
+        status,
+        lane,
+        title: b.title ?? path.basename(b.filePath),
+        repo: s.repo,
+        actor: b.actor,
+        createdAt: s.createdIso,
+        updatedAt: b.mtimeIso,
+        activityAt: s.activityAt,
+        ...(chain ? { chain } : {}),
+        url: `file://${b.filePath}`,
+        detail: { kind: 'brief', to: b.to, openHook },
+        provenance: { sourcePath: b.filePath, ...(b.refs?.length ? { refs: b.refs } : {}) },
+      });
     }
 
     health.status = 'up';
     health.itemCount = items.length;
-    health.note = `${repoCount} repos with .handoff${skipped ? ` · ${skipped} files skipped` : ''}`;
+    health.note = `${repoCount} repos with .handoff${skipped ? ` · ${skipped} files skipped` : ''}${folded ? ` · ${folded} decided-in-flight folded` : ''}`;
     return { items, health };
   } catch (err) {
     health.status = 'down';
