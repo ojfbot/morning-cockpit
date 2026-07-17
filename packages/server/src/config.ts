@@ -81,6 +81,19 @@ export const config = {
     trackingRoot: process.env.COCKPIT_TRACKING_ROOT ?? path.join(os.homedir(), 'selfco', 'tracking'),
     auditFile:
       process.env.COCKPIT_AUDIT_FILE ?? path.join(os.homedir(), '.claude', 'skill-architecture-audit.jsonl'),
+    /**
+     * The S6 capture-quality artifact (core rm:rm-l1-core#S6). While this file is
+     * absent, the pane suppresses ALL rates (ADR-0095: never publish a rate before
+     * the gold-set verification is green) and shows counts only.
+     */
+    captureQualityFile:
+      process.env.COCKPIT_CAPTURE_QUALITY_FILE ??
+      path.join(
+        process.env.COCKPIT_CORE_ROOT ?? path.join(os.homedir(), 'ojfbot', 'core'),
+        'decisions',
+        'opav',
+        'capture-quality-report.json',
+      ),
     /** Days without a new disposition event before capture is flagged stale. */
     staleDays: Number(process.env.COCKPIT_LOOP_STALE_DAYS ?? 3),
     topSkills: Number(process.env.COCKPIT_LOOP_TOP_SKILLS ?? 8),

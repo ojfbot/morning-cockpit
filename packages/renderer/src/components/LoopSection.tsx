@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { DispositionCounts, LoopSnapshot } from '@cockpit/shared';
+import type { DispositionCounts, LoopSnapshot, PopulationFunnel } from '@cockpit/shared';
 import { fetchLoop } from '../api.js';
 import { Section } from './Section.js';
 
@@ -56,7 +56,9 @@ export function LoopSection() {
       ) : (
         <>
           <CaptureBlock snap={snap} />
-          <FunnelBlock allTime={snap.funnel.allTime} last14d={snap.funnel.last14d} />
+          {snap.populations.map((p) => (
+            <PopulationFunnelBlock key={p.population} funnel={p} />
+          ))}
           <SkillBlock snap={snap} />
         </>
       )}
@@ -102,17 +104,40 @@ const FUNNEL_ROWS: Array<{ key: keyof DispositionCounts; label: string }> = [
   { key: 'ignored', label: 'ignored' },
   { key: 'engaged_no_act', label: 'engaged, no act' },
   { key: 'followed', label: 'followed' },
+  { key: 'capture_miss', label: 'capture miss' },
   { key: 'acted', label: 'acted' },
 ];
 
-/** The funnel — all-time and last-14d counts per disposition. Zero rows always render. */
-function FunnelBlock({ allTime, last14d }: { allTime: DispositionCounts; last14d: DispositionCounts }) {
+const POPULATION_META: Record<PopulationFunnel['population'], { label: string; src: string }> = {
+  installed: { label: 'Funnel · installed', src: 'installed-skill suggestions · post-fix era' },
+  uninstalled: { label: 'Funnel · uninstalled', src: 'uninstalled-skill suggestions · post-fix era' },
+  legacy: {
+    label: 'Funnel · legacy',
+    src: 'pre-fix rows (blind predicate) — archived to .bak at the 2026-07-17 rebuild, never blended',
+  },
+};
+
+/** One population's funnel — all-time and last-14d counts. Zero rows always render. */
+function PopulationFunnelBlock({ funnel }: { funnel: PopulationFunnel }) {
+  const { allTime, last14d } = funnel;
+  const meta = POPULATION_META[funnel.population];
+  if (allTime.total === 0 && funnel.population !== 'legacy') {
+    return (
+      <div className="loop-funnel">
+        <div className="delivery-block-head">
+          <span className="delivery-block-label">{meta.label}</span>
+          <span className="delivery-block-src">{meta.src}</span>
+        </div>
+        <p className="delivery-empty">No {funnel.population}-population rows yet — they accumulate as sessions stop.</p>
+      </div>
+    );
+  }
   const max = Math.max(1, ...FUNNEL_ROWS.map((r) => allTime[r.key]));
   return (
     <div className="loop-funnel">
       <div className="delivery-block-head">
-        <span className="delivery-block-label">Funnel</span>
-        <span className="delivery-block-src">all-time · last 14d</span>
+        <span className="delivery-block-label">{meta.label}</span>
+        <span className="delivery-block-src">{meta.src}</span>
       </div>
       {FUNNEL_ROWS.map((row) => (
         <div className="loop-funnel-row" key={row.key}>
@@ -134,21 +159,39 @@ function FunnelBlock({ allTime, last14d }: { allTime: DispositionCounts; last14d
   );
 }
 
-/** Top skills by suggestion volume with their (honest) follow rates. */
+/**
+ * Top skills by suggestion volume. Rates render ONLY when the S6 capture-quality
+ * artifact exists (snap.rateVerified) — until then, raw followed counts with an
+ * unverified badge (ADR-0095: never publish a rate before the gold set is green).
+ */
 function SkillBlock({ snap }: { snap: LoopSnapshot }) {
   if (snap.skills.length === 0) return null;
   return (
     <div className="loop-skills">
       <div className="delivery-block-head">
-        <span className="delivery-block-label">Top suggested skills</span>
-        <span className="delivery-block-src">suggestions · engaged · follow rate</span>
+        <span className="delivery-block-label">
+          Top suggested skills
+          {!snap.rateVerified && (
+            <span
+              className="loop-stale-badge loop-unverified-badge"
+              title="No capture-quality artifact yet (rm:rm-l1-core#S6) — counts shown, rates suppressed per the ADR-0095 honesty contract."
+            >
+              rates unverified
+            </span>
+          )}
+        </span>
+        <span className="delivery-block-src">
+          {snap.rateVerified ? 'suggestions · engaged · follow rate' : 'suggestions · engaged · followed (count)'}
+        </span>
       </div>
       {snap.skills.map((s) => (
         <div className="loop-skill-row" key={s.skill}>
           <span className="loop-skill-name">{s.skill}</span>
           <span className="loop-skill-num">{s.total}</span>
           <span className="loop-skill-num">{s.engaged}</span>
-          <span className="loop-skill-rate">{Math.round(s.followRate * 100)}%</span>
+          <span className="loop-skill-rate">
+            {snap.rateVerified ? `${Math.round(s.followRate * 100)}%` : s.followed}
+          </span>
         </div>
       ))}
     </div>

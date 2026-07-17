@@ -763,6 +763,7 @@ body {
   font-family: var(--mono);
   font-size: 11px;
 }
+.loop-unverified-badge { margin-left: var(--gt-space-3); }
 .loop-skill-name { flex: 1; min-width: 0; color: var(--ink); font-weight: 500; }
 .loop-skill-num { flex: none; width: 42px; text-align: right; color: var(--ink-2); }
 .loop-skill-rate { flex: none; width: 42px; text-align: right; color: var(--ink-3); }

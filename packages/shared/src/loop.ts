@@ -28,6 +28,22 @@ export interface DispositionEvent {
   sessionId?: string;
   suggestedAt?: string;
   mode?: string;
+  /**
+   * Era/population tag (core rm:rm-l1-core#S3): 'installed' | 'uninstalled'.
+   * Absent on legacy rows written before the 2026-07-17 pipeline fixes — those
+   * rows were scored by a predicate blind to Skill-tool follows and must never
+   * be blended with post-fix rows.
+   */
+  population?: string;
+}
+
+/** Display population: the two scored denominators plus the pre-fix legacy era. */
+export type LoopPopulation = 'installed' | 'uninstalled' | 'legacy';
+
+export interface PopulationFunnel {
+  population: LoopPopulation;
+  allTime: DispositionCounts;
+  last14d: DispositionCounts;
 }
 
 /** Funnel counts. `acted` comes from the boolean flag, not the disposition string. */
@@ -35,6 +51,8 @@ export interface DispositionCounts {
   ignored: number;
   engaged_no_act: number;
   followed: number;
+  /** Work done in-session but never self-reported — the real capture failure (ADR-0095). */
+  capture_miss: number;
   acted: number;
   other: number;
   total: number;
@@ -76,6 +94,14 @@ export interface LoopSnapshot {
   generatedAt: string;
   capture: CaptureHealth;
   funnel: { allTime: DispositionCounts; last14d: DispositionCounts };
+  /** Per-population funnels (rm:rm-l1-core#S7): installed / uninstalled / legacy, eras never blended. */
+  populations: PopulationFunnel[];
+  /**
+   * True only when the S6 capture-quality artifact exists on disk (ADR-0095: no rate
+   * is publishable before the gold-set verification is green). While false, consumers
+   * must show counts, never rates.
+   */
+  rateVerified: boolean;
   skills: SkillRow[];
   odometer: OdometerFreshness;
   audit: { mtime?: string; daysSince?: number };
@@ -113,6 +139,7 @@ export function parseDispositionLines(text: string): { events: DispositionEvent[
         sessionId: typeof row.session_id === 'string' ? row.session_id : undefined,
         suggestedAt: typeof row.suggested_at === 'string' ? row.suggested_at : undefined,
         mode: typeof row.mode === 'string' ? row.mode : undefined,
+        population: typeof row.population === 'string' ? row.population : undefined,
       });
     } catch {
       skipped++;
@@ -156,6 +183,7 @@ export function countDispositions(events: DispositionEvent[], since?: Date): Dis
     ignored: 0,
     engaged_no_act: 0,
     followed: 0,
+    capture_miss: 0,
     acted: 0,
     other: 0,
     total: 0,
@@ -170,10 +198,33 @@ export function countDispositions(events: DispositionEvent[], since?: Date): Dis
     if (e.disposition === 'ignored') counts.ignored++;
     else if (e.disposition === 'engaged_no_act') counts.engaged_no_act++;
     else if (e.disposition === 'followed') counts.followed++;
-    else counts.other++;
+    else if (e.disposition === 'capture_miss') counts.capture_miss++;
+    else if (e.disposition !== 'acted') counts.other++; // 'acted' string: the boolean below owns it
     if (e.acted) counts.acted++;
   }
   return counts;
+}
+
+/** Bucket an event into its display population; unknown tags fold into legacy. */
+export function populationOf(e: DispositionEvent): LoopPopulation {
+  return e.population === 'installed' || e.population === 'uninstalled' ? e.population : 'legacy';
+}
+
+/**
+ * Per-population funnels, eras never blended. All three populations are always
+ * returned (zeros explicit) in fixed order: installed, uninstalled, legacy.
+ */
+export function buildPopulationFunnels(events: DispositionEvent[], now: Date): PopulationFunnel[] {
+  const fourteenDaysAgo = new Date(now.getTime() - 14 * 86_400_000);
+  const order: LoopPopulation[] = ['installed', 'uninstalled', 'legacy'];
+  return order.map((population) => {
+    const subset = events.filter((e) => populationOf(e) === population);
+    return {
+      population,
+      allTime: countDispositions(subset),
+      last14d: countDispositions(subset, fourteenDaysAgo),
+    };
+  });
 }
 
 /** Top-N skills by suggestion volume (desc), skill-name asc on ties. */

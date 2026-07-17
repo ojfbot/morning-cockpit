@@ -5,6 +5,8 @@ import {
   countDispositions,
   buildSkillBreakdown,
   buildOdometerFreshness,
+  buildPopulationFunnels,
+  populationOf,
   type DispositionEvent,
 } from '../loop.js';
 import type { Movement } from '../delivery.js';
@@ -102,20 +104,24 @@ describe('countDispositions', () => {
       LINE({ ts: '2026-07-13T00:00:00Z' }),
       LINE({ ts: '2026-07-13T01:00:00Z', disposition: 'mystery' }),
       LINE({ ts: '2026-07-14T00:00:00Z', disposition: 'followed', engaged: true, acted: true }),
+      LINE({ ts: '2026-07-15T00:00:00Z', disposition: 'capture_miss', engaged: true, artifact_exists: true }),
+      LINE({ ts: '2026-07-15T01:00:00Z', disposition: 'acted', engaged: true, acted: true }),
     ].join('\n'),
   ).events;
 
   it('buckets by disposition string and counts acted from the boolean', () => {
     const all = countDispositions(events);
-    expect(all).toEqual({ ignored: 2, engaged_no_act: 1, followed: 1, acted: 1, other: 1, total: 5 });
+    // The 'acted'-string row is owned by the acted boolean — it must NOT leak into other.
+    expect(all).toEqual({ ignored: 2, engaged_no_act: 1, followed: 1, capture_miss: 1, acted: 2, other: 1, total: 7 });
   });
 
   it('windows on since — an event exactly at the boundary is included', () => {
     const since = new Date('2026-07-02T09:00:00Z'); // exactly the engaged_no_act event
     const windowed = countDispositions(events, since);
-    expect(windowed.total).toBe(4);
+    expect(windowed.total).toBe(6);
     expect(windowed.ignored).toBe(1);
     expect(windowed.engaged_no_act).toBe(1);
+    expect(windowed.capture_miss).toBe(1);
   });
 
   it('reports an explicit zero for followed on a real-shaped all-ignored feed', () => {
@@ -151,6 +157,48 @@ describe('buildSkillBreakdown', () => {
     expect(summarize).toMatchObject({ total: 4, followed: 0, engaged: 0, followRate: 0 });
     expect(tdd).toMatchObject({ total: 2, followed: 1, engaged: 2, followRate: 0.5 });
     expect(buildSkillBreakdown([], 8)).toEqual([]);
+  });
+});
+
+describe('populations (rm:rm-l1-core#S7) — eras never blended', () => {
+  const events = parseDispositionLines(
+    [
+      LINE({ ts: '2026-06-20T00:00:00Z' }), // legacy: no population field
+      LINE({ ts: '2026-07-17T00:00:00Z', population: 'installed', disposition: 'engaged_no_act', engaged: true }),
+      LINE({ ts: '2026-07-17T01:00:00Z', population: 'installed' }),
+      LINE({ ts: '2026-07-17T02:00:00Z', population: 'uninstalled' }),
+      LINE({ ts: '2026-07-17T03:00:00Z', population: 'weird-future-tag' }), // unknown → legacy
+    ].join('\n'),
+  ).events;
+
+  it('parses the population field and buckets unknown/absent tags as legacy', () => {
+    expect(populationOf(events[0]!)).toBe('legacy');
+    expect(populationOf(events[1]!)).toBe('installed');
+    expect(populationOf(events[3]!)).toBe('uninstalled');
+    expect(populationOf(events[4]!)).toBe('legacy');
+  });
+
+  it('always returns all three populations in fixed order with explicit zeros', () => {
+    const funnels = buildPopulationFunnels(events, NOW);
+    expect(funnels.map((f) => f.population)).toEqual(['installed', 'uninstalled', 'legacy']);
+    const [installed, uninstalled, legacy] = funnels;
+    expect(installed!.allTime).toMatchObject({ total: 2, engaged_no_act: 1, ignored: 1 });
+    expect(uninstalled!.allTime).toMatchObject({ total: 1, ignored: 1 });
+    expect(legacy!.allTime.total).toBe(2); // the no-field row + the unknown-tag row
+    expect(installed!.allTime.followed).toBe(0); // zero stays explicit
+  });
+
+  it('windows each population independently', () => {
+    const funnels = buildPopulationFunnels(events, NOW);
+    const legacy = funnels.find((f) => f.population === 'legacy')!;
+    expect(legacy.allTime.total).toBe(2);
+    expect(legacy.last14d.total).toBe(1); // only the Jul-17 unknown-tag row is inside 14d of NOW
+  });
+
+  it('returns zero-total funnels for an empty ledger (never omits a population)', () => {
+    const funnels = buildPopulationFunnels([], NOW);
+    expect(funnels).toHaveLength(3);
+    for (const f of funnels) expect(f.allTime.total).toBe(0);
   });
 });
 
