@@ -118,6 +118,8 @@ export type {
   OdometerFreshness,
   LoopHealth,
   LoopSnapshot,
+  LoopPopulation,
+  PopulationFunnel,
 } from './loop.js';
 export {
   parseDispositionLines,
@@ -125,6 +127,8 @@ export {
   countDispositions,
   buildSkillBreakdown,
   buildOdometerFreshness,
+  populationOf,
+  buildPopulationFunnels,
 } from './loop.js';
 
 export type { LaneContext, LaneInput } from './lanes.js';

@@ -3,6 +3,7 @@ import path from 'node:path';
 import {
   buildCaptureHealth,
   buildOdometerFreshness,
+  buildPopulationFunnels,
   buildSkillBreakdown,
   countDispositions,
   parseDispositionLines,
@@ -103,6 +104,10 @@ export function buildLoopSnapshot(now = new Date()): LoopSnapshot {
       allTime: countDispositions(events),
       last14d: countDispositions(events, fourteenDaysAgo),
     },
+    populations: buildPopulationFunnels(events, now),
+    // ADR-0095 honesty contract at the read-model: rates stay suppressed until the
+    // S6 capture-quality artifact exists on disk. Counts are always shown.
+    rateVerified: existsSync(config.loop.captureQualityFile),
     skills: buildSkillBreakdown(events, config.loop.topSkills),
     odometer: buildOdometerFreshness(movements, now),
     audit: { mtime: audit.mtime, daysSince: audit.daysSince },
