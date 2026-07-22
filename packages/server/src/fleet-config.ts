@@ -30,6 +30,10 @@ export const REPO_META: RepoMeta[] = [
   { name: 'frame-ui-components', role: 'UI library — shared Carbon DS', phase: 'P2' },
   { name: 'gcgcca', role: 'Type bridge — Pydantic ⇄ TypeScript', phase: 'P1' },
   { name: 'asset-foundry', role: 'Asset pipeline — parametric 3D foundry', phase: 'EXP' },
+  // Added 2026-07-22: portfolio-first gap-closers (operator sitting; core#249).
+  { name: 'dive-briefing', role: 'Dive RAG service — cited answers, tiered corpora', phase: 'EXP' },
+  { name: 'switchboard', role: 'LLM gateway — budgets, failover, observability', phase: 'EXP' },
+  { name: 'agent-anatomy', role: 'Orchestration atlas — article companion', phase: 'EXP' },
 ];
 
 /**
