@@ -48,6 +48,7 @@ export const REPO_META: RepoMeta[] = [
   { name: 'github-actions', role: 'Fleet CI — shared reusable workflows', phase: 'P1' },
   { name: 'golf-platform-scripts', role: 'Golf platform automation', phase: 'EXP' },
   { name: 'workstation-yuri', role: 'Workstation automation — Focus, wallpaper, launcher', phase: 'EXP' },
+  { name: 'virtualLight', role: 'Book-to-cinema pipeline — extraction + styled prompts', phase: 'EXP' },
 ];
 
 /**
