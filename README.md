@@ -6,6 +6,9 @@ projects into a vertical stack of visually-distinct **context blocks**:
 - **Beads** — work-items from across every ojfbot project in three lanes: **Overnight** (what ran
   while you slept), **Daily pickup** (human-in-the-loop priorities), **Available** (unclaimed,
   pickable work, stale items flagged).
+- **Loop** — live skill-telemetry read-model (use-funnel & evolution streams), independently
+  degradable across its three sources.
+- **System Map** — read-only rendering of committed OPM process models (see ADR-0015).
 - **Reading** — curated RSS/Atom feeds with a local-model "what's worth your attention" digest.
 - **Research** — trending Hugging Face Daily Papers, each with a leveled AI explainer that relates
   the paper to concepts you already command (plus an opt-in full-PDF Claude deep-dive).
