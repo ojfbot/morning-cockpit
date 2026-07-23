@@ -131,6 +131,9 @@ export {
   buildPopulationFunnels,
 } from './loop.js';
 
+export type { DecidedBead, ChainedPredecessor } from './decided.js';
+export { parseClosesRefs, deriveDecidedInFlight, foldedChainFor } from './decided.js';
+
 export type { LaneContext, LaneInput } from './lanes.js';
 export {
   overnightWindowStart,

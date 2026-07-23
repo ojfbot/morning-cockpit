@@ -70,6 +70,30 @@ export function WorkItemCard({ item, onClaimed }: { item: WorkItem; onClaimed?: 
         <StalenessBadge days={item.staleDays} />
       </div>
 
+      {item.chain && item.chain.length > 0 && (
+        <div className="card-chain">
+          <span
+            className="card-chain-marker"
+            title="Derived from this brief's closes: ref — these beads are decided, delivery in flight. They read normally again when this brief closes."
+          >
+            decided → in flight
+          </span>
+          <span className="card-chain-preds">
+            {item.chain.map((pred) =>
+              pred.url ? (
+                <a key={pred.nativeId} className="card-chain-pred" href={pred.url} rel="noreferrer">
+                  {pred.title}
+                </a>
+              ) : (
+                <span key={pred.nativeId} className="card-chain-pred">
+                  {pred.title}
+                </span>
+              ),
+            )}
+          </span>
+        </div>
+      )}
+
       {item.claimedBy ? (
         <div className="card-claim card-claim--held" title={`held by ${item.claimedBy}`}>
           ● claimed by {item.claimedBy}

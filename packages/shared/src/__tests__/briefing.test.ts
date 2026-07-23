@@ -81,6 +81,39 @@ const SNAPSHOT = (): CockpitSnapshot => ({
 });
 
 describe('briefingFallback', () => {
+  it('a decided-in-flight predecessor seeds no thread — only its chained successor does (S8)', () => {
+    // Post-derivation lanes: the handoff adapter folded the predecessor under its successor,
+    // so the decision pool sees ONE item where the pre-S8 defect re-seeded two.
+    const snap = SNAPSHOT();
+    snap.lanes.pickup = [
+      workItem({
+        nativeId: '20260717-1717-brief-pick-up-evolve-morning-cockpit-s-northstar-from',
+        lane: 'pickup',
+        kind: 'brief',
+        title: "Pick up: Evolve morning-cockpit's northstar",
+        repo: 'morning-cockpit',
+        chain: [
+          {
+            nativeId: '20260628-2015-brief-northstar-control-surface',
+            title: "Evolve morning-cockpit's northstar from read-model pane → operator control surface",
+            state: 'decided-in-flight',
+          },
+        ],
+      }),
+    ];
+    snap.lanes.available = [];
+
+    const fb = briefingFallback(snap, '2026-07-17T23:00:00Z');
+    expect(fb.threads.length).toBe(1);
+    expect(fb.threads[0]?.tag).toBe('decision');
+    expect(fb.threads[0]?.title).toBe("Pick up: Evolve morning-cockpit's northstar");
+    // The decided predecessor never re-enters the pool.
+    const predecessorSeeded = fb.threads.some(
+      (t) => t.id.includes('20260628-2015') || t.title.includes('read-model pane'),
+    );
+    expect(predecessorSeeded).toBe(false);
+  });
+
   it('builds honest threads from real lane data, most-stale first', () => {
     const fb = briefingFallback(SNAPSHOT(), '2026-06-22T06:00:00Z');
     expect(fb.source).toBe('deterministic');
