@@ -49,6 +49,7 @@ export const REPO_META: RepoMeta[] = [
   { name: 'golf-platform-scripts', role: 'Golf platform automation', phase: 'EXP' },
   { name: 'workstation-yuri', role: 'Workstation automation — Focus, wallpaper, launcher', phase: 'EXP' },
   { name: 'virtualLight', role: 'Book-to-cinema pipeline — extraction + styled prompts', phase: 'EXP' },
+  { name: 'mirrorworld', role: 'Geospatial track — real places as three.js scenes', phase: 'EXP' },
 ];
 
 /**
