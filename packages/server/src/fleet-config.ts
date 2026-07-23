@@ -34,6 +34,20 @@ export const REPO_META: RepoMeta[] = [
   { name: 'dive-briefing', role: 'Dive RAG service — cited answers, tiered corpora', phase: 'EXP' },
   { name: 'switchboard', role: 'LLM gateway — budgets, failover, observability', phase: 'EXP' },
   { name: 'agent-anatomy', role: 'Orchestration atlas — article companion', phase: 'EXP' },
+  // Added 2026-07-22 (fleet-onboard reconcile): active repos the cards had drifted past.
+  { name: 'buddy-check', role: 'Dive Q&A eval lab — judge calibration, hybrid RAG', phase: 'P2' },
+  { name: 'silicon-empires', role: 'AI-infra RTS — queues, capital, energy, silicon', phase: 'P1' },
+  { name: 'f1-pit-wall', role: 'F1 dashboard — telemetry literacy + claim grounding', phase: 'P1' },
+  { name: 'f1-substrate', role: 'F1 telemetry substrate — DuckDB + FastAPI', phase: 'P1' },
+  { name: 'f1-press-room', role: 'F1 teaching studio — claim-checked articles', phase: 'EXP' },
+  { name: 'bldgblog-corpus', role: 'BLDGBLOG ingest — corpus + deposit library', phase: 'EXP' },
+  { name: 'beaverGame', role: 'Cozy beaver sim — consumes asset-foundry GLBs', phase: 'EXP' },
+  { name: 'lofi-beaver', role: 'Willow Bend — 1-bit isometric story-world', phase: 'EXP' },
+  { name: 'selfco-box', role: 'Vault runner — capture daemon (paused)', phase: 'EXP' },
+  { name: 'landing', role: 'jim.software — portfolio landing page', phase: 'SHIP' },
+  { name: 'github-actions', role: 'Fleet CI — shared reusable workflows', phase: 'P1' },
+  { name: 'golf-platform-scripts', role: 'Golf platform automation', phase: 'EXP' },
+  { name: 'workstation-yuri', role: 'Workstation automation — Focus, wallpaper, launcher', phase: 'EXP' },
 ];
 
 /**
