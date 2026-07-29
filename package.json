@@ -13,6 +13,9 @@
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck",
     "dev:server": "pnpm --filter @cockpit/server dev",
-    "dev:renderer": "pnpm --filter @cockpit/renderer dev"
+    "dev:renderer": "pnpm --filter @cockpit/renderer dev",
+    "watch:poll": "pnpm --filter @cockpit/watch poll",
+    "watch:verify-sources": "pnpm --filter @cockpit/watch verify-sources",
+    "watch:opml": "pnpm --filter @cockpit/watch opml"
   }
 }

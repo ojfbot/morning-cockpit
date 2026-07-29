@@ -1,6 +1,9 @@
 import os from 'node:os';
 import path from 'node:path';
 import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { parse as parseYaml } from 'yaml';
+import { parseRegistry, sourcesFor } from '@cockpit/shared';
 
 /**
  * Personal reader-profile data (vault path, self-described strengths/learning, research domains)
@@ -24,6 +27,28 @@ function loadProfileLocal(): ProfileLocal {
   }
 }
 const profileLocal = loadProfileLocal();
+
+/**
+ * The Reading pod's feed list, read from the repo-root sources.yaml registry (ADR-0015).
+ *
+ * Resolved relative to this file rather than cwd so the server behaves the same whether it
+ * is started from the repo root, from packages/server, or by a supervisor.
+ *
+ * A malformed registry throws at startup by design: an empty Reading pod that renders as
+ * "no new posts" is a far worse failure than a loud one, because it looks like success.
+ */
+function readingFeeds(): Array<{ title: string; feedUrl: string; siteUrl?: string; tier?: string }> {
+  const file =
+    process.env.COCKPIT_SOURCES_FILE ??
+    path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..', 'sources.yaml');
+  const registry = parseRegistry(parseYaml(readFileSync(file, 'utf8')));
+  return sourcesFor(registry, 'reading').map((s) => ({
+    title: s.title,
+    feedUrl: s.feedUrl,
+    siteUrl: s.siteUrl,
+    tier: s.tier,
+  }));
+}
 
 /** All tunables in one place. Env overrides keep secrets/paths out of code. */
 export const config = {
@@ -144,20 +169,12 @@ export const config = {
     perSource: Number(process.env.COCKPIT_READING_PER_SOURCE ?? 8),
     fetchTimeoutMs: 8_000,
     ttlMs: 30 * 60_000,
-    feeds: [
-      { title: 'Steve Yegge', feedUrl: 'https://steveyegge.substack.com/feed', siteUrl: 'https://steveyegge.substack.com', tier: '0' },
-      { title: 'Andrej Karpathy', feedUrl: 'https://karpathy.github.io/feed.xml', siteUrl: 'https://karpathy.github.io', tier: '0' },
-      { title: 'Karpathy (Bear)', feedUrl: 'https://karpathy.bearblog.dev/feed/', siteUrl: 'https://karpathy.bearblog.dev', tier: '0' },
-      { title: 'Simon Willison', feedUrl: 'https://simonwillison.net/atom/everything/', siteUrl: 'https://simonwillison.net', tier: '1' },
-      { title: 'Latent Space', feedUrl: 'https://www.latent.space/feed', siteUrl: 'https://www.latent.space', tier: '1' },
-      { title: 'The Pragmatic Engineer', feedUrl: 'https://newsletter.pragmaticengineer.com/feed', siteUrl: 'https://newsletter.pragmaticengineer.com', tier: '1' },
-      { title: 'Ahead of AI', feedUrl: 'https://magazine.sebastianraschka.com/feed', siteUrl: 'https://magazine.sebastianraschka.com', tier: '1' },
-      { title: 'Lilian Weng', feedUrl: 'https://lilianweng.github.io/index.xml', siteUrl: 'https://lilianweng.github.io', tier: '2' },
-      { title: 'Eugene Yan', feedUrl: 'https://eugeneyan.com/rss/', siteUrl: 'https://eugeneyan.com', tier: '2' },
-      { title: 'Chip Huyen', feedUrl: 'https://huyenchip.com/feed.xml', siteUrl: 'https://huyenchip.com', tier: '2' },
-      { title: 'Import AI', feedUrl: 'https://jack-clark.net/feed', siteUrl: 'https://jack-clark.net', tier: '2' },
-      { title: 'Dwarkesh Patel', feedUrl: 'https://www.dwarkeshpatel.com/feed', siteUrl: 'https://www.dwarkeshpatel.com', tier: '2' },
-    ],
+    /**
+     * Read from sources.yaml (`pods: [reading]`), not hardcoded here. Previously this array
+     * and reading.opml were maintained by hand and had already drifted on titles; both are
+     * now derived from the one registry. See ADR-0015.
+     */
+    feeds: readingFeeds(),
   },
 
   /**

@@ -48,9 +48,17 @@ pnpm dev:renderer     # Vite renderer on :5180 (proxies /api → :3040)
 
 ```
 packages/shared    WorkItem view-model + pure lane/staleness logic + mirrored Dolt types
+                   + the sources.yaml validator (pure, no I/O — ADR-0015)
 packages/server    Express :3040 — adapters (dolt, handoff) → aggregate → /api/cockpit, /api/health
 packages/renderer  Vite + React — three-lane UI, GroupThink tokens, polls /api/cockpit
+packages/watch     CLI-only. Polls Anthropic feeds, scores against fleet-profile.md with local
+                   Ollama, stages a ≤3-item shortlist to disk. No server, no UI. ADR-0016/0017.
 ```
+
+**Feeds live in `sources.yaml`, not in code** (ADR-0015). One registry, with `pods: [watch]`
+/ `[reading]` / both. `reading.opml` is **generated** — `pnpm watch:opml` — not hand-kept.
+After changing it, run `pnpm watch:verify-sources`; a failing endpoint goes to the
+`quarantine:` block *with its reason*, never deleted and never replaced by an unfetched URL.
 
 A small **server is required** because two data sources can't run in a browser: Dolt needs a
 TCP socket (`mysql2`) and (later) GitHub needs to shell out to `gh`. Adapters fan out with

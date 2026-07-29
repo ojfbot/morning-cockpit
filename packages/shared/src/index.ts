@@ -16,6 +16,9 @@ export { summarizeLane } from './summarize.js';
 export type { ReadingItem, ReadingSource, ReadingSnapshot } from './reading.js';
 export { readingCutoff, isNewSince, readingDigestFloor } from './reading.js';
 
+export type { Pod, Source, QuarantinedSource, Registry } from './sources.js';
+export { parseRegistry, sourcesFor } from './sources.js';
+
 export type {
   PaperItem,
   ProfileNode,

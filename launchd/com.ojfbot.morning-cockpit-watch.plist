@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Anthropic watch — daily poll of Anthropic's technical output (ADR-0016).
+
+  DO NOT LOAD until two OPERATOR-TRIGGERED runs of scripts/watch-poll.sh have passed, each
+  appending a line to ~/.claude/morning-cockpit-watch.jsonl with a non-zero feeds_ok in the
+  ledger. This is the house ritual from core/scripts/trace-triager-launchd.plist: a new
+  scheduled loop is supervised twice before it is allowed to run unattended.
+
+  A green exit is NOT evidence the job did anything — see
+  .handoff/20260618-brief-launchd-processes-panel.md. Check the `runs` table in
+  packages/watch/.data/watch.sqlite, not the exit code.
+
+  Install (after the two supervised runs):
+    cp launchd/com.ojfbot.morning-cockpit-watch.plist ~/Library/LaunchAgents/
+    launchctl load -w ~/Library/LaunchAgents/com.ojfbot.morning-cockpit-watch.plist
+  Uninstall:
+    launchctl unload -w ~/Library/LaunchAgents/com.ojfbot.morning-cockpit-watch.plist
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.ojfbot.morning-cockpit-watch</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/Users/yuri/ojfbot/morning-cockpit/scripts/watch-poll.sh</string>
+    </array>
+
+    <!-- 06:15 local. Clear of the other ojfbot jobs (03:30 sync-telemetry, 03:45 audit,
+         04:15 trace-triager, 05:30 selfco-box cultivate) and lands before the human morning. -->
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>6</integer>
+        <key>Minute</key>
+        <integer>15</integer>
+    </dict>
+
+    <!-- No RunAtLoad: a reboot should not fire an extra poll.
+         No KeepAlive: this is a scheduled job, not a daemon. -->
+
+    <key>StandardOutPath</key>
+    <string>/tmp/morning-cockpit-watch.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/morning-cockpit-watch.err</string>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/yuri/ojfbot/morning-cockpit</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin</string>
+        <key>HOME</key>
+        <string>/Users/yuri</string>
+    </dict>
+</dict>
+</plist>
