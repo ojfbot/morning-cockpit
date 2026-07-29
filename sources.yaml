@@ -1,0 +1,334 @@
+# sources.yaml — the single feed registry for morning-cockpit.
+#
+# Replaces the hardcoded array that used to live in packages/server/src/config.ts and the
+# hand-maintained reading.opml (which had already drifted on titles). See ADR-0015.
+#
+#   pods:  which surfaces consume this source.
+#            reading — the cockpit's Reading pod (/api/reading), rendered in the UI
+#            watch   — the Anthropic watch poller (@cockpit/watch), scored and shortlisted
+#          A source may belong to both. One entry, no drift.
+#
+#   tier:  '0' | '1' | '2' — Reading-pod display grouping ONLY. Untouched from the old config.
+#   authority: 0..1 — deterministic input to the watch rubric's source_authority dimension.
+#          It is NOT model-scored: letting a 7b model rate the authority of its own inputs is
+#          a self-grading loop with no ground truth. See ADR-0017.
+#
+#   verified: the date the endpoint was last fetched and confirmed to return parseable XML.
+#          `inherited` = carried over from the shipped config.ts feed list (in production
+#          since 2026-06-07) but not individually re-fetched during this build.
+#          `pnpm watch:verify-sources` re-checks every entry and reports staleness.
+#
+# Endpoints that fail verification move to `quarantine:` WITH THE REASON RECORDED.
+# Never silently drop one, and never invent a replacement URL.
+
+version: 1
+
+defaults:
+  user_agent: "morning-cockpit/0.1 (+local read-model)"
+  fetch_timeout_ms: 8000
+
+sources:
+  # ---- Anthropic first-party -------------------------------------------------------------
+  # No official RSS exists for the marketing-site blogs; these are community mirrors that
+  # scrape the same pages. They are single points of failure maintained by volunteers —
+  # watch:verify-sources checks their freshness, and a stale mirror is a real risk (the
+  # conoro engineering mirror died 2025-11-24 and is deliberately absent below).
+
+  - id: claude-blog
+    title: Claude blog
+    kind: rss
+    feed_url: https://raw.githubusercontent.com/Olshansk/rss-feeds/main/feeds/feed_claude.xml
+    site_url: https://claude.com/blog
+    class: anthropic-first-party
+    authority: 1.0
+    pods: [watch]
+    fetch_full_text: true
+    verified: 2026-07-28
+    note: >-
+      The acceptance-test source. Carries the Fable 5 field guides. Feed descriptions are
+      title-only (54 bytes for the acceptance item) — full-text fetch is mandatory here.
+
+  - id: anthropic-news
+    title: Anthropic news
+    kind: rss
+    feed_url: https://raw.githubusercontent.com/Olshansk/rss-feeds/main/feeds/feed_anthropic_news.xml
+    site_url: https://www.anthropic.com/news
+    class: anthropic-first-party
+    authority: 1.0
+    pods: [watch]
+    fetch_full_text: true
+    verified: 2026-07-28
+
+  - id: anthropic-engineering
+    title: Anthropic engineering
+    kind: rss
+    feed_url: https://raw.githubusercontent.com/Olshansk/rss-feeds/main/feeds/feed_anthropic_engineering.xml
+    site_url: https://www.anthropic.com/engineering
+    class: anthropic-first-party
+    authority: 1.0
+    pods: [watch]
+    fetch_full_text: true
+    verified: 2026-07-28
+
+  - id: anthropic-research
+    title: Anthropic research
+    kind: rss
+    feed_url: https://raw.githubusercontent.com/Olshansk/rss-feeds/main/feeds/feed_anthropic_research.xml
+    site_url: https://www.anthropic.com/research
+    class: anthropic-first-party
+    authority: 1.0
+    pods: [watch]
+    fetch_full_text: true
+    verified: 2026-07-28
+
+  - id: claude-code-changelog
+    title: Claude Code changelog
+    kind: rss
+    feed_url: https://code.claude.com/docs/en/changelog/rss.xml
+    site_url: https://code.claude.com/docs/en/changelog
+    class: anthropic-official
+    authority: 1.0
+    pods: [watch]
+    # Release notes are already the full text; fetching the page adds nav, not signal.
+    fetch_full_text: false
+    verified: 2026-07-28
+    note: A real first-party feed, not a mirror. Mintlify-generated.
+
+  - id: anthropic-status
+    title: Anthropic status
+    kind: rss
+    feed_url: https://status.anthropic.com/history.rss
+    site_url: https://status.anthropic.com
+    class: anthropic-official
+    authority: 0.9
+    pods: [watch]
+    fetch_full_text: false
+    verified: 2026-07-28
+    note: A real first-party feed (Atlassian Statuspage). Incident bodies are in the feed.
+
+  # ---- Anthropic repositories ------------------------------------------------------------
+  - id: gh-claude-code
+    # Commit-level activity, NOT announcements. Authority is deliberately BELOW the
+    # first-party blogs: an individual commit to a docs/cookbook repo is routine churn, and
+    # judged from a bare subject line a model reads almost any imperative commit title as
+    # highly actionable. The first live run put "Fix lychee.toml for lychee 0.23" at the top
+    # of the brief at 0.88. Release feeds would be the better granularity (Stage 2).
+    title: anthropics/claude-code
+    kind: atom
+    feed_url: https://github.com/anthropics/claude-code/commits/main.atom
+    site_url: https://github.com/anthropics/claude-code
+    class: anthropic-repo
+    authority: 0.6
+    pods: [watch]
+    fetch_full_text: false
+    verified: 2026-07-28
+
+  - id: gh-claude-cookbooks
+    # Commit-level activity, NOT announcements. Authority is deliberately BELOW the
+    # first-party blogs: an individual commit to a docs/cookbook repo is routine churn, and
+    # judged from a bare subject line a model reads almost any imperative commit title as
+    # highly actionable. The first live run put "Fix lychee.toml for lychee 0.23" at the top
+    # of the brief at 0.88. Release feeds would be the better granularity (Stage 2).
+    title: anthropics/claude-cookbooks
+    kind: atom
+    feed_url: https://github.com/anthropics/claude-cookbooks/commits/main.atom
+    site_url: https://github.com/anthropics/claude-cookbooks
+    class: anthropic-repo
+    authority: 0.6
+    pods: [watch]
+    fetch_full_text: false
+    verified: 2026-07-28
+    note: Renamed from anthropic-cookbook. The new name is the one that resolves.
+
+  - id: gh-skills
+    # Commit-level activity, NOT announcements. Authority is deliberately BELOW the
+    # first-party blogs: an individual commit to a docs/cookbook repo is routine churn, and
+    # judged from a bare subject line a model reads almost any imperative commit title as
+    # highly actionable. The first live run put "Fix lychee.toml for lychee 0.23" at the top
+    # of the brief at 0.88. Release feeds would be the better granularity (Stage 2).
+    title: anthropics/skills
+    kind: atom
+    feed_url: https://github.com/anthropics/skills/commits/main.atom
+    site_url: https://github.com/anthropics/skills
+    class: anthropic-repo
+    authority: 0.6
+    pods: [watch]
+    fetch_full_text: false
+    verified: 2026-07-28
+
+  # ---- Practitioners (shared: watch + reading) -------------------------------------------
+  - id: simon-willison
+    title: Simon Willison
+    kind: atom
+    feed_url: https://simonwillison.net/atom/everything/
+    site_url: https://simonwillison.net
+    tier: '1'
+    class: practitioner
+    authority: 0.7
+    pods: [watch, reading]
+    fetch_full_text: true
+    verified: 2026-07-28
+
+  # ---- Reading pod ------------------------------------------------------------------------
+  # Carried over verbatim from packages/server/src/config.ts. Titles here are the config's
+  # (authoritative) spellings — reading.opml had drifted and is now generated from this file.
+
+  - id: steve-yegge
+    title: Steve Yegge
+    kind: rss
+    feed_url: https://steveyegge.substack.com/feed
+    site_url: https://steveyegge.substack.com
+    tier: '0'
+    class: practitioner
+    authority: 0.6
+    pods: [reading]
+    verified: inherited
+
+  - id: karpathy
+    title: Andrej Karpathy
+    kind: rss
+    feed_url: https://karpathy.github.io/feed.xml
+    site_url: https://karpathy.github.io
+    tier: '0'
+    class: practitioner
+    authority: 0.7
+    pods: [reading]
+    verified: inherited
+
+  - id: karpathy-bear
+    title: Karpathy (Bear)
+    kind: rss
+    feed_url: https://karpathy.bearblog.dev/feed/
+    site_url: https://karpathy.bearblog.dev
+    tier: '0'
+    class: practitioner
+    authority: 0.7
+    pods: [reading]
+    verified: inherited
+
+  - id: latent-space
+    title: Latent Space
+    kind: rss
+    feed_url: https://www.latent.space/feed
+    site_url: https://www.latent.space
+    tier: '1'
+    class: practitioner
+    authority: 0.6
+    pods: [reading]
+    verified: inherited
+
+  - id: pragmatic-engineer
+    title: The Pragmatic Engineer
+    kind: rss
+    feed_url: https://newsletter.pragmaticengineer.com/feed
+    site_url: https://newsletter.pragmaticengineer.com
+    tier: '1'
+    class: practitioner
+    authority: 0.5
+    pods: [reading]
+    verified: inherited
+
+  - id: ahead-of-ai
+    title: Ahead of AI
+    kind: rss
+    feed_url: https://magazine.sebastianraschka.com/feed
+    site_url: https://magazine.sebastianraschka.com
+    tier: '1'
+    class: practitioner
+    authority: 0.6
+    pods: [reading]
+    verified: inherited
+
+  - id: lilian-weng
+    title: Lilian Weng
+    kind: rss
+    feed_url: https://lilianweng.github.io/index.xml
+    site_url: https://lilianweng.github.io
+    tier: '2'
+    class: practitioner
+    authority: 0.7
+    pods: [reading]
+    verified: inherited
+
+  - id: eugene-yan
+    title: Eugene Yan
+    kind: rss
+    feed_url: https://eugeneyan.com/rss/
+    site_url: https://eugeneyan.com
+    tier: '2'
+    class: practitioner
+    authority: 0.6
+    pods: [reading]
+    verified: inherited
+
+  - id: chip-huyen
+    title: Chip Huyen
+    kind: rss
+    feed_url: https://huyenchip.com/feed.xml
+    site_url: https://huyenchip.com
+    tier: '2'
+    class: practitioner
+    authority: 0.6
+    pods: [reading]
+    verified: inherited
+
+  - id: import-ai
+    title: Import AI
+    kind: rss
+    feed_url: https://jack-clark.net/feed
+    site_url: https://jack-clark.net
+    tier: '2'
+    class: practitioner
+    authority: 0.6
+    pods: [reading]
+    verified: inherited
+
+  - id: dwarkesh
+    title: Dwarkesh Patel
+    kind: rss
+    feed_url: https://www.dwarkeshpatel.com/feed
+    site_url: https://www.dwarkeshpatel.com
+    tier: '2'
+    class: practitioner
+    authority: 0.5
+    pods: [reading]
+    verified: inherited
+
+# ------------------------------------------------------------------------------------------
+# Quarantine — endpoints that were checked and are NOT in service, with the reason recorded.
+# A hallucinated feed URL in config is the most expensive failure mode in this build, so a
+# failing endpoint is parked here rather than dropped or "fixed" with a guessed replacement.
+# ------------------------------------------------------------------------------------------
+quarantine:
+  - id: anthropic-youtube
+    title: Anthropic YouTube
+    feed_url: https://www.youtube.com/feeds/videos.xml?channel_id=UCrDwWp7EBBv4NwvScIpBDOA
+    site_url: https://www.youtube.com/@anthropic-ai
+    checked: 2026-07-28
+    reason: >-
+      HTTP 404 under both a bot User-Agent and a Chrome User-Agent. The channel_id is CORRECT
+      — confirmed against "externalId" in the HTML of youtube.com/@anthropic-ai — so this is
+      not an ID error: the videos.xml endpoint does not serve this channel. The upstream
+      research doc marked this "VERIFIED" having verified the ID and inferred the feed URL.
+      No replacement URL invented. Recheck before assuming YouTube coverage exists.
+
+  - id: hn-claude-code
+    title: 'Hacker News: "claude code"'
+    feed_url: >-
+      https://hn.algolia.com/api/v1/search_by_date?query=%22claude%20code%22&tags=story&numericFilters=points%3E50
+    checked: 2026-07-28
+    reason: >-
+      AVAILABILITY IS FINE — HTTP 200, 360 hits, the API and query syntax both work. This is a
+      PRECISION problem: at points>50 the result set is dominated by off-topic stories that
+      merely mention Claude Code (top hits included "Bento - an entire PowerPoint in one HTML
+      file" and a credential-gateway Show HN). Feeding this to the scorer before the rubric is
+      calibrated would spend the 3-item brief budget on noise. Stage 2 decision.
+
+  - id: anthropic-engineering-conoro
+    title: Anthropic engineering (conoro mirror)
+    feed_url: https://conoro.github.io/anthropic-engineering-rss-feed/anthropic_engineering_rss.xml
+    checked: 2026-07-28
+    reason: >-
+      Known dead — last item 2025-11-24. Recorded here so a future session does not
+      rediscover it as a plausible-looking mirror and wire it back in. The live engineering
+      mirror is the Olshansk feed above.
