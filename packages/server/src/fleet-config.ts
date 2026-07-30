@@ -28,7 +28,9 @@ export const REPO_META: RepoMeta[] = [
   { name: 'seh-study', role: 'SEH study — NASA spaced repetition', phase: 'P2' },
   { name: 'core-reader', role: 'Docs viewer — renders core framework', phase: 'P3' },
   { name: 'frame-ui-components', role: 'UI library — shared Carbon DS', phase: 'P2' },
-  { name: 'gcgcca', role: 'Type bridge — Pydantic ⇄ TypeScript', phase: 'P1' },
+  // Renamed from gcgcca 2026-07-30 (GOLF UMBRELLA sitting); fairway decomposed from mirrorworld same day.
+  { name: 'capture-agent', role: 'Golf capture agent — TX imagery → segmentation model → HF', phase: 'P1' },
+  { name: 'fairway', role: 'Golf digital twin — explorable twin surface', phase: 'P1' },
   { name: 'asset-foundry', role: 'Asset pipeline — parametric 3D foundry', phase: 'EXP' },
   // Added 2026-07-22: portfolio-first gap-closers (operator sitting; core#249).
   { name: 'dive-briefing', role: 'Dive RAG service — cited answers, tiered corpora', phase: 'EXP' },
