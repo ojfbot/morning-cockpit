@@ -1,4 +1,4 @@
-import type { CockpitSnapshot, Liveness, RepoCard, WorkItem } from '@cockpit/shared';
+import type { CockpitSnapshot, FleetSnapshot, Liveness, RepoCard, WorkItem } from '@cockpit/shared';
 import { REPO_META } from './fleet-config.js';
 
 /**
@@ -38,23 +38,23 @@ export function deriveFleet(snap: CockpitSnapshot, now: number): RepoCard[] {
       openCount: open.length,
       lastActivity,
       liveness: livenessOf(lastActivity, now),
+      // Distinguish "aged real timestamps" from "never had a bead". Both land on 'dark',
+      // and conflating them makes a healthy repo that does not use the bead store look
+      // abandoned. Loop health lives in pane 08, not here.
+      basis: lastActivity ? 'activity' : 'no-data',
       here: meta.name === 'morning-cockpit' || undefined,
     };
   });
 }
 
-export function fleetTotals(repos: RepoCard[]): {
-  repos: number;
-  openBeads: number;
-  live: number;
-  stale: number;
-  dark: number;
-} {
+export function fleetTotals(repos: RepoCard[]): FleetSnapshot['totals'] {
   return {
     repos: repos.length,
     openBeads: repos.reduce((n, r) => n + r.openCount, 0),
     live: repos.filter((r) => r.liveness === 'live').length,
     stale: repos.filter((r) => r.liveness === 'stale').length,
     dark: repos.filter((r) => r.liveness === 'dark').length,
+    // A subset of `dark`, not a sibling: these repos are dark for want of any bead at all.
+    noData: repos.filter((r) => r.basis === 'no-data').length,
   };
 }

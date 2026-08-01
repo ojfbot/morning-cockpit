@@ -1788,3 +1788,80 @@ a.card-chain-pred:hover {
 .health-dot.down { background: var(--red); }
 .health-dot.degraded { background: var(--amber); }
 .health-dot.disabled { background: var(--ink-3); }
+
+/* ── 08 · Control plane ─────────────────────────────────────────────────────
+   Loop health from core's registry. Coverage is styled to be unmissable: the
+   "unobserved" stat is amber-ruled because it is the share of the control
+   plane nothing can check — the one number that must not read as healthy.
+   `unverifiable` is deliberately neutral, never red: it means "not visible
+   from this vantage", not "broken". */
+.cp-degraded {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--amber);
+  border-left: 3px solid var(--amber);
+  padding: 6px 10px;
+  margin-bottom: var(--gt-space-5, 24px);
+}
+
+.cp-coverage {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gt-space-6, 32px);
+  padding-bottom: var(--gt-space-5, 24px);
+  margin-bottom: var(--gt-space-5, 24px);
+  border-bottom: 1px solid var(--rule);
+}
+.cp-stat { display: flex; flex-direction: column; gap: 2px; min-width: 130px; }
+.cp-stat-n { font-size: 30px; font-weight: 700; line-height: 1; color: var(--ink); }
+.cp-stat-l {
+  font-family: var(--mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-2);
+}
+.cp-stat-sub { font-size: 11px; color: var(--ink-3); max-width: 22ch; }
+.cp-stat-warn { border-left: 3px solid var(--amber); padding-left: 10px; }
+.cp-stat-warn .cp-stat-n { color: var(--amber); }
+
+.cp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.cp-table th {
+  text-align: left;
+  font-family: var(--mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-3);
+  border-bottom: 1px solid var(--rule);
+  padding: 0 10px 6px 0;
+  font-weight: 500;
+}
+.cp-table td { padding: 7px 10px 7px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+.cp-slug { font-family: var(--mono); font-weight: 700; color: var(--ink); }
+.cp-why { color: var(--ink-2); }
+
+.cp-badge {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 2px 6px;
+  border: 1px solid currentColor;
+}
+.cp-badge-down { color: var(--red); }
+.cp-badge-stale { color: var(--amber); }
+.cp-badge-ok { color: var(--green); }
+.cp-badge-unverifiable { color: var(--ink-3); }
+.cp-badge-excluded { color: var(--ink-3); }
+
+.cp-empty { font-size: 13px; color: var(--ink-2); margin: 0 0 var(--gt-space-5, 24px); }
+
+.cp-unverifiable { margin-top: var(--gt-space-5, 24px); font-size: 13px; }
+.cp-unverifiable summary { font-family: var(--mono); font-size: 11px; color: var(--ink-2); cursor: pointer; }
+.cp-unverifiable ul { margin: 10px 0 0; padding-left: 18px; color: var(--ink-2); }
+.cp-unverifiable li { margin-bottom: 4px; }
+
+.cp-vantage { margin-top: var(--gt-space-5, 24px); font-size: 11px; color: var(--ink-3); }
+.cp-vantage code { font-family: var(--mono); font-size: 10px; }

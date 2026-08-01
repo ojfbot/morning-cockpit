@@ -20,7 +20,9 @@ export type FrontmatterScalar = string | number | boolean | null;
 export type FrontmatterItem = Record<string, FrontmatterScalar>;
 export type Frontmatter = Record<string, FrontmatterScalar | FrontmatterItem[]>;
 
-const LIST_KEYS = new Set(['properties', 'registry', 'roadmaps', 'phases', 'slices']);
+// `loops` added for core's loops registry (decisions/loops/loops.md) — same northstar-fm
+// style, so it reuses this parser rather than shipping a second one. See control-plane.ts.
+const LIST_KEYS = new Set(['properties', 'registry', 'roadmaps', 'phases', 'slices', 'loops']);
 
 function scalar(v: string | undefined | null): FrontmatterScalar {
   if (v == null) return null;

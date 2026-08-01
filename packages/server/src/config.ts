@@ -97,6 +97,34 @@ export const config = {
   },
 
   /**
+   * Control plane (08) — health of the fleet's LOOPS, read from core's registry
+   * (`decisions/loops/loops.md`). Distinct from Fleet (01), which reports repo bead
+   * traffic, and from Loop (07), which reports skill-disposition telemetry.
+   *
+   * Read-only and offline by default: `gh:` evidence is deliberately left unresolved
+   * rather than shelling out to an authenticated CLI from a read-model.
+   */
+  controlPlane: {
+    coreRoot: process.env.COCKPIT_CORE_ROOT ?? path.join(os.homedir(), 'ojfbot', 'core'),
+    /** Aliveness probe for `dolt:` evidence — the bead store's sql-server. */
+    doltProbe: {
+      host: process.env.COCKPIT_DOLT_HOST ?? '127.0.0.1',
+      port: Number(process.env.COCKPIT_DOLT_PORT ?? 3307),
+    },
+    probeTimeoutMs: Number(process.env.COCKPIT_CONTROL_PLANE_PROBE_TIMEOUT_MS ?? 500),
+    /**
+     * Staleness budget per cadence, in ms. Generous on purpose: a daily loop firing at
+     * 03:30 must not read stale to a 09:00 probe the next morning.
+     */
+    budgets: {
+      daily: Number(process.env.COCKPIT_CONTROL_PLANE_DAILY_MS ?? 2 * 86_400_000),
+      weekly: Number(process.env.COCKPIT_CONTROL_PLANE_WEEKLY_MS ?? 10 * 86_400_000),
+      other: Number(process.env.COCKPIT_CONTROL_PLANE_OTHER_MS ?? 10 * 86_400_000),
+    },
+    ttlMs: Number(process.env.COCKPIT_CONTROL_PLANE_TTL_MS ?? 30_000),
+  },
+
+  /**
    * Loop pane — the self-improvement telemetry loop, read-only. Capture health + the
    * disposition funnel come from core's shadow-mode OPAV hooks (ADR-0095) writing into
    * the selfco tracking dir; odometer freshness re-reads status.jsonl (delivery.coreRoot);

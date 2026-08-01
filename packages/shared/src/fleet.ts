@@ -20,6 +20,17 @@ export interface RepoCard {
   /** ISO of the most recent bead activity in this repo, or null if none seen. */
   lastActivity: string | null;
   liveness: Liveness;
+  /**
+   * What the liveness verdict is actually based on.
+   *
+   * `'activity'` — real bead timestamps were seen and aged.
+   * `'no-data'`  — this repo has NO beads at all, so `liveness` fell through to `'dark'`
+   *                by absence of evidence. A perfectly healthy repo that simply does not
+   *                use the bead store reads identically to an abandoned one, and callers
+   *                must not present the two the same way. Fleet answers "which repos have
+   *                bead traffic" — not "what is working"; loop health is pane 08.
+   */
+  basis?: 'activity' | 'no-data';
   /** The "you are here" card (morning-cockpit). */
   here?: boolean;
 }
@@ -27,7 +38,18 @@ export interface RepoCard {
 export interface FleetSnapshot {
   generatedAt: string;
   repos: RepoCard[];
-  totals: { repos: number; openBeads: number; live: number; stale: number; dark: number };
+  totals: {
+    repos: number;
+    openBeads: number;
+    live: number;
+    stale: number;
+    dark: number;
+    /**
+     * Subset of `dark` that is dark only because the repo has no beads at all. Reported
+     * separately so "we have no signal" is never read as "nothing is happening there".
+     */
+    noData: number;
+  };
 }
 
 export type Severity = 'critical' | 'high' | 'blocked' | 'decision';

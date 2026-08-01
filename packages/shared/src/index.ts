@@ -137,6 +137,29 @@ export {
 export type { DecidedBead, ChainedPredecessor } from './decided.js';
 export { parseClosesRefs, deriveDecidedInFlight, foldedChainFor } from './decided.js';
 
+export type {
+  LoopTrigger,
+  LoopCadence,
+  LoopStatus,
+  LoopVerdict,
+  LoopEntry,
+  LoopEvidence,
+  LoopRow,
+  ControlPlaneTotals,
+  ControlPlaneSnapshot,
+  CadenceBudgets,
+} from './control-plane.js';
+export {
+  parseLoopsRegistry,
+  deriveLoopRow,
+  deriveControlPlane,
+  hasRealVerifier,
+  isWatched,
+  sortRows,
+  VERDICT_ORDER,
+  DEFAULT_CADENCE_BUDGETS,
+} from './control-plane.js';
+
 export type { LaneContext, LaneInput } from './lanes.js';
 export {
   overnightWindowStart,

@@ -73,6 +73,7 @@ TCP socket (`mysql2`) and (later) GitHub needs to shell out to `gh`. Adapters fa
 | Per-repo `.handoff/*.md` briefs | `adapters/handoff.ts` | 0 ✅ | Open-hook logic ported from core's `orient.py`. Only ~3 repos have `.handoff/` today. |
 | GitHub PRs + issues | `adapters/github.ts` | 1 | **NOT BUILT** (planned, Slice 1). The file does not exist and `aggregate.ts` wires only dolt + handoff. Plan: copy collectors from daily-logger `collect-context.ts` (gh CLI). |
 | frame-standup priorities | `adapters/standup.ts` | 2 | **NOT BUILT** (planned, Slice 2). The file does not exist. Plan: read artifacts (`~/.claude/standup-telemetry.jsonl`), don't invoke the LLM skill. |
+| Loops registry (`core/decisions/loops/loops.md`) | `adapters/loops.ts` | ✅ 2026-08-01 | **Control plane pane (08)**, own endpoint `/api/control-plane`. Reads core's loops registry — the 30+ declared loops with trigger/cadence/verifier/stop-rule/evidence — and resolves each `evidence_ref:` (`file:` mtime · `git-branch:` last commit · `dolt:` TCP probe; `gh:` deliberately UNRESOLVED, no authenticated shell-out from a read-model). Leads with **watched vs unobserved**, not a green count: ~3/4 of the registry is `event`/`manual` cadence that liveness cannot evaluate, so a hook that silently stops is invisible — rendering only the watchable subset would make that blindness look like health. **No consumption column** — reference-counting was prototyped and failed to discriminate (`prototypes/control-plane/FINDINGS.md`). `unverifiable` ≠ `down`: the snapshot carries its `vantage` so unreadable-from-here is never rendered as broken. |
 | Self-improvement telemetry (OPAV skill dispositions + odometer + audit freshness) | `adapters/loop.ts` | ✅ 2026-07-16 · S7 2026-07-17 | Loop pane (07), own endpoint `/api/loop`. Reads `~/selfco/tracking/skill-dispositions.jsonl` (core's shadow-mode hooks, ADR-0095), re-reads `status.jsonl` independently of the delivery adapter, mtime-probes `~/.claude/skill-architecture-audit.jsonl`. Renders the funnel's zeros explicitly. S7 (rm:rm-l1-core#S7): per-population funnels (installed / uninstalled / legacy — eras never blended; `population` field is the era marker) and **rate suppression** — no percentage renders until core's S6 capture-quality artifact exists (`COCKPIT_CAPTURE_QUALITY_FILE`); counts only, with an "rates unverified" badge. The pane observes the loop, closing it happens in core. |
 
 ## Honest gaps (do not paper over)
@@ -84,6 +85,12 @@ TCP socket (`mysql2`) and (later) GitHub needs to shell out to `gh`. Adapters fa
   leaves the Briefing decision pool, and folds under its successor as ONE chained Pickup item
   ("decided → in flight"). When the successor closes at delivery the derivation ends and the
   predecessor reads normally again. Folded counts surface in the handoff health note.
+- **Fleet (01) reports bead traffic, not health.** `deriveFleet` ages `WorkItem.activityAt` over a
+  hand-maintained `REPO_META` roster, so a repo with healthy loops and no beads reads `dark`.
+  Since 2026-08-01 the card carries `basis: 'activity' | 'no-data'` and totals carry `noData` (a
+  **subset** of `dark`, not a sibling) so absence of signal is no longer rendered as death — with
+  Dolt down the pane says "35 dark (35 no bead traffic)" rather than implying a dead fleet. The
+  underlying limit stands: for what is actually *running*, read pane 08.
 - There is **no real unassigned-task pool** yet — tasks are born already-assigned in a convoy.
   The Available lane is *synthesized* from open issues + open briefs. The real write-path is
   designed in `decisions/adr/0002-*` (Track R). Until then, show truthful empty states.

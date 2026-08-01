@@ -10,6 +10,7 @@ import type {
   ChatMessage,
   ChatPreload,
   CockpitSnapshot,
+  ControlPlaneSnapshot,
   CrossLinkSuggestion,
   HandoffDraft,
   LaneSummary,
@@ -320,4 +321,10 @@ export async function claimTask(beadId: string): Promise<ClaimResponse> {
   });
   if (!res.ok && res.status !== 409) throw new Error(`claim ${res.status}`);
   return (await res.json()) as ClaimResponse;
+}
+
+export async function fetchControlPlane(signal?: AbortSignal): Promise<ControlPlaneSnapshot> {
+  const res = await fetch('/api/control-plane', { signal });
+  if (!res.ok) throw new Error(`control-plane ${res.status}`);
+  return (await res.json()) as ControlPlaneSnapshot;
 }

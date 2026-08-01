@@ -50,7 +50,9 @@ export function FleetSection({
         <span className="section-caption">
           {t ? `${t.repos} repositories · ${t.openBeads} open beads` : 'scanning repos…'}
           <br />
-          {t ? `${t.live} live · ${t.stale} stale · ${t.dark} dark` : 'deriving liveness…'}
+          {t
+            ? `${t.live} live · ${t.stale} stale · ${t.dark} dark${t.noData ? ` (${t.noData} no bead traffic)` : ''}`
+            : 'deriving liveness…'}
         </span>
       }
     >
