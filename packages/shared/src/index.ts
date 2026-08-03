@@ -137,10 +137,11 @@ export {
 export type { DecidedBead, ChainedPredecessor } from './decided.js';
 export { parseClosesRefs, deriveDecidedInFlight, foldedChainFor } from './decided.js';
 
-export type { LaneContext, LaneInput } from './lanes.js';
+export type { LaneContext, LaneInput, AgeBucket } from './lanes.js';
 export {
   overnightWindowStart,
   computeStaleDays,
+  ageBucket,
   classifyLane,
   finalizeItems,
   splitLanes,

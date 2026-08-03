@@ -57,6 +57,20 @@ export function computeStaleDays(iso: string | undefined, now: Date): number | u
   return Math.floor(ms / 86_400_000);
 }
 
+/**
+ * Age buckets for queue legibility (rm:rm-l1-morning-cockpit bead-lanes slice). One
+ * definition shared by badge, lane header, and briefing ranking so every surface agrees
+ * on what "old" means. "Rotten" is deliberately uncomfortable — the label should make
+ * the operator want the queue empty.
+ */
+export type AgeBucket = 'fresh' | 'aging' | 'rotten';
+
+export function ageBucket(staleDays: number | undefined): AgeBucket {
+  if (staleDays === undefined || staleDays < 7) return 'fresh';
+  if (staleDays <= 30) return 'aging';
+  return 'rotten';
+}
+
 function isWithinOvernight(activityAt: string, ctx: LaneContext): boolean {
   const t = Date.parse(activityAt);
   const since = Date.parse(ctx.overnightSince);
@@ -110,8 +124,12 @@ export function finalizeItems(items: WorkItem[], ctx: LaneContext): WorkItem[] {
     const staleDays = computeStaleDays(item.createdAt ?? item.activityAt, ctx.now);
     const finalized: WorkItem = { ...item, staleDays };
 
-    // An available item past the threshold becomes 'stale' (status decoration only).
-    if (finalized.lane === 'available' && staleDays !== undefined && staleDays >= ctx.staleThresholdDays) {
+    // An open item past the threshold becomes 'stale' (status decoration only, applied
+    // AFTER lane assignment — never a demotion). Was gated to 'available' only, which
+    // made pickup-lane briefs un-stale-markable: an open brief always classifies to
+    // 'pickup' first, so a May brief could sit invisible for months (TD-006's display
+    // half). Overnight stays exempt — fresh activity isn't rot.
+    if (finalized.lane !== 'overnight' && staleDays !== undefined && staleDays >= ctx.staleThresholdDays) {
       finalized.status = 'stale';
     }
 
@@ -124,14 +142,17 @@ export function finalizeItems(items: WorkItem[], ctx: LaneContext): WorkItem[] {
   return [...byNative.values()];
 }
 
-/** Split a finalized list into the three lanes, each sorted by activityAt descending. */
+/** Split a finalized list into the three lanes. Overnight sorts by recency; the two
+ *  actionable lanes sort by staleness (most stale first) so rot floats up — pickup used
+ *  to sort by recency, which sank the oldest, most-neglected brief to the bottom and
+ *  disagreed with the briefing fallback's stale-first ranking. */
 export function splitLanes(items: WorkItem[]): Record<WorkItemLane, WorkItem[]> {
   const lanes: Record<WorkItemLane, WorkItem[]> = { overnight: [], pickup: [], available: [] };
   for (const item of items) lanes[item.lane].push(item);
   const byActivityDesc = (a: WorkItem, b: WorkItem) => Date.parse(b.activityAt) - Date.parse(a.activityAt);
+  const byRotDesc = (a: WorkItem, b: WorkItem) => (b.staleDays ?? 0) - (a.staleDays ?? 0);
   lanes.overnight.sort(byActivityDesc);
-  lanes.pickup.sort(byActivityDesc);
-  // Available sorts by staleness (most stale first) so rot floats up.
-  lanes.available.sort((a, b) => (b.staleDays ?? 0) - (a.staleDays ?? 0));
+  lanes.pickup.sort(byRotDesc);
+  lanes.available.sort(byRotDesc);
   return lanes;
 }

@@ -124,6 +124,20 @@ slices:
     claimable_by: agent_eligible
     kind: m
     status: ready
+  - id: S9B
+    phase: PH2
+    title: "Bead-lane P0 quartet: age is the organizing principle of the pickup queue"
+    advances: "ns:l1-morning-cockpit#P2"
+    moves_from: 56
+    moves_to: 58
+    deliverable: "PR: (1) finalizeItems stale-marks any non-overnight lane (was available-only — pickup briefs could never look old); (2) pickup sorts rot-first like available, agreeing with the briefing fallback's ranking; (3) shared ageBucket() (fresh <7d / aging 7-30d / rotten >30d) replaces the StalenessBadge 14d cliff, rotten renders red; (4) HandoffArtifactCard routes claim-on-emit by id namespace — handoff-ledger ids are never sent to the Dolt claim, and a failed/skipped claim is said on the card, never swallowed. Companion to core rm:rm-l2-ojfbot#S32 (bead-lint); the write-side claim verb for handoff beads is wave 2."
+    entrance: "Fleet bead audit 2026-08-02 (core S32 t0): 36 open hooks, oldest 96d, invisible in the cockpit — pickup sorted newest-first and could not stale-mark; HandoffArtifactCard.tsx:39 swallowed cross-namespace claim failures with an empty catch."
+    success: "Oldest brief renders at the TOP of pickup wearing a rotten chip; overnight items are never stale-marked; ageBucket boundaries covered by tests; emitted cards state claim outcome; full suite green."
+    check: "pnpm test"
+    autonomy: gate-0
+    claimable_by: agent_eligible
+    kind: s
+    status: delivered
 ---
 
 # Roadmap — morning-cockpit (l1-morning-cockpit)
