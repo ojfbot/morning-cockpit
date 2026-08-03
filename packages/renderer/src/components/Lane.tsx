@@ -4,7 +4,7 @@ import { LaneSummaryPanel } from './LaneSummaryPanel.js';
 
 const SUBTITLE: Record<WorkItemLane, string> = {
   overnight: 'ran or running since last evening',
-  pickup: 'human-in-the-loop, act today',
+  pickup: 'your queue — oldest first, rotten on top',
   available: 'unclaimed — pickable, stale floats up',
 };
 

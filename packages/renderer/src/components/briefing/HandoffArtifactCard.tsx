@@ -5,8 +5,17 @@ import { emitBriefingArtifact, claimTask } from '../../api.js';
 type EmitState =
   | { phase: 'draft' }
   | { phase: 'emitting' }
-  | { phase: 'emitted'; path?: string; beadId?: string }
+  | { phase: 'emitted'; path?: string; beadId?: string; claimNote?: string }
   | { phase: 'error'; errors: string[] };
+
+/**
+ * Markdown-ledger bead ids (date-stamped .handoff filenames) and Dolt bead ids are
+ * DISJOINT namespaces. queue-claim only knows Dolt ids — calling it with a handoff id
+ * is a guaranteed no-op that used to be swallowed by an empty .catch, so the operator
+ * believed routing happened when nothing did. A claim that silently fails is worse
+ * than no claim mechanism.
+ */
+const isHandoffBeadId = (id: string) => /^\d{4}-?\d{2}-?\d{2}/.test(id);
 
 /**
  * The terminal state of a deliver branch: a draft Handoff Artifact. Approve & emit reuses the
@@ -35,9 +44,22 @@ export function HandoffArtifactCard({
       const res = await emitBriefingArtifact(artifact);
       if (res.written) {
         // Emit defines + delegates the work; also TAKE OWNERSHIP of the bead it closes (S4
-        // auto-claim). Best-effort: a lost/failed claim doesn't undo the written brief.
-        if (artifact.closes) void claimTask(artifact.closes).catch(() => {});
-        setState({ phase: 'emitted', path: res.path, beadId: res.beadId });
+        // auto-claim). Best-effort: a lost/failed claim doesn't undo the written brief —
+        // but a failed claim is SAID, never swallowed, and handoff-namespace ids are not
+        // sent to the Dolt claim at all (wave-2 /api/handoff/claim is where that lands).
+        let claimNote: string | undefined;
+        if (artifact.closes) {
+          if (isHandoffBeadId(artifact.closes)) {
+            claimNote = `bead ${artifact.closes} not claimed — handoff-ledger claim verb not built yet`;
+          } else {
+            try {
+              await claimTask(artifact.closes);
+            } catch (e) {
+              claimNote = `claim of ${artifact.closes} failed: ${e instanceof Error ? e.message : String(e)}`;
+            }
+          }
+        }
+        setState({ phase: 'emitted', path: res.path, beadId: res.beadId, claimNote });
         onApprove();
       } else {
         setState({ phase: 'error', errors: res.errors ?? ['emit refused'] });
@@ -68,6 +90,9 @@ export function HandoffArtifactCard({
             The delivery task is spawned with its acceptance criteria — meeting them closes{' '}
             <strong>{artifact.closes}</strong>.
           </p>
+          {state.phase === 'emitted' && state.claimNote && (
+            <p className="artifact-claim-note">⚠ {state.claimNote}</p>
+          )}
           <button className="artifact-undo" onClick={undo}>
             Undo
           </button>
