@@ -146,3 +146,32 @@ export {
   finalizeItems,
   splitLanes,
 } from './lanes.js';
+
+export type {
+  Provenance,
+  SliceTally,
+  CensusRecord,
+  DeferredNorthstar,
+  FleetAuthoredData,
+  LoadedNorthstar,
+  LoadedRoadmap,
+  NodeProvenance,
+  FleetNode,
+  FleetEdgeType,
+  FleetEdge,
+  WayfinderMapInfo,
+  VaultLayerInfo,
+  CensusDisagreement,
+  FleetStats,
+  FleetStructureSnapshot,
+} from './fleet-structure.js';
+export {
+  tallySlices,
+  addTallies,
+  EMPTY_TALLY,
+  buildRegisteredNodes,
+  buildDeferredNodes,
+  buildUnregisteredNodes,
+  buildEdges,
+  buildStats,
+} from './fleet-structure.js';

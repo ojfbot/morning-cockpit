@@ -12,6 +12,7 @@ import { chatRouter } from './routes/chat.js';
 import { briefingRouter } from './routes/briefing.js';
 import { fleetRouter } from './routes/fleet.js';
 import { deliveryRouter } from './routes/delivery.js';
+import { fleetStructureRouter } from './routes/fleet-structure.js';
 import { loopRouter } from './routes/loop.js';
 import { claimRouter } from './routes/claim.js';
 
@@ -35,6 +36,7 @@ app.use(chatRouter);
 app.use(briefingRouter);
 app.use(fleetRouter);
 app.use(deliveryRouter);
+app.use(fleetStructureRouter);
 app.use(loopRouter);
 app.use(claimRouter);
 
