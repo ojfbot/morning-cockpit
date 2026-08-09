@@ -51,6 +51,8 @@ export type {
   ChatContextType,
   ChatContextItem,
   ChatAttachment,
+  ChatTab,
+  NorthstarPreload,
   ResolvedAttachment,
 } from './chat.js';
 export {
@@ -58,8 +60,14 @@ export {
   buildDayGoalBrief,
   buildChatSystemPrompt,
   buildChatRegistry,
+  buildNorthstarPreload,
+  buildNorthstarSystemPrompt,
   formatAttachmentBlock,
   chatFallbackText,
+  chatThreadKey,
+  isChatTab,
+  northstarFallbackText,
+  CHAT_TABS,
 } from './chat.js';
 
 export type { BriefBody, BriefCandidate, BriefValidation, HandoffDraft } from './handoff-brief.js';

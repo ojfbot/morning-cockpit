@@ -28,6 +28,7 @@ function uiWith(repo: string): CockpitUiState {
   return {
     theme: 'light', density: 'comfortable', accent: 'red',
     activeId: '', chosen: {}, approved: {}, chatOpen: false,
+    activeChatTab: 'leo',
     selectedRepo: repo,
   };
 }

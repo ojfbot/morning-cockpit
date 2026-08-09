@@ -9,9 +9,12 @@ import { AttachPicker } from './AttachPicker.js';
 export function ChatComposer({
   disabled,
   onSend,
+  placeholder = 'Ask about beads, reading, or papers…',
 }: {
   disabled: boolean;
   onSend: (text: string, attachments: ChatAttachment[]) => void;
+  /** The prompt must describe THIS tab's grounding — the pods, or one unit's compass (S9). */
+  placeholder?: string;
 }) {
   const [text, setText] = useState('');
   const [attached, setAttached] = useState<ChatContextItem[]>([]);
@@ -58,7 +61,7 @@ export function ChatComposer({
           className="chat-input"
           rows={2}
           value={text}
-          placeholder="Ask about beads, reading, or papers…"
+          placeholder={placeholder}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={onKeyDown}
         />

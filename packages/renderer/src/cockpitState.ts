@@ -6,6 +6,8 @@
  * read-model (`/api/*`), never from here. Mirrors the design's `Component.loadState`.
  */
 
+import type { ChatTab } from '@cockpit/shared';
+
 export type Theme = 'light' | 'dark';
 export type Density = 'comfortable' | 'compact';
 export type Accent = 'red' | 'blue' | 'green';
@@ -23,8 +25,13 @@ export interface CockpitUiState {
   /** Chat rail expanded (Slice 6). */
   chatOpen: boolean;
   /**
+   * Which sidebar conversation is showing (S9). `northstar` is scoped to `selectedRepo`;
+   * `leo` is the original single global thread.
+   */
+  activeChatTab: ChatTab;
+  /**
    * The Fleet tile currently in focus (F1, ADR-0012). Default = morning-cockpit (fixed home).
-   * Drives the Fleet highlight; F2 will scope the Briefing to it.
+   * Drives the Fleet highlight, scopes the Briefing (F2), and scopes the Northstar chat (S9).
    */
   selectedRepo: string;
 }
@@ -39,15 +46,33 @@ const DEFAULTS: CockpitUiState = {
   chosen: {},
   approved: {},
   chatOpen: false,
+  activeChatTab: 'leo',
   selectedRepo: 'morning-cockpit',
 };
 
-/** Merge persisted state over defaults; tolerate corrupt / absent storage. */
+/** v1 key for the chat rail's open flag, superseded by `chatOpen` in mc.cockpit.v1 (S9). */
+const LEGACY_CHAT_OPEN_KEY = 'cockpit-chat-open';
+
+/**
+ * Merge persisted state over defaults; tolerate corrupt / absent storage.
+ *
+ * S9 also absorbs the stray `cockpit-chat-open` key the sidebar used to own, so all chat UI
+ * state lives in one blob. The legacy key WINS when present: `chatOpen` shipped in this blob
+ * but was never read or written by the sidebar, so a persisted `chatOpen` is dead state, not a
+ * user preference. Reading it in preference to the legacy key would collapse an open rail on
+ * first load. Read once, then remove.
+ */
 export function loadState(): CockpitUiState {
   try {
     const raw = localStorage.getItem(STATE_KEY);
-    if (!raw) return { ...DEFAULTS };
-    return { ...DEFAULTS, ...(JSON.parse(raw) as Partial<CockpitUiState>) };
+    const stored = raw ? (JSON.parse(raw) as Partial<CockpitUiState>) : {};
+    const merged = { ...DEFAULTS, ...stored };
+    const legacy = localStorage.getItem(LEGACY_CHAT_OPEN_KEY);
+    if (legacy === 'open' || legacy === 'closed') {
+      merged.chatOpen = legacy === 'open';
+      localStorage.removeItem(LEGACY_CHAT_OPEN_KEY);
+    }
+    return merged;
   } catch {
     return { ...DEFAULTS };
   }

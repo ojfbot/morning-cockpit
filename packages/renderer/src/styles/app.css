@@ -1422,6 +1422,41 @@ a.card-chain-pred:hover {
 .chat-head-btn:hover:not(:disabled) { border-color: var(--gt-accent); color: var(--gt-accent); }
 .chat-head-btn:disabled { opacity: 0.5; cursor: default; }
 
+/* Conversation tabs (S9): Leo = the pods, Northstar = the focused unit's compass. */
+.chat-tabs {
+  display: flex;
+  gap: var(--gt-space-3);
+  padding: 0 var(--gt-space-4);
+  border-bottom: 1px solid var(--gt-border);
+}
+.chat-tab {
+  font-family: var(--gt-font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--gt-text-secondary);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: var(--gt-space-2) 0;
+  margin-bottom: -1px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.chat-tab:hover:not(:disabled) { color: var(--gt-accent); }
+.chat-tab:disabled { opacity: 0.5; cursor: default; }
+.chat-tab--on {
+  color: var(--ink);
+  border-bottom-color: var(--red);
+}
+/* The unit is context, not the label — it must not out-shout the tab name in a 372px rail. */
+.chat-tab-unit {
+  color: var(--gt-text-secondary);
+  font-size: 10px;
+}
+.chat-tab--on .chat-tab-unit { color: var(--gt-text-secondary); }
+
 .chat-context { border-bottom: 1px dashed var(--gt-border); }
 .chat-context-summary {
   display: flex;

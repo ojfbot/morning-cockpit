@@ -14,15 +14,21 @@ export const deliveryRouter: Router = Router();
 
 const cache = new TtlCache<DeliverySnapshot>();
 
+/**
+ * The cached delivery snapshot. Exported so the Northstar chat tab (roadmap S9) grounds on the
+ * SAME cache the Delivery pane serves — one read of core's registry per TTL, not two.
+ */
+export async function getDelivery(now: number): Promise<DeliverySnapshot> {
+  const hit = cache.get('delivery', now);
+  if (hit) return hit;
+  const snap = await buildDeliverySnapshot(new Date(now));
+  cache.set('delivery', snap, config.delivery.ttlMs, now);
+  return snap;
+}
+
 deliveryRouter.get('/api/delivery', async (_req, res) => {
   try {
-    const now = Date.now();
-    let snap = cache.get('delivery', now);
-    if (!snap) {
-      snap = await buildDeliverySnapshot(new Date(now));
-      cache.set('delivery', snap, config.delivery.ttlMs, now);
-    }
-    res.json(snap);
+    res.json(await getDelivery(Date.now()));
   } catch (err) {
     res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
   }

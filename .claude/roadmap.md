@@ -13,6 +13,9 @@ phases:
   - id: PH3
     name: "Focus-surface completion"
     goal: "Track L launch surface lands; the fleet focus-swap is a complete operator loop (see, pivot, launch)."
+  - id: PH4
+    name: "The northstar conversation surface"
+    goal: "Focusing a fleet unit opens a grounded conversation about its compass — the roadtrip's cadence at the desk, converging on a proposal that leaves through the existing gate."
 slices:
   - id: S1
     phase: PH1
@@ -124,6 +127,20 @@ slices:
     claimable_by: agent_eligible
     kind: m
     status: ready
+  - id: S9
+    phase: PH4
+    title: "Chat tabs + focus-scoped Northstar thread (shell only)"
+    advances: "ns:l1-morning-cockpit#P3"
+    moves_from: 55
+    moves_to: 60
+    deliverable: "PR: tab strip in ChatSidebar (Leo | Northstar); ui.selectedRepo threaded from App.tsx into the sidebar; chat-store threads keyed by (tab, unit) instead of one global array; chatOpen + activeChatTab reconciled into mc.cockpit.v1 and the stray cockpit-chat-open key retired; buildNorthstarPreload(delivery, repo) in packages/shared/src/chat.ts building a deterministic per-unit grounding from the existing DeliverySnapshot; ?tab= and ?repo= on the chat routes."
+    entrance: "selectedRepo already drives the repo-scoped briefing (ADR-0012) and /api/delivery already serves northstars, roadmaps and movements — the shell needs no new reader. No open wayfinder ticket in cockpit-northstar-conversation gates the shell: the cadence, provider, evidence-line and thread-keying questions all sit above it."
+    success: "Switching fleet tiles re-scopes the Northstar thread; Leo's thread stays global and behaviourally unchanged; a repo with no registered northstar renders a truthful empty state rather than a fabricated one; the /api/cockpit snapshot contract and GraphQL drift gate are untouched; full suite green."
+    check: "pnpm test"
+    autonomy: gate-0
+    claimable_by: agent_eligible
+    kind: m
+    status: ready
 ---
 
 # Roadmap — morning-cockpit (l1-morning-cockpit)
@@ -153,3 +170,18 @@ lands — dogfooding from line one).
 
 Track L (tile launch surface) in two slices, sequenced L1 links then L2 probe + L3 popover. This is
 the remaining 45% of P3 after the Flow-01 focus-swap shipped.
+
+## PH4 — The northstar conversation surface
+
+Focus-swap currently opens onto a *view*. PH4 makes it open onto a *conversation*: a second sidebar
+chat tab that runs the Northstar Roadtrip's cadence — vision first, one thread at a time, the
+property set attacked as a set, then per-property honesty, then the ladder check — scoped to the
+focused unit, converging on a proposal that leaves through the ADR-0005 gate.
+
+S9 is the shell alone: tabs, focus plumbing, per-unit threads, and a deterministic grounding built
+from the `/api/delivery` snapshot the Delivery pane already reads. It is deliberately the only PH4
+slice on this roadmap today. The cadence, the provider seam, the evidence line, and thread-keying
+behaviour are **open decisions**, charted as tickets in
+`core/decisions/wayfinder/cockpit-northstar-conversation.md`. Their slices get appended here when
+that map's frontier empties — a slice whose `moves_to` isn't yet decidable is a question, not a
+delivery, and the two ledgers never merge.
