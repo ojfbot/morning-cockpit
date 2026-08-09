@@ -142,7 +142,9 @@ slices:
     claimable_by: agent_eligible
     kind: s
     status: delivered
-  # ── PH5 (design_handoff_cockpit_v2, 2026-08-09). All queued pending operator ratification.
+  # ── PH5 (design_handoff_cockpit_v2, 2026-08-09). Ratified 2026-08-08 sitting: S10+S11 → ready,
+  # S13 re-scoped as generalization-of-S9 (coexist ruling: Leo threads pin, Northstar follows focus),
+  # order S10→S11→S12→S13→S14 then S15/S16/S17 confirmed. S12, S14–S17 remain queued.
   # Slice letters in the design brief map: S-a→S10 S-f→S11 S-b→S12 S-c→S13 S-d→S14 S-e→S15 S-g→S16 S-h→S17.
   # Suggested order (brief): S10 → S11 → S12 → S13 → S14, then S15/S16/S17 in any order.
   - id: S10
@@ -158,7 +160,7 @@ slices:
     autonomy: gate-0
     claimable_by: agent_eligible
     kind: m
-    status: queued
+    status: ready
   - id: S11
     phase: PH5
     title: "Derived-truth selectors — no surface hardcodes a count"
@@ -172,7 +174,7 @@ slices:
     autonomy: gate-0
     claimable_by: agent_eligible
     kind: s
-    status: queued
+    status: ready
   - id: S12
     phase: PH5
     title: "Fleet section, three modes (grid / tiers / constellation) + ADR-0012 binding"
@@ -189,13 +191,13 @@ slices:
     status: queued
   - id: S13
     phase: PH5
-    title: "Keyed Leo threads (global + per-repo) with share-to-global toggle"
+    title: "Scoped Leo threads (global + per-repo) — generalize S9's keying; share-to-global toggle"
     advances: "ns:l1-morning-cockpit#P3"
     moves_from: 62
     moves_to: 66
-    deliverable: "PR: chat-store.ts keyed threads {scope: global | repo}, migration for existing global history, scoped seed message (authored prose + delivery counts), context → Global ON/OFF toggle; selection changes the INSPECTOR, never yanks a pinned thread. Implements core wayfinder #340's recommended answer — record the decision on that map (core brief owns the map edit)."
-    entrance: "S12 selection seam merged (thread tabs open from the inspector's Ask Leo)."
-    success: "Two threads hold distinct histories across restarts; focus-change mid-thread keeps the thread pinned; migration preserves the existing Leo history byte-for-byte; Vitest on the store."
+    deliverable: "PR: extend S9's ThreadMap/chatThreadKey with Leo scope — 'leo' stays the global thread (S9's v1→leo migration already preserves history; no new migration), 'leo:<repo>' per-repo; scoped seed reusing the buildNorthstarPreload pattern (authored prose + delivery counts); context → Global ON/OFF toggle; thread tabs open from the S12 inspector's Ask Leo; selection changes the INSPECTOR, never yanks a pinned Leo thread — Northstar tab keeps its S9 follow-focus behaviour (per-tab contract, coexist ruling ratified 2026-08-08). Implements core wayfinder #340's recommended answer — record the decision on that map (core brief owns the map edit)."
+    entrance: "PR #43 (S9 preservation) merged; S12 selection seam merged (thread tabs open from the inspector's Ask Leo)."
+    success: "Global + repo threads hold distinct histories across restarts; focus-change mid-thread keeps a pinned Leo thread pinned while the Northstar tab re-scopes; S9's 'leo' history byte-for-byte intact after upgrade; Vitest on the store."
     check: "pnpm test"
     autonomy: gate-0
     claimable_by: agent_eligible
