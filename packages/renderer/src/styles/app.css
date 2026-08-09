@@ -396,6 +396,7 @@ body {
 .artifact-criteria li::before { content: '☐'; position: absolute; left: 0; color: var(--ink-3); }
 .artifact-foot { margin: var(--gt-space-1) 0 0; font-family: var(--mono); font-size: 10px; color: var(--ink-3); }
 .artifact-errors { margin: 0; padding-left: var(--gt-space-4); font-size: 12px; color: var(--red); }
+.artifact-claim-note { margin: var(--gt-space-1) 0 0; font-family: var(--mono); font-size: 11px; color: var(--amber); }
 .artifact-actions { display: flex; align-items: center; gap: var(--gt-space-3); margin-top: var(--gt-space-1); }
 .artifact-approve {
   font-family: var(--mono);
@@ -991,7 +992,7 @@ a.card-chain-pred:hover {
 }
 .convoy-bar > span { display: block; height: 100%; background: var(--red); }
 
-/* Staleness badge */
+/* Staleness badge — age buckets share one definition with lane order (shared ageBucket) */
 .stale-badge {
   margin-left: auto;
   font-family: var(--mono);
@@ -1000,6 +1001,10 @@ a.card-chain-pred:hover {
   padding: 1px 5px;
   color: var(--amber);
   background: color-mix(in srgb, var(--amber) 16%, transparent);
+}
+.stale-badge--rotten {
+  color: var(--red);
+  background: color-mix(in srgb, var(--red) 16%, transparent);
 }
 
 /* ── Lane summary (the per-lane brief: headline → square bullets → red pull-quote) ── */

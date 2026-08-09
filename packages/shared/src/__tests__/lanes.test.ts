@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   overnightWindowStart,
   computeStaleDays,
+  ageBucket,
   classifyLane,
   finalizeItems,
   splitLanes,
@@ -123,6 +124,21 @@ describe('finalizeItems', () => {
     expect(out!.staleDays).toBeGreaterThanOrEqual(14);
   });
 
+  it('marks old PICKUP items stale too — an open brief must be able to look old', () => {
+    // Regression: the gate used to be lane==='available' only, unreachable for briefs
+    // (openHook → pickup first), so a May brief could sit undecorated for months.
+    const brief = mk({ kind: 'brief', lane: 'pickup', createdAt: '2026-05-01T00:00:00' });
+    const [out] = finalizeItems([brief], ctx);
+    expect(out!.status).toBe('stale');
+    expect(out!.staleDays).toBeGreaterThanOrEqual(14);
+  });
+
+  it('never stale-marks overnight items — fresh activity is not rot', () => {
+    const overnight = mk({ lane: 'overnight', status: 'done', createdAt: '2026-05-01T00:00:00' });
+    const [out] = finalizeItems([overnight], ctx);
+    expect(out!.status).toBe('done');
+  });
+
   it('does not mark a fresh available item stale', () => {
     const fresh = mk({ createdAt: '2026-06-06T00:00:00', activityAt: '2026-06-06T00:00:00' });
     const [out] = finalizeItems([fresh], ctx);
@@ -153,14 +169,30 @@ describe('splitLanes', () => {
     provenance: {},
   });
 
-  it('sorts overnight/pickup by activity descending and available by staleness', () => {
+  it('sorts overnight by activity descending; pickup and available by staleness (rot floats up)', () => {
     const lanes = splitLanes([
       mk('overnight', '2026-06-07T01:00:00'),
       mk('overnight', '2026-06-07T05:00:00'),
       mk('available', '2026-06-01T00:00:00', 6),
       mk('available', '2026-05-01T00:00:00', 37),
+      mk('pickup', '2026-06-06T00:00:00', 1),
+      mk('pickup', '2026-04-15T00:00:00', 53),
     ]);
     expect(lanes.overnight[0]!.activityAt).toBe('2026-06-07T05:00:00');
     expect(lanes.available[0]!.staleDays).toBe(37);
+    // Regression: pickup used to sort by recency, sinking the oldest brief to the bottom.
+    expect(lanes.pickup[0]!.staleDays).toBe(53);
+  });
+});
+
+describe('ageBucket', () => {
+  it('buckets on the shared boundaries: fresh <7d, aging 7-30d, rotten >30d', () => {
+    expect(ageBucket(undefined)).toBe('fresh');
+    expect(ageBucket(0)).toBe('fresh');
+    expect(ageBucket(6)).toBe('fresh');
+    expect(ageBucket(7)).toBe('aging');
+    expect(ageBucket(30)).toBe('aging');
+    expect(ageBucket(31)).toBe('rotten');
+    expect(ageBucket(96)).toBe('rotten');
   });
 });
