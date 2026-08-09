@@ -13,6 +13,10 @@ phases:
   - id: PH3
     name: "Focus-surface completion"
     goal: "Track L launch surface lands; the fleet focus-swap is a complete operator loop (see, pivot, launch)."
+  # PH4 intentionally skipped: a concurrent main-checkout WIP may be minting it; ids are immutable, gaps are fine.
+  - id: PH5
+    name: "Cockpit v2 — instrument shell + fleet structure"
+    goal: "The design_handoff_cockpit_v2 program: fleet-structure adapter + three-mode Fleet section + keyed Leo threads + instrument shell, per the ruled decisions in research/design-handoff-cockpit-v2/README.md. Entrance/check values below are PROPOSED drafts from the design brief — operator ratifies by flipping queued → ready."
 slices:
   - id: S1
     phase: PH1
@@ -138,6 +142,121 @@ slices:
     claimable_by: agent_eligible
     kind: s
     status: delivered
+  # ── PH5 (design_handoff_cockpit_v2, 2026-08-09). All queued pending operator ratification.
+  # Slice letters in the design brief map: S-a→S10 S-f→S11 S-b→S12 S-c→S13 S-d→S14 S-e→S15 S-g→S16 S-h→S17.
+  # Suggested order (brief): S10 → S11 → S12 → S13 → S14, then S15/S16/S17 in any order.
+  - id: S10
+    phase: PH5
+    title: "Registry adapter + /api/fleet-structure (read-only)"
+    advances: "ns:l1-morning-cockpit#P2"
+    moves_from: 50
+    moves_to: 54
+    deliverable: "PR: adapters/fleet-structure.ts reading core registry frontmatter, roadmap status: tallies across sibling repos, wayfinder frontmatter, ~/selfco/wiki counts (precedent: adapters/loop.ts); REST endpoint /api/fleet-structure, not the G1 facade (RFI C16). Badges in payload: DERIVED tallies, JUDGMENT cluster assignment, AUTHORED prose. Membership joins to the REGISTRY, never REPO_META; census/registry disagreement is rendered, not hidden (TD-007)."
+    entrance: "design_handoff_cockpit_v2 bundle in research/; RFI response A9/C15 names every reader; loop.ts precedent for ~/selfco reads."
+    success: "Endpoint serves the full node/edge/stat payload from live files; Vitest covers each parser; a missing sibling repo degrades that roadmap's tallies with a health note, never the snapshot."
+    check: "pnpm test"
+    autonomy: gate-0
+    claimable_by: agent_eligible
+    kind: m
+    status: queued
+  - id: S11
+    phase: PH5
+    title: "Derived-truth selectors — no surface hardcodes a count"
+    advances: "ns:l1-morning-cockpit#P1"
+    moves_from: 66
+    moves_to: 68
+    deliverable: "PR: one selector layer over the snapshot (decisions = openBriefs − emittedBriefs and friends); hero/dial/spine/meta/chips all consume it; grep-able removal of the v1 hardcoded literals (42 pickups, 80/7d, sinceGap, stat rails)."
+    entrance: "S10 payload shape settled (selectors read the same snapshot)."
+    success: "Emitting a brief visibly moves every decision surface in one render; Vitest proves emit → all counts move; grep for the named v1 literals returns nothing."
+    check: "pnpm test"
+    autonomy: gate-0
+    claimable_by: agent_eligible
+    kind: s
+    status: queued
+  - id: S12
+    phase: PH5
+    title: "Fleet section, three modes (grid / tiers / constellation) + ADR-0012 binding"
+    advances: "ns:l1-morning-cockpit#P3"
+    moves_from: 55
+    moves_to: 62
+    deliverable: "PR: port of the prototype canvas as a zero-dep React SVG component (masonry cluster boxes, bundled per-cluster edges — never per-node; polar constellation); grid restructure (SIGNAL cards / DORMANT cluster rows); filter = dim .14 + brighten + match pill, never remove; selection drives ADR-0012 fleet selection for repo nodes, no-op for non-repo (RFI D22 ruling); inspector replaces rail widgets on selection."
+    entrance: "S10 live; design reference research/design-handoff-cockpit-v2/design/Cockpit Fleet v2.dc.html; punch-list canvas items (pan clamp, a11y tab stops) in scope."
+    success: "The G40 Playwright run's canvas beats pass: type ready → click f1-substrate → inspector opens AND fleet selection follows; layout fns pure + Vitest-covered; SVG nodes tabbable with focus ring."
+    check: "pnpm test"
+    autonomy: gate-0
+    claimable_by: agent_eligible
+    kind: m
+    status: queued
+  - id: S13
+    phase: PH5
+    title: "Keyed Leo threads (global + per-repo) with share-to-global toggle"
+    advances: "ns:l1-morning-cockpit#P3"
+    moves_from: 62
+    moves_to: 66
+    deliverable: "PR: chat-store.ts keyed threads {scope: global | repo}, migration for existing global history, scoped seed message (authored prose + delivery counts), context → Global ON/OFF toggle; selection changes the INSPECTOR, never yanks a pinned thread. Implements core wayfinder #340's recommended answer — record the decision on that map (core brief owns the map edit)."
+    entrance: "S12 selection seam merged (thread tabs open from the inspector's Ask Leo)."
+    success: "Two threads hold distinct histories across restarts; focus-change mid-thread keeps the thread pinned; migration preserves the existing Leo history byte-for-byte; Vitest on the store."
+    check: "pnpm test"
+    autonomy: gate-0
+    claimable_by: agent_eligible
+    kind: m
+    status: queued
+  - id: S14
+    phase: PH5
+    title: "Instrument shell — meta bar, phase hero + day dial, spine nav, last-viewed"
+    advances: "ns:l1-morning-cockpit#P1"
+    moves_from: 68
+    moves_to: 72
+    deliverable: "PR: 40px meta bar (loop pulse, phase chip, clock); phase wordmark + focus sentence (red only on decision counts) + day dial (24h ring, phase arcs, one added center element per the operator flag — pick ONE of next-anchor ETA / loop count-up / phase glyph); 192px spine with derived state summaries + red decision dots; last-viewed timestamp powering SINCE YOU LAST LOOKED; hero collapse-on-scroll (punch-list); prefers-reduced-motion kills the pulse."
+    entrance: "S11 selectors live (every shell number derives)."
+    success: "All shell numbers trace to selectors (no literals); phase flips at 5/11/17/22 with manual override; dial has role=img + label; collapse keeps >60% viewport for content at 900px-tall windows."
+    check: "pnpm test"
+    autonomy: gate-0
+    claimable_by: agent_eligible
+    kind: m
+    status: queued
+  - id: S15
+    phase: PH5
+    title: "Leo thread color coding + UI-executed command tokens"
+    advances: "ns:l1-morning-cockpit#P1"
+    moves_from: 72
+    moves_to: 74
+    deliverable: "PR: thread accents by scope (global cream, repo = cluster hue, system green, red only on decision-required); token chip row — /explain /ladder /gap /open /draft-handoff — each a deterministic UI verb (never free text to the model); /draft-handoff enters the existing ADR-0005 gated flow; unknown tokens fall through as text. Core-verb tokens (queue-claim etc.) are explicitly OUT — new operator decision required (core brief §4)."
+    entrance: "S13 threads merged."
+    success: "Each token performs its verb deterministically in a recorded run; /draft-handoff cannot emit without the Approve gate; token chips render in the transcript."
+    check: "pnpm test"
+    autonomy: gate-0
+    claimable_by: agent_eligible
+    kind: s
+    status: queued
+  - id: S16
+    phase: PH5
+    title: "Newline pane — course ops from vault notes + open briefs"
+    advances: "ns:l1-morning-cockpit#P1"
+    moves_from: 74
+    moves_to: 76
+    deliverable: "PR: units table (real unit names from vault notes — the prototype's are placeholders, punch-list), DERIVED — VAULT NOTES badge, hot-row binding to the live brief, NEXT SITTING card navigating to the matching briefing thread."
+    entrance: "S11 + S13 merged (derived counts, thread navigation)."
+    success: "Every unit row traces to a vault note; NEXT SITTING opens the right briefing thread; truthful empty state when no notes exist."
+    check: "pnpm test"
+    autonomy: gate-0
+    claimable_by: agent_eligible
+    kind: s
+    status: queued
+  - id: S17
+    phase: PH5
+    title: "Canon pane — regenerated D5 + authored D6, dark-theme native"
+    advances: "ns:l1-morning-cockpit#P1"
+    moves_from: 76
+    moves_to: 78
+    deliverable: "PR: figure cards with provenance headers (AUTHORED / GENERATED, canon path, 'the cockpit shows, the vault keeps') + staleness footers; consumes core's registry-generated D5 (core brief §2) and authored D6; mermaid themed dark-native — never a light-theme SVG embedded (punch-list)."
+    entrance: "Core's D5 generator slice delivered (registry → mermaid → dark render)."
+    success: "Both figures render dark-native with provenance + staleness; deleting the canon file yields a truthful empty state pointing at the vault path."
+    check: "pnpm test"
+    autonomy: gate-0
+    claimable_by: agent_eligible
+    kind: s
+    status: queued
 ---
 
 # Roadmap — morning-cockpit (l1-morning-cockpit)
