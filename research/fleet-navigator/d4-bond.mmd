@@ -1,0 +1,22 @@
+---
+title: The ojfbot-selfco bond (what actually crosses)
+---
+flowchart LR
+  FLEET["ojfbot fleet<br/>45 repos"]
+  CORE["core<br/>registry + skills + hooks"]
+  VAULT["selfco vault<br/>wiki + tracking + teach + diagrams"]
+  Sync(["/vault sync<br/>activity feed to entity pages"])
+  Spawn(["repo spawn<br/>ADR-0088 entity registration"])
+  Teach(["/teach deposits<br/>lessons to selfco/teach"])
+  Stub(["vault-session.sh hook<br/>opt-in session stubs to Inbox"])
+  NSREF["l2-selfco northstar<br/>referenced by core registry, owned by vault"]
+  FLEET -- "consumed by" --> Sync
+  Sync -- "yields" --> VAULT
+  CORE -- "handles" --> Spawn
+  Spawn -- "yields" --> VAULT
+  CORE -- "handles" --> Teach
+  Teach -- "yields" --> VAULT
+  CORE -. "opt-in" .-> Stub
+  Stub -.-> VAULT
+  VAULT -- "owns" --> NSREF
+  CORE -. "references by path" .-> NSREF

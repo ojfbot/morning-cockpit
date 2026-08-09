@@ -1,0 +1,590 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fleet Navigator — 2026-08-08</title>
+<style>
+  /* OJF Editorial tokens — mirrored from morning-cockpit packages/renderer/src/styles/tokens.css @ 2026-08-08 */
+  :root {
+    --paper: #f2efe7; --paper-2: #e8e4d8; --card: #fcfbf6;
+    --ink: #17140f; --ink-2: #574f44; --ink-3: #938a7c;
+    --rule: rgba(23,20,15,.16); --rule-strong: rgba(23,20,15,.62);
+    --red: #e2231a; --green: #2f7d5b; --amber: #a8730f;
+    --sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, "SF Mono", monospace;
+    --c-platform:#4a6fa5; --c-apps:#8c7ea5; --c-f1:#b3543f; --c-golf:#4f7d5b;
+    --c-dive:#3f7d8c; --c-story:#7d5f9e; --c-client:#a8730f; --c-vault:#6d5f8e; --c-corpus:#6b7a5a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper:#100e08; --paper-2:#191510; --card:#1b1812;
+      --ink:#f3eee3; --ink-2:#a69d8e; --ink-3:#6c6457;
+      --rule: rgba(243,238,227,.16); --rule-strong: rgba(243,238,227,.5);
+      --red:#ff463a; --green:#52b083; --amber:#e0a53a;
+      --c-platform:#7d9bc9; --c-apps:#a99bc9; --c-f1:#cf7f6b; --c-golf:#79a98a;
+      --c-dive:#6fa9b8; --c-story:#a98fc9; --c-client:#e0a53a; --c-vault:#9b8fb8; --c-corpus:#95a884;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--paper); color:var(--ink); font:500 14px/1.5 var(--sans); }
+  header { padding: 18px 24px 0; }
+  .masthead { display:flex; align-items:baseline; gap:16px; flex-wrap:wrap; }
+  .masthead h1 { margin:0; font-size:34px; font-weight:800; letter-spacing:-.02em; text-transform:uppercase; }
+  .masthead .ed { font:500 11px var(--mono); color:var(--ink-2); text-transform:uppercase; letter-spacing:.06em; }
+  .rules { border-top:2px solid var(--rule-strong); border-bottom:1px solid var(--rule-strong); height:5px; margin:10px 0 0; }
+  .controls { display:flex; gap:10px; align-items:center; flex-wrap:wrap; padding:12px 24px; border-bottom:1px solid var(--rule); }
+  #query { flex:1 1 300px; max-width:520px; background:var(--card); color:var(--ink); border:1px solid var(--rule-strong); padding:8px 12px; font:500 13px var(--mono); outline:none; }
+  #query:focus { border-color:var(--red); }
+  .chip, button.small, .viewbtn { cursor:pointer; border:1px solid var(--rule-strong); background:var(--card); color:var(--ink-2); padding:5px 12px; font:600 11px var(--mono); text-transform:uppercase; letter-spacing:.05em; }
+  .chip:hover, button.small:hover, .viewbtn:hover { color:var(--ink); border-color:var(--red); }
+  .viewbtn.on { background:var(--ink); color:var(--paper); border-color:var(--ink); }
+  #stats { display:flex; gap:20px; flex-wrap:wrap; padding:8px 24px; font:500 11px var(--mono); color:var(--ink-2); border-bottom:1px solid var(--rule); text-transform:uppercase; letter-spacing:.04em; }
+  #stats b { color:var(--ink); font-weight:700; }
+  #stats .rd { color:var(--red); font-weight:700; }
+  main { display:grid; grid-template-columns: 1fr 330px; min-height:74vh; }
+  @media (max-width: 980px) { main { grid-template-columns:1fr; } }
+  #sky { position:relative; overflow:hidden; cursor:grab; min-height:74vh; background:var(--paper); }
+  #sky.dragging { cursor:grabbing; }
+  #sky svg { display:block; width:100%; height:100%; position:absolute; inset:0; }
+  #skyTools { position:absolute; right:16px; top:12px; z-index:4; display:flex; gap:8px; }
+  #detail { border-left:1px solid var(--rule-strong); background:var(--paper-2); padding:18px; overflow-y:auto; max-height:86vh; }
+  #detail h2 { margin:0 0 2px; font-size:17px; font-weight:800; }
+  #detail .kind { font:500 11px var(--mono); color:var(--ink-2); text-transform:uppercase; letter-spacing:.05em; margin-bottom:10px; }
+  #results .r { padding:6px 8px; font-size:13px; cursor:pointer; border-bottom:1px solid var(--rule); }
+  #results .r:hover { background:var(--card); }
+  #results .r small { font:500 10px var(--mono); color:var(--ink-2); display:block; }
+  #results .r.edge { color:var(--ink-2); }
+  /* ── popover ── */
+  #pop { position:absolute; z-index:9; width:400px; max-width:92%; background:var(--card); border:1px solid var(--rule-strong); box-shadow:0 10px 30px rgba(0,0,0,.25); display:none; }
+  #pop .hd { display:flex; align-items:flex-start; gap:8px; padding:12px 14px 8px; border-bottom:1px solid var(--rule); }
+  #pop .hd h2 { margin:0; font-size:16px; font-weight:800; flex:1; }
+  #pop .hd .x { cursor:pointer; border:1px solid var(--rule-strong); background:none; color:var(--ink-2); font:700 11px var(--mono); padding:2px 8px; }
+  #pop .hd .x:hover { color:var(--red); border-color:var(--red); }
+  #pop .kind { font:500 10px var(--mono); color:var(--ink-2); text-transform:uppercase; letter-spacing:.05em; padding:0 14px; margin-top:6px; }
+  #pop .body { padding:8px 14px 12px; max-height:46vh; overflow-y:auto; }
+  #pop .lbl { font:700 10px var(--mono); color:var(--red); letter-spacing:.08em; margin:10px 0 3px; }
+  #pop .novice { font-size:13px; line-height:1.55; }
+  #pop .path { font:500 10px var(--mono); color:var(--ink-2); word-break:break-all; margin:8px 0 0; padding:6px 8px; background:var(--paper-2); border:1px solid var(--rule); }
+  .slicebar { display:flex; height:12px; overflow:hidden; margin:6px 0 4px; border:1px solid var(--rule-strong); background:var(--paper-2); }
+  .slicebar div { height:100%; }
+  .legend { font:500 10px var(--mono); color:var(--ink-2); display:flex; gap:12px; flex-wrap:wrap; text-transform:uppercase; }
+  .dot { display:inline-block; width:8px; height:8px; margin-right:4px; }
+  .ladder { font:500 11px var(--mono); margin-top:8px; color:var(--ink-2); }
+  .ladder a { color:var(--red); cursor:pointer; text-decoration:none; font-weight:700; }
+  #pop .chat { border-top:2px solid var(--rule-strong); padding:10px 14px 12px; background:var(--paper-2); }
+  #pop .chat .lbl { margin-top:0; }
+  #pop .chatlog { max-height:180px; overflow-y:auto; font-size:12.5px; line-height:1.5; }
+  #pop .chatlog .u { color:var(--ink-2); font:600 11px var(--mono); margin-top:8px; }
+  #pop .chatlog .a { white-space:pre-wrap; }
+  #pop .chatlog .meta { font:500 9px var(--mono); color:var(--ink-3); text-transform:uppercase; }
+  #pop .chatrow { display:flex; gap:6px; margin-top:8px; }
+  #pop .chatrow input { flex:1; background:var(--card); color:var(--ink); border:1px solid var(--rule-strong); padding:7px 9px; font:500 12px var(--mono); outline:none; }
+  #pop .chatrow input:focus { border-color:var(--red); }
+  #pop .chatrow button { cursor:pointer; border:1px solid var(--rule-strong); background:var(--ink); color:var(--paper); font:700 11px var(--mono); padding:0 14px; }
+  #pop .chatrow button:disabled { opacity:.45; cursor:wait; }
+  section.diagrams { padding:24px; border-top:2px solid var(--rule-strong); }
+  section.diagrams h2 { font-size:18px; font-weight:800; text-transform:uppercase; }
+  .card { background:var(--card); border:1px solid var(--rule-strong); padding:18px; margin:18px 0; }
+  .card h3 { margin:0 0 6px; font-size:14px; font-weight:700; }
+  .card p.cap { color:var(--ink-2); font-size:13px; margin:0 0 12px; }
+  .card .svgwrap { overflow-x:auto; background:#fcfbf6; border:1px solid var(--rule); padding:10px; }
+  .card .svgwrap svg { max-width:none; }
+  footer { padding:16px 24px 36px; color:var(--ink-2); font-size:12px; border-top:1px solid var(--rule-strong); }
+  .node { cursor:pointer; }
+  .node rect.bg { fill:var(--card); stroke:var(--rule-strong); stroke-width:1; }
+  .node.unreg rect.bg { stroke-dasharray:4 3; stroke:var(--ink-3); }
+  .node text.nm { fill:var(--ink); font:700 12px var(--sans); pointer-events:none; }
+  .node.unreg text.nm { fill:var(--ink-2); }
+  .node text.sub { fill:var(--ink-2); font:500 9px var(--mono); pointer-events:none; }
+  .node.sel rect.bg { stroke:var(--red); stroke-width:2; stroke-dasharray:none; }
+  .edgeline { stroke:var(--rule-strong); stroke-width:1; fill:none; pointer-events:none; }
+  .edgeline.dotted { stroke-dasharray:3 4; stroke:var(--ink-3); }
+  .edgeline.sel { stroke:var(--red); stroke-width:2.5; }
+  .edgehit { stroke:transparent; stroke-width:16; fill:none; cursor:pointer; }
+  .edgehit:hover + .edgeline, g.eg:hover .edgeline { stroke:var(--red); }
+  .dimmed { opacity:.12; }
+  .bandrule { stroke:var(--rule-strong); stroke-width:1; }
+  .bandlabel { fill:var(--ink-2); font:700 11px var(--mono); letter-spacing:.08em; }
+  .clusterbox { fill:none; stroke:var(--rule); stroke-width:1; }
+  .clusterlabel { font:700 10px var(--mono); letter-spacing:.06em; }
+</style>
+</head>
+<body>
+<header>
+  <div class="masthead">
+    <h1>Fleet Navigator</h1>
+    <span class="ed">Vol. 3 · registry + vault read 2026-08-08 · click any node OR edge · chat wired to cockpit Leo (:3040)</span>
+  </div>
+  <div class="rules"></div>
+</header>
+<div class="controls">
+  <span class="viewbtn on" id="btnTiers">Tiers</span>
+  <span class="viewbtn" id="btnCon">Constellation</span>
+  <input id="query" type="text" placeholder='query… "ready" · cluster:f1 · status:charting · kind:vault · unregistered · ladders' autocomplete="off">
+  <span class="chip" data-q="status:ready">ready work</span>
+  <span class="chip" data-q="unregistered">gaps</span>
+  <span class="chip" data-q="status:charting">charting maps</span>
+  <span class="chip" data-q="cluster:f1">F1</span>
+  <span class="chip" data-q="cluster:golf-geo">golf</span>
+  <span class="chip" data-q="kind:vault">vault</span>
+  <span class="chip" data-q="">clear</span>
+</div>
+<div id="stats"></div>
+<main>
+  <div id="sky">
+    <div id="skyTools"><button class="small" id="resetView">reset view</button></div>
+    <div id="pop">
+      <div class="hd"><h2 id="popTitle"></h2><button class="x" id="popClose">ESC</button></div>
+      <div class="kind" id="popKind"></div>
+      <div class="body" id="popBody"></div>
+      <div class="chat">
+        <div class="lbl">ASK LEO — COCKPIT CHAT · LOCAL MODEL · THREAD PERSISTS IN COCKPIT</div>
+        <div class="chatlog" id="popLog"></div>
+        <div class="chatrow">
+          <input id="popIn" type="text" placeholder="ask about this node/edge…">
+          <button id="popSend">ASK</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <aside id="detail">
+    <div id="nodecard">
+      <h2>Everything is clickable</h2>
+      <div class="kind">Nodes AND edges. Click one → a popover explains it as if you're new here, and Leo (Cockpit Chat's local model) is one keystroke away. Queries match nodes, edges, and descriptions.</div>
+    </div>
+    <div id="results"></div>
+  </aside>
+</main>
+<section class="diagrams">
+  <h2>The canon — rendered Mermaid</h2>
+  <div class="card"><h3>D5 · The constellation at altitude</h3>
+    <p class="cap"><b>Caption:</b> The ladder, read bottom-up: 18 L1 northstars in seven presentation clusters ladder into <code>l2-ojfbot</code>, which ladders into the shared L3 apex. <code>l2-selfco</code> is dotted = declared-but-deferred: it will live in the vault's <code>tracking/</code>, owned by selfco, referenced by core.</p>
+    <div class="svgwrap"><!--SVG:d1--></div></div>
+  <div class="card"><h3>D6 · How decisions become recorded movement</h3>
+    <p class="cap"><b>Caption:</b> Wayfinder maps (5 working / 4 charting) yield decisions into roadmaps; <code>roadmap-compile</code> projects ready slices into the dispatch queue; worker sessions yield beads into the Dolt ledger, which Morning Cockpit reads. Dotted movement edge = sessions <i>propose</i> movement, never write <code>current:</code>.</p>
+    <div class="svgwrap"><!--SVG:d2--></div></div>
+  <div class="card"><h3>D7 · selfco vault internals</h3>
+    <p class="cap"><b>Caption:</b> Karpathy two-layer: append-only <code>raw/</code> consumed by <code>/vault</code>, which owns the four wiki page types (696 pages at read). <code>tracking/</code> and <code>diagrams/</code> sit outside wiki lint scope on purpose (dotted). selfco-box on the Pi is the live capture transport.</p>
+    <div class="svgwrap"><!--SVG:d3--></div></div>
+  <div class="card"><h3>D8 · The ojfbot ⊕ selfco bond</h3>
+    <p class="cap"><b>Caption:</b> Verified seams only: <code>/vault sync</code> folds fleet activity into entity pages, ADR-0088 registers repos at spawn, <code>/teach</code> deposits lessons, the opt-in SessionEnd hook (dotted) drops stubs into the Inbox. The L2 northstar is owned on one side, referenced by the other.</p>
+    <div class="svgwrap"><!--SVG:d4--></div></div>
+</section>
+<footer>
+  <b>Provenance & caveats.</b> Parsed from <code>core/decisions/northstar/README.md</code> + each roadmap's <code>status:</code> lines (minus file-level <code>status: active</code>). Dashed repo cards = in the 45-repo census but carrying no northstar; cluster assignment for those is presentation-level, not registry fact. Chat posts to the cockpit server's <code>/api/chat</code> (Leo's global thread — exchanges persist and reappear in Cockpit Chat); requires <code>pnpm dev:server</code> in morning-cockpit and Ollama. Read-model only — never writes registry state. Tokens mirrored from cockpit <code>tokens.css</code> (OJF Editorial, ADR-0007).
+</footer>
+<script>
+const COCKPIT = "http://localhost:3040";
+const NOVICE_TEMPLATES = {
+  repo: "This repo exists in the 45-repo census but carries NO northstar — nothing in the delivery system measures it or dispatches work to it. That's the gap this map surfaces: the work may be real, but it is invisible to the fleet's steering instruments.",
+  map: "A wayfinder map is a living file of open decision tickets for an initiative still wrapped in fog. It plans and rules — it never builds. Status 'working' means tickets are being burned down one session at a time; 'charting' means the map itself is still being drawn. When tickets close, the decisions become roadmap slices.",
+  vault: "Part of selfco — the personal knowledge vault (an Obsidian repo at ~/selfco) that sits beside the build fleet. The build side ships code; the vault side accumulates understanding, and each feeds the other.",
+};
+const FLEET = {
+  asOf: "2026-08-08",
+  northstars: [
+    {slug:"l3-shared",tier:"L3",name:"Shared apex",cluster:"apex",ladder:null,desc:"The ojfbot ⊕ selfco apex northstar.",novice:"The single vision statement everything else answers to. There is exactly one L3; both ventures — the ojfbot build fleet and the selfco knowledge vault — declare that their goals serve it. If you're lost anywhere in this graph, walking 'up' the edges always ends here.",path:"core/decisions/northstar/l3-shared.md"},
+    {slug:"l2-ojfbot",tier:"L2",name:"ojfbot venture",cluster:"apex",ladder:"l3-shared",desc:"The fleet venture northstar; all 18 L1s ladder here.",novice:"The venstar for the whole ~/ojfbot fleet — a vision paragraph plus measured properties with completion percentages. Every app's L1 northstar names which property here its work advances (this navigator serves P2, 'work is legible'). Its own roadmap holds fleet-wide plumbing: registries, lints, the dispatch pipeline.",path:"core/decisions/northstar/l2-ojfbot.md",slices:{ready:6,queued:11,merged:16},roadmap:"rm-l2-ojfbot"},
+    {slug:"l2-selfco",tier:"L2",name:"selfco venture",cluster:"selfco",ladder:"l3-shared",deferred:true,desc:"Declared-but-deferred L2 for the vault.",novice:"A placeholder for the second venture: the selfco knowledge vault. It's declared in the registry only as a comment — the file doesn't exist yet, which is why this card is dashed. When it lands it will live inside the vault itself (tracking/northstar-selfco.md), owned by selfco and merely referenced by core.",path:"~/selfco/tracking/northstar-selfco.md"},
+    {slug:"l1-core",tier:"L1",name:"core",cluster:"platform",ladder:"l2-ojfbot",desc:"Registry, skills, hooks, telemetry, delivery pipeline.",novice:"The fleet's engine room. It holds the skill catalog Claude sessions run on, the northstar/roadmap registry this very page reads, the telemetry hooks, and the delivery pipeline. Its own product bet is the 'skill loop': honestly measuring whether skill suggestions get followed, then improving them against a frozen evaluation.",path:"core/.claude/northstar.md",slices:{queued:7,merged:11},roadmap:"rm-l1-core"},
+    {slug:"l1-shell",tier:"L1",name:"shell",cluster:"platform",ladder:"l2-ojfbot",desc:"MF host compositor + frame-agent LLM gateway.",novice:"The web host that composes the Frame apps (cv-builder, blogengine, …) into one surface using Module Federation, and fronts the LLM gateway they share. Registered northstar but no roadmap yet — that's why it shows no slice counts.",path:"shell/.claude/northstar.md"},
+    {slug:"l1-morning-cockpit",tier:"L1",name:"morning-cockpit",cluster:"platform",ladder:"l2-ojfbot",desc:"Local-first morning dashboard; Cockpit Chat = Leo.",novice:"The dashboard you open in the morning: lanes of work-items (beads) gathered from every repo, a reading pod, and Cockpit Chat — whose global assistant thread is Leo, the same local model this popover's chat talks to. This navigator is a prototype for a navigation pane inside it.",path:"morning-cockpit/.claude/northstar.md",slices:{ready:4,queued:4,merged:1},roadmap:"rm-l1-morning-cockpit"},
+    {slug:"l1-switchboard",tier:"L1",name:"switchboard",cluster:"platform",ladder:"l2-ojfbot",desc:"Fleet LLM gateway — budgets, labeled failover, OTel.",novice:"One gateway every fleet app will eventually call instead of hitting LLM providers directly: per-app budgets, failover that is never silent, and metrics. Python/FastAPI on port 8600.",path:"switchboard/.claude/northstar.md",slices:{ready:1,queued:8,merged:1},roadmap:"rm-l1-switchboard"},
+    {slug:"l1-cv-builder",tier:"L1",name:"cv-builder",cluster:"frame-apps",ladder:"l2-ojfbot",desc:"AI resume builder, MF remote.",novice:"The oldest Frame app — an AI resume builder that runs as a Module Federation remote inside shell. Registered but roadmap-less. It carries the registry's one standing lint ERROR, which is a known working-copy artifact, not real breakage.",path:"cv-builder/.claude/northstar.md"},
+    {slug:"l1-blogengine",tier:"L1",name:"blogengine",cluster:"frame-apps",ladder:"l2-ojfbot",desc:"AI blog dashboard w/ Notion integration.",novice:"An AI blog dashboard with Notion integration — drafting, tone-checking, media handling. One of the original Frame apps; publishes prose the writing pipeline produces.",path:"blogengine/.claude/northstar.md"},
+    {slug:"l1-f1-substrate",tier:"L1",name:"f1-substrate",cluster:"f1",ladder:"l2-ojfbot",desc:"DuckDB FastF1 store + FastAPI query layer.",novice:"Ground truth for the F1 stack: it loads official timing data into DuckDB and serves computed facts (gaps, stints) over an API. House rule: everything else in the F1 cluster may only say what substrate can back with data.",path:"f1-substrate/.claude/northstar.md",slices:{ready:2,queued:7,merged:2},roadmap:"rm-l1-f1-substrate"},
+    {slug:"l1-f1-pit-wall",tier:"L1",name:"f1-pit-wall",cluster:"f1",ladder:"l2-ojfbot",desc:"Race-engineering dashboard, claim-grounding harness.",novice:"The dashboard that displays substrate's telemetry like a race engineer's screen. Its defining discipline: the engineer persona starts empty and only ever speaks claim-grounded facts — no fabricated racecraft, ever.",path:"f1-pit-wall/.claude/northstar.md",slices:{ready:2,queued:14,merged:3},roadmap:"rm-l1-f1-pit-wall"},
+    {slug:"l1-f1-press-room",tier:"L1",name:"f1-press-room",cluster:"f1",ladder:"l2-ojfbot",desc:"Teaching studio off the f1 export seam.",novice:"Turns the F1 stack's outputs into teaching content — articles and video shorts where every claim is checked against substrate's export before publishing. The 'content' seat of the four-repo stack.",path:"f1-press-room/.claude/northstar.md",slices:{queued:10,merged:2},roadmap:"rm-l1-f1-press-room"},
+    {slug:"l1-f1-doctrine",tier:"L1",name:"f1-doctrine",cluster:"f1",ladder:"l2-ojfbot",desc:"RAQG question layer — 33 bound questions.",novice:"The question layer: a registry of 33 strategist questions ('should we undercut?'), each bound to a real substrate API call. It suggests WHICH question to ask at a given race moment — it never computes an answer itself. Its phase-keyed retrieval already passed a pre-registered evaluation gate.",path:"f1-doctrine/.claude/northstar.md",slices:{queued:4,merged:2},roadmap:"rm-l1-f1-doctrine"},
+    {slug:"l1-mirrorworld",tier:"L1",name:"mirrorworld",cluster:"golf-geo",ladder:"l2-ojfbot",desc:"Real places as three.js scenes; producer for fairway.",novice:"Turns real places into explorable three.js scenes from public imagery and elevation data. It's the producer side of the golf pair — fairway consumes what it makes. Open caution: the imagery-overlay alignment is still unverified, which blocks trusting the pretty pictures for measurements.",path:"mirrorworld/.claude/northstar.md",slices:{queued:16,merged:2},roadmap:"rm-l1-mirrorworld"},
+    {slug:"l1-fairway",tier:"L1",name:"fairway",cluster:"golf-geo",ladder:"l2-ojfbot",posture:"active",desc:"Golf digital twin — consumer of mirrorworld + capture-agent.",novice:"The golf digital-twin product: an explorable course surface built from mirrorworld's scenes plus capture-agent's imagery. Split out of mirrorworld on 2026-07-30 (producer/consumer separation). Which exact parent property it ladders to is still an open operator question.",path:"fairway/.claude/northstar.md",slices:{queued:5},roadmap:"rm-l1-fairway"},
+    {slug:"l1-capture-agent",tier:"L1",name:"capture-agent",cluster:"golf-geo",ladder:"l2-ojfbot",posture:"active",desc:"USGS imagery corpus → segmentation model → HF.",novice:"Acquires golf-course aerial imagery through a USGS Earth Explorer CLI, builds a Texas corpus, and trains a segmentation model for release on Hugging Face. The formalization of a years-long golf-capture lineage (firstTxGolf → txGolf → this).",path:"capture-agent/.claude/northstar.md"},
+    {slug:"buddy-check",tier:"L1",name:"buddy-check",cluster:"dive",ladder:"l2-ojfbot",desc:"Dive Q&A eval lab, 13,194 products.",novice:"The private lab of the dive pair: scuba-gear Q&A over a 13,194-product catalog, with SME-calibrated judges for evaluating answer quality. The retrieval science is proven here before dive-briefing serves it publicly. (Bare slug, no 'l1-' prefix — slugs are immutable identity.)",path:"buddy-check/.claude/northstar.md"},
+    {slug:"l1-dive-briefing",tier:"L1",name:"dive-briefing",cluster:"dive",ladder:"l2-ojfbot",desc:"Public dive-Q&A RAG service, per-claim citations.",novice:"The public face of the dive pair: a Q&A service that retrieves from tiered corpus packs and verifies every claim's citation before answering. Runs on port 8610; buddy-check is its private sibling where the machinery gets calibrated.",path:"dive-briefing/.claude/northstar.md",slices:{ready:1,queued:7,merged:1},roadmap:"rm-l1-dive-briefing"},
+    {slug:"l1-silicon-empires",tier:"L1",name:"silicon-empires",cluster:"story",ladder:"l2-ojfbot",desc:"AoE-style RTS of the AI-infra complex; SPEC-canon.",novice:"A playable real-time-strategy game about the AI-infrastructure economy — fabs, power, capital, silicon — with a fully deterministic simulation (same inputs, same game, always). It's a 'SPEC-canon' repo: the spec documents are the product and the code proves them. 26 slices already merged; first playthrough verified.",path:"silicon-empires/.claude/northstar.md",slices:{queued:12,merged:26},roadmap:"rm-l1-silicon-empires"},
+    {slug:"l1-virtuallight",tier:"L1",name:"virtualLight",cluster:"story",ladder:"l2-ojfbot",desc:"Book-to-cinema pipeline; Gibson packs private.",novice:"Book-to-cinema: deterministically extracts passages from novels and renders cinematography-styled video prompts from them. The pipeline is the product; the William Gibson corpus stays private while a public-domain demo fronts it. Revived 2026-07-23 after a dormant spell.",path:"virtualLight/.claude/northstar.md",slices:{ready:1,queued:6,dispatched:1},roadmap:"rm-l1-virtuallight"},
+    {slug:"l1-fieldwork-1",tier:"L1",name:"fieldwork-1",cluster:"client",ladder:"l2-ojfbot",posture:"active",desc:"First field engagement (texas-rr), private repo.",novice:"The first paid client engagement (a Texas railroad), kept as its own private dossier + delivery workspace. Deliberately temporary and numbered: it retires when the engagement ends, and the next client mints fieldwork-2. Its northstar file lands with the repo bootstrap — registered ahead of the checkout existing.",path:"fieldwork-1/.claude/northstar.md"}
+  ],
+  unregistered: [
+    {name:"daily-logger",cluster:"platform",desc:"Auto-committed dev log at log.jim.software — collects fleet activity nightly, drafts with a council of expert personas, publishes. Active daily."},
+    {name:"gastown-pilot",cluster:"platform",desc:"Gas Town 6-tab dashboard piloting bead-adapter patterns. Scaffold."},
+    {name:"core-reader",cluster:"platform",desc:"A browser over core itself — commands + ADRs tabs (port 3015)."},
+    {name:"github-actions",cluster:"platform",desc:"Shared CI workflows every fleet repo reuses (ADR-0067)."},
+    {name:"frame-ui-components",cluster:"platform",desc:"Shared Carbon Design System component library for the Frame apps."},
+    {name:"workstation-yuri",cluster:"platform",desc:"macOS workspace orchestrator (Focus modes, wallpapers, iTerm2, Hammerspoon); paused mid-MVP."},
+    {name:"selfco-box",cluster:"platform",desc:"The vault's capture daemon — Notion/PLAUD pollers now running LIVE on the Pi on a 15-minute timer. The repo itself carries no northstar."},
+    {name:"TripPlanner",cluster:"frame-apps",desc:"AI trip planner with an 11-phase SSE pipeline. One of the original Frame apps."},
+    {name:"lean-canvas",cluster:"frame-apps",desc:"9-section AI business canvas. Scaffold."},
+    {name:"purefoy",cluster:"frame-apps",desc:"Roger Deakins cinematography RAG knowledge base. Known depth gap: zero eval scenarios."},
+    {name:"mrplug",cluster:"frame-apps",desc:"Chrome extension (MV3) for AI UI/UX analysis of any page."},
+    {name:"landing",cluster:"frame-apps",desc:"Personal portfolio landing page."},
+    {name:"GroupThink",cluster:"frame-apps",desc:"LLM tab-grouping Chrome extension with a semantic treemap. SHIPPED — the fleet's one finished consumer artifact."},
+    {name:"f1-learning-studio",cluster:"f1",desc:"The F1 stack's teaching/learning seat — its wayfinder map is WORKING but the repo is still scaffold. The stack's fifth chair, waiting to be registered."},
+    {name:"build-golf",cluster:"golf-geo",desc:"Golf build experiments — the firstTxGolf → txGolf lineage that capture-agent later formalized."},
+    {name:"golf-platform-scripts",cluster:"golf-geo",desc:"Golf platform automation scripts. Active, unregistered."},
+    {name:"jocdive-sdi-mcp",cluster:"dive",desc:"Read-only Playwright MCP server over the SDI/TDI instructor portal; parked, blocked on an account email."},
+    {name:"diy-repair-qa-eval",cluster:"dive",desc:"DIY-repair Q&A evaluation — scaffold sibling of buddy-check's eval track."},
+    {name:"lofi-beaver",cluster:"story",desc:"1-bit isometric 'Willow Bend' story-world with a Blender sprite pipeline. Four slices shipped in a day, then parked."},
+    {name:"beaverGame",cluster:"story",desc:"Cozy 3D beaver simulator (Babylon.js) — consumes asset-foundry's .glb assets."},
+    {name:"asset-foundry",cluster:"story",desc:"AI-driven Blender asset pipeline (LangGraph + bpy) feeding the game repos."},
+    {name:"foundry-recipes",cluster:"story",desc:"Recipe library for asset-foundry."},
+    {name:"bldgblog-corpus",cluster:"corpus",desc:"Deterministic ingest of the full BLDGBLOG archive (2,512 posts, verified) + a 296-post annotated subset. A dive-briefing roadmap slice lands here."},
+    {name:"newline-ai-course",cluster:"corpus",desc:"Newline AI Accelerator coursework workspace — 18 courses mapped, 13 ingested. Local-only."},
+    {name:"agent-anatomy",cluster:"corpus",desc:"'Anatomy of the fleet's multi-agent system' — article companion repo. Registers as an L1 once its article is outlined."},
+    {name:"seh-study",cluster:"corpus",desc:"NASA Systems Engineering Handbook glossary with Leitner spaced repetition."}
+  ],
+  residual:"hailstone · jimyokohama · jyc · christmasInLondon · introIot · carrier-pigeon · dms-core · elevator-visual · GameOrg · todo-todo · core-library — legacy/experiment repos in the census with no cluster claim.",
+  wayfinder: [
+    {slug:"diagram-first-output",status:"working",desc:"Regular diagram output across the fleet — Mermaid canon, canvas surface. This navigator is a prototype from this very map."},
+    {slug:"f1-learning-studio",status:"working",desc:"Decision map for the F1 learning studio."},
+    {slug:"neistat-ai-bulletin",status:"working",desc:"Camera Program 'Bulletin AI/04' — Van Neistat as living precedent."},
+    {slug:"operating-surface-bonded-pair",status:"working",desc:"'Arcade' — the operating surface over the ojfbot⊕selfco pair."},
+    {slug:"teach-in-the-loop",status:"working",desc:"ZPD-calibrated teaching woven into the delivery loop."},
+    {slug:"cockpit-northstar-conversation",status:"charting",desc:"The northstar conversation surface inside the cockpit."},
+    {slug:"fde-operating-presence",status:"charting",desc:"FDE operating presence — career-lens map."},
+    {slug:"teach-persistence",status:"charting",desc:"Where lessons live long-term."},
+    {slug:"texas-rr-engagement",status:"charting",desc:"First FDE client engagement map — parent of fieldwork-1."}
+  ],
+  vault: [
+    {slug:"wiki-sources",name:"sources · 247",desc:"One wiki page per ingested source — videos, articles, papers, podcasts."},
+    {slug:"wiki-entities",name:"entities · 166",desc:"People, repos, orgs, tools — including one page per ojfbot repo, auto-registered at spawn (ADR-0088)."},
+    {slug:"wiki-concepts",name:"concepts · 162",desc:"Ideas that recur across sources."},
+    {slug:"wiki-synthesis",name:"synthesis · 121",desc:"LLM-authored cross-cutting essays, e.g. the proto-ojfbot lineage."},
+    {slug:"raw",name:"raw/",desc:"Append-only source layer — never edited, only consumed by /vault."},
+    {slug:"tracking",name:"tracking/",desc:"Delivery-adjacent state, outside wiki lint; the future home of l2-selfco."},
+    {slug:"teach",name:"teach/",desc:"Fleet teach corpus — /teach deposits lessons and evidence here."},
+    {slug:"diagrams",name:"diagrams/",desc:"Standing fleet maps — fleet-map.md and this navigator file live here."},
+    {slug:"selfco-box",name:"selfco-box (Pi)",desc:"Live capture transport on the Raspberry Pi — Notion/PLAUD pollers on a 15-minute systemd timer."}
+  ],
+  census: {repos:45}
+};
+const SL = {ready:["var(--green)","ready"],dispatched:["var(--amber)","dispatched"],queued:["var(--rule)","queued"],merged:["var(--ink-3)","merged"]};
+const CLUSTERS = {
+  platform:{label:"PLATFORM SPINE",color:"var(--c-platform)",angle:180,cols:3,novice:"The repos that run the machine itself — the engine room, the host surface, the morning dashboard, the LLM gateway. If these stall, every other cluster loses its instruments."},
+  "frame-apps":{label:"FRAME APPS",color:"var(--c-apps)",angle:222,cols:2,novice:"The original wave of AI product apps composed under shell. Two are registered northstars; the rest predate the registry and await either registration or retirement."},
+  f1:{label:"F1 STACK",color:"var(--c-f1)",angle:135,cols:2,novice:"Four repos, one discipline: substrate holds the data truth, pit-wall displays it, doctrine picks the questions, press-room teaches it. Nothing in this cluster may state a fact substrate can't back."},
+  "golf-geo":{label:"GOLF-GEO",color:"var(--c-golf)",angle:95,cols:2,novice:"The golf umbrella: capture-agent acquires imagery, mirrorworld builds scenes, fairway is the consumer-facing digital twin. Two older repos in the lineage remain unregistered."},
+  dive:{label:"DIVE PAIR",color:"var(--c-dive)",angle:265,cols:2,novice:"A private lab (buddy-check) proves the retrieval science; a public service (dive-briefing) serves it with per-claim citations. The portfolio's cleanest producer/consumer split."},
+  story:{label:"STORY WORLDS",color:"var(--c-story)",angle:305,cols:2,novice:"The narrative/simulation repos — a deterministic RTS, a book-to-cinema pipeline, two beaver worlds and their asset pipeline. Where craft experiments live."},
+  corpus:{label:"CORPUS & STUDY",color:"var(--c-corpus)",angle:25,cols:2,novice:"Knowledge-ingest and study repos — none registered. They feed other clusters (bldgblog-corpus feeds dive-briefing's deposit library) rather than shipping surfaces of their own."},
+  client:{label:"CLIENT",color:"var(--c-client)",angle:345,cols:1,novice:"Paid engagement workspaces. Ordinal by design — each engagement gets its own numbered repo and retires at exit."}
+};
+const EDGE_NOVICE = {
+  ladder: (a,b)=>`A "ladders up to" edge — the spine of the northstar system. ${a}'s northstar file declares (via ladders_up_to:) which property of ${b} its work advances, and a lint checks that reference resolves to a real property on disk. Read it as: progress in ${a} is meant to move a needle in ${b}.`,
+  "ladder-deferred": ()=>`A declared-but-deferred ladder. l2-selfco is promised in the registry (as a comment) but its file doesn't exist yet, so this edge is intent, not enforceable fact — the lint can't check a file that isn't there.`,
+  "cluster-feed": (a)=>`A summary edge: every REGISTERED northstar inside the ${a} box ladders up to l2-ojfbot individually. The tier view draws one line per cluster to stay readable; switch to Constellation to see each app's own edge.`,
+  orbit: (a,c)=>`A gap marker, not a registry edge. ${a} clearly belongs to ${c} territory, but it has no northstar — so nothing actually connects it to the delivery system. The dotted line shows where it WOULD ladder if registered.`,
+  "wayfinder-feed": (a)=>`A decision-flow edge. ${a} is a wayfinder map: it holds open decision tickets, not code. As tickets close, its decisions become roadmap slices under l2-ojfbot — so this dotted line carries decisions, not deliverables.`,
+  "vault-layer": (a)=>`An ownership edge inside selfco: ${a} is a layer of the vault. This isn't delivery flow — it says the (deferred) selfco venture is made of these parts.`,
+  "vault-feed": ()=>`A summary edge: the vault's layers collectively constitute the selfco venture. The L2 file itself is deferred; the layers are already real and busy.`,
+  halo: ()=>`The residual census: legacy and experiment repos with no cluster claim and no northstar. They're counted so the map never pretends the fleet is smaller than it is.`
+};
+// ---------- construction ----------
+const nodes = [], EDGES = [], chrome = [];
+function N(o){ nodes.push(o); return o; }
+function E(a,b,type,views,dotted,label){ const e={id:"e"+EDGES.length,a,b,type,views,dotted,label}; EDGES.push(e); return e; }
+const CW=176, CH=60, ROWH=80, COLW=192, PAD=14, HDR=26;
+const CX=1050, CY=470, S=1.75;
+const L3 = N({id:"l3-shared",w:230,h:CH,kind:"northstar",label:"L3 · SHARED APEX",sub:"ojfbot ⊕ selfco",acc:"var(--ink)",d:FLEET.northstars[0], tx:870,ty:40, cx:CX,cy:CY-60});
+const L2O = N({id:"l2-ojfbot",w:210,h:CH,kind:"northstar",label:"l2-ojfbot",sub:"6 ready · 11 queued · 16 merged",acc:"var(--red)",d:FLEET.northstars[1], tx:620,ty:180, cx:CX-260*S,cy:CY+60});
+const L2S = N({id:"l2-selfco",w:210,h:CH,kind:"northstar",label:"l2-selfco",sub:"deferred · vault tracking/",acc:"var(--c-vault)",dashed:true,d:FLEET.northstars[2], tx:1300,ty:180, cx:CX+300*S,cy:CY+60});
+E(L2O,L3,"ladder","both",false,"l2-ojfbot ladders up to L3");
+E(L2S,L3,"ladder-deferred","both",true,"l2-selfco → L3 (deferred)");
+const rowPlan = [["platform","frame-apps","f1","golf-geo"],["dive","story","corpus","client"]];
+const byCluster = {};
+FLEET.northstars.filter(n=>n.tier==="L1").forEach(n=>{(byCluster[n.cluster]=byCluster[n.cluster]||[]).push({reg:true,src:n});});
+FLEET.unregistered.forEach(u=>{(byCluster[u.cluster]=byCluster[u.cluster]||[]).push({reg:false,src:u});});
+let rowY = 330, maxBottom = 330;
+for (const row of rowPlan) {
+  let bx = 30, rowBottom = rowY;
+  for (const ck of row) {
+    const cfg = CLUSTERS[ck], list = byCluster[ck]||[];
+    const cols = cfg.cols, rows = Math.ceil(list.length/cols);
+    const bw = cols*COLW - (COLW-CW) + PAD*2, bh = HDR + rows*ROWH - (ROWH-CH) + PAD;
+    const regCount = list.filter(e=>e.reg).length, unregCount = list.length-regCount;
+    const box = {type:"cluster",x:bx,y:rowY,w:bw,h:bh,label:`${cfg.label} — ${regCount} NS · ${unregCount} UNREG`,color:cfg.color,ck};
+    chrome.push(box);
+    const feed = E({box},L2O,"cluster-feed","tier",false,`${cfg.label} → l2-ojfbot`);
+    feed.clusterKey = ck;
+    const baseA = cfg.angle*Math.PI/180;
+    list.forEach((entry,i)=>{
+      const col=i%cols, rown=Math.floor(i/cols);
+      const spread=(i-(list.length-1)/2)*0.30, a=baseA+spread, R=(165+(i%2)*58+(entry.reg?0:75))*S;
+      let node;
+      if (entry.reg) {
+        const ns = entry.src;
+        node = N({id:ns.slug,w:CW,h:CH,kind:"northstar",label:ns.name,
+          sub: ns.slices? Object.entries(ns.slices).map(([k,v])=>v+" "+k.slice(0,5)).join(" · ") : "registered · no roadmap yet",
+          acc:cfg.color,d:ns});
+        const ed = E(node,L2O,"ladder","con",false,`${ns.name} ladders up to l2-ojfbot`);
+        if (ns.slug==="l1-fairway") ed.note = "PROVISIONAL — which parent property (#P1 vs #P2) is an open operator question.";
+      } else {
+        const u = entry.src;
+        node = N({id:"r-"+u.name,w:CW,h:CH,kind:"repo",unreg:true,label:u.name,sub:"UNREGISTERED — NO NORTHSTAR",acc:cfg.color,
+          d:{name:u.name,tier:"repo (unregistered)",desc:u.desc,novice:u.desc+" — "+NOVICE_TEMPLATES.repo,path:u.name+"/",cluster:u.cluster,unregistered:true}});
+        E(node,L2O,"orbit","con",true,`${u.name} (unregistered) — would ladder to l2-ojfbot`);
+      }
+      node.tx=bx+PAD+col*COLW; node.ty=rowY+HDR+rown*ROWH;
+      node.cx=L2O.cx+Math.cos(a)*R; node.cy=L2O.cy+Math.sin(a)*R;
+    });
+    rowBottom = Math.max(rowBottom, rowY+bh);
+    bx += bw + 26;
+  }
+  rowY = rowBottom + 60;
+  maxBottom = rowBottom;
+}
+const SBY = maxBottom + 78;
+chrome.push({type:"band",y:20,label:"L3 · SHARED APEX"});
+chrome.push({type:"band",y:160,label:"L2 · VENTURES"});
+chrome.push({type:"band",y:308,label:"L1 · CLUSTERS — SOLID = REGISTERED NORTHSTAR · DASHED = UNREGISTERED REPO (THE GAP)"});
+chrome.push({type:"band",y:SBY-22,label:"SUPPORTING LAYERS — WAYFINDER FRONTIER (DECISIONS) · SELFCO VAULT (KNOWLEDGE) · RESIDUAL CENSUS"});
+const WFX = 30, WFW = 3*250+PAD*2;
+const wfBox = {type:"cluster",x:WFX,y:SBY,w:WFW,h:HDR+3*66-14+PAD,label:"WAYFINDER FRONTIER — 9 MAPS",color:"var(--ink-3)"};
+chrome.push(wfBox);
+const wfFeed = E({box:wfBox},L2O,"wayfinder-feed","tier",true,"wayfinder frontier → l2-ojfbot (decisions)");
+FLEET.wayfinder.forEach((w,i)=>{
+  const col=i%3, row=Math.floor(i/3);
+  const a=(-162+i*20)*Math.PI/180, R=(300+(i%2)*55)*S;
+  const node = N({id:"wf-"+w.slug,w:238,h:50,kind:"map",label:w.slug,sub:w.status.toUpperCase(),
+    acc:w.status==="working"?"var(--green)":"var(--amber)",
+    d:{name:w.slug,tier:"wayfinder ("+w.status+")",desc:w.desc,novice:w.desc+" — "+NOVICE_TEMPLATES.map,path:"core/decisions/wayfinder/"+w.slug+".md",cluster:"wayfinder",status:w.status},
+    tx:WFX+PAD+col*250, ty:SBY+HDR+row*66, cx:CX+Math.cos(a)*R, cy:CY-190+Math.sin(a)*(110+(i%2)*45)});
+  E(node,L2O,"wayfinder-feed","con",true,`${w.slug} yields decisions toward l2-ojfbot`);
+});
+const VX = 1240, VW = 3*196+PAD*2;
+const vBox = {type:"cluster",x:VX,y:SBY,w:VW,h:HDR+3*60-10+PAD,label:"SELFCO VAULT — 696 WIKI PAGES + TRANSPORT",color:"var(--c-vault)"};
+chrome.push(vBox);
+E({box:vBox},L2S,"vault-feed","tier",false,"vault layers constitute l2-selfco");
+FLEET.vault.forEach((v,i)=>{
+  const col=i%3, row=Math.floor(i/3);
+  const a=(-70+i*38)*Math.PI/180;
+  const node = N({id:"v-"+v.slug,w:184,h:46,kind:"vault",label:v.name,sub:v.slug.startsWith("wiki-")?"WIKI LAYER":"LAYER",
+    acc:"var(--c-vault)",
+    d:{name:v.name,tier:"selfco vault",desc:v.desc,novice:v.desc+" — "+NOVICE_TEMPLATES.vault,path:"~/selfco/"+(v.slug.startsWith("wiki-")?"wiki/"+v.slug.slice(5):v.slug),cluster:"selfco"},
+    tx:VX+PAD+col*196, ty:SBY+HDR+row*60, cx:L2S.cx+Math.cos(a)*130*S, cy:L2S.cy+Math.sin(a)*150});
+  E(node,L2S,"vault-layer","con",false,`${v.name} is a layer of selfco`);
+});
+const HALO = N({id:"halo",w:280,h:52,kind:"census",label:"~11 residual legacy repos",sub:"NO CLUSTER CLAIM — CLICK FOR LIST",acc:"var(--ink-3)",dashed:true,unreg:true,
+  d:{name:"Residual census",tier:"census",desc:FLEET.residual,novice:FLEET.residual+" — "+EDGE_NOVICE.halo(),path:"(45-repo census, 2026-07)",cluster:"census",unregistered:true},
+  tx:850,ty:SBY+HDR+30, cx:L2O.cx, cy:CY+340});
+E(HALO,L2O,"halo","both",true,"residual census — unclaimed repos");
+// ---------- render ----------
+const NSNS="http://www.w3.org/2000/svg";
+const svg=document.createElementNS(NSNS,"svg");
+document.getElementById("sky").appendChild(svg);
+const chromeL=document.createElementNS(NSNS,"g"), edgeL=document.createElementNS(NSNS,"g"), nodeL=document.createElementNS(NSNS,"g");
+svg.append(chromeL,edgeL,nodeL);
+function el(t,attrs,parent){const e=document.createElementNS(NSNS,t);for(const k in attrs)e.setAttribute(k,attrs[k]);parent.appendChild(e);return e;}
+let MODE="tier";
+const groupByNode=new Map(), groupByEdge=new Map();
+nodes.forEach(n=>{
+  const g=el("g",{class:"node"+(n.unreg?" unreg":""),"data-id":n.id},nodeL);
+  groupByNode.set(n.id,g);
+  el("rect",{class:"bg",width:n.w,height:n.h,...(n.dashed?{"stroke-dasharray":"4 3"}:{})},g);
+  el("rect",{class:"acc",width:4,height:n.h,fill:n.acc,...(n.unreg?{opacity:.45}:{})},g);
+  el("text",{class:"nm",x:12,y:n.h/2-2},g).textContent=n.label;
+  el("text",{class:"sub",x:12,y:n.h/2+14},g).textContent=n.sub||"";
+  g.addEventListener("click",ev=>{ev.stopPropagation();openNode(n,ev);});
+});
+function endpoint(x,mode){
+  if(x.box) return [x.box.x+x.box.w/2, x.box.y];
+  return mode==="tier" ? [x.tx+x.w/2, x.ty+x.h/2] : [x.cx, x.cy];
+}
+function redraw(){
+  nodes.forEach(n=>{
+    const [x,y]= MODE==="tier" ? [n.tx,n.ty] : [n.cx-n.w/2,n.cy-n.h/2];
+    groupByNode.get(n.id).setAttribute("transform",`translate(${x},${y})`);
+  });
+  edgeL.innerHTML=""; chromeL.innerHTML=""; groupByEdge.clear();
+  if(MODE==="tier"){
+    chrome.forEach(c=>{
+      if(c.type==="band"){
+        el("line",{x1:20,y1:c.y,x2:2140,y2:c.y,class:"bandrule"},chromeL);
+        el("text",{x:24,y:c.y-6,class:"bandlabel"},chromeL).textContent=c.label;
+      } else {
+        el("rect",{x:c.x,y:c.y,width:c.w,height:c.h,class:"clusterbox"},chromeL);
+        el("text",{x:c.x+8,y:c.y+17,class:"clusterlabel",fill:c.color},chromeL).textContent=c.label;
+      }
+    });
+  }
+  EDGES.filter(e=>e.views==="both"||e.views===MODE).forEach(e=>{
+    const [x1,y1]=endpoint(e.a,MODE), [x2b,y2b]=endpoint(e.b,MODE);
+    let y2=y2b;
+    if(MODE==="tier"&&!e.b.box) y2 = e.b.ty+e.b.h;
+    const g=el("g",{class:"eg"},edgeL);
+    groupByEdge.set(e.id,g);
+    el("line",{x1,y1,x2:x2b,y2,class:"edgehit"},g);
+    el("line",{x1,y1,x2:x2b,y2,class:"edgeline"+(e.dotted?" dotted":"")},g);
+    g.addEventListener("click",ev=>{ev.stopPropagation();openEdge(e,ev);});
+  });
+}
+let vx,vy,vw,vh;
+function fit(){ if(MODE==="tier"){vx=0;vy=0;vw=2180;vh=Math.max(1250,SBY+320);} else {vx=CX-1150;vy=CY-560;vw=2300;vh=1150;} apply(); }
+function apply(){svg.setAttribute("viewBox",`${vx} ${vy} ${vw} ${vh}`);}
+const sky=document.getElementById("sky");
+let drag=null, moved=false;
+sky.addEventListener("mousedown",e=>{drag={x:e.clientX,y:e.clientY};moved=false;sky.classList.add("dragging");});
+window.addEventListener("mousemove",e=>{if(!drag)return;moved=true;const s=vw/sky.clientWidth;vx-=(e.clientX-drag.x)*s;vy-=(e.clientY-drag.y)*s;drag={x:e.clientX,y:e.clientY};apply();});
+window.addEventListener("mouseup",()=>{drag=null;sky.classList.remove("dragging");});
+sky.addEventListener("wheel",e=>{e.preventDefault();const f=e.deltaY>0?1.1:0.9;const mx=vx+vw*(e.offsetX/sky.clientWidth),my=vy+vh*(e.offsetY/sky.clientHeight);vw*=f;vh*=f;vx=mx-(mx-vx)*f;vy=my-(my-vy)*f;apply();},{passive:false});
+document.getElementById("resetView").onclick=fit;
+const btnT=document.getElementById("btnTiers"), btnC=document.getElementById("btnCon");
+btnT.onclick=()=>{MODE="tier";btnT.classList.add("on");btnC.classList.remove("on");closePop();redraw();fit();};
+btnC.onclick=()=>{MODE="con";btnC.classList.add("on");btnT.classList.remove("on");closePop();redraw();fit();};
+// ---------- popover ----------
+const pop=document.getElementById("pop"), popTitle=document.getElementById("popTitle"),
+      popKind=document.getElementById("popKind"), popBody=document.getElementById("popBody"),
+      popLog=document.getElementById("popLog"), popIn=document.getElementById("popIn"), popSend=document.getElementById("popSend");
+let selG=null, selEdgeG=null, popTopic=null, miniThread=[];
+function place(ev){
+  const r=sky.getBoundingClientRect();
+  let x=(ev&&ev.clientX?ev.clientX-r.left:r.width/2-200)+14, y=(ev&&ev.clientY?ev.clientY-r.top:80);
+  x=Math.max(8,Math.min(x,r.width-410)); y=Math.max(8,Math.min(y,r.height-320));
+  pop.style.left=x+"px"; pop.style.top=y+"px"; pop.style.display="block";
+}
+function clearSel(){
+  if(selG)selG.classList.remove("sel");
+  if(selEdgeG){const l=selEdgeG.querySelector(".edgeline"); if(l)l.classList.remove("sel");}
+  selG=selEdgeG=null;
+}
+function closePop(){ pop.style.display="none"; clearSel(); popTopic=null; miniThread=[]; popLog.innerHTML=""; popIn.value=""; }
+document.getElementById("popClose").onclick=closePop;
+window.addEventListener("keydown",e=>{if(e.key==="Escape")closePop();});
+sky.addEventListener("click",()=>{if(!moved)closePop();});
+function openNode(n,ev){
+  closePop(); selG=groupByNode.get(n.id); selG.classList.add("sel");
+  const d=n.d;
+  popTitle.textContent=d.name||n.label;
+  popKind.textContent=(d.tier||n.kind)+(d.cluster&&CLUSTERS[d.cluster]?" · "+CLUSTERS[d.cluster].label:"")+(d.posture?" · POSTURE: "+d.posture:"")+(d.deferred?" · DEFERRED":"");
+  let html=`<div class="lbl">NEW HERE? WHAT THIS IS</div><div class="novice">${d.novice||d.desc||""}</div>`;
+  if(d.slices){
+    const tot=Object.values(d.slices).reduce((s,v)=>s+v,0);
+    html+=`<div class="lbl">DELIVERY STATE — ${tot} SLICES (${d.roadmap})</div><div class="slicebar">`;
+    for(const k of ["merged","dispatched","ready","queued"]) if(d.slices[k]) html+=`<div style="width:${100*d.slices[k]/tot}%;background:${SL[k][0]}"></div>`;
+    html+=`</div><div class="legend">`+["merged","dispatched","ready","queued"].filter(k=>d.slices[k]).map(k=>`<span><span class="dot" style="background:${SL[k][0]}"></span>${d.slices[k]} ${k}</span>`).join("")+`</div>`;
+  }
+  if(d.ladder) html+=`<div class="ladder">ladders up to <a onclick="jump('${d.ladder}')">${d.ladder}</a></div>`;
+  html+=`<div class="path">${d.path||""}</div>`;
+  popBody.innerHTML=html;
+  popTopic={kind:"node",name:d.name||n.label,meta:popKind.textContent,novice:(d.novice||d.desc||"").slice(0,500)};
+  popIn.placeholder=`ask Leo about ${d.name||n.label}…`;
+  place(ev);
+}
+function openEdge(e,ev){
+  closePop(); selEdgeG=groupByEdge.get(e.id);
+  if(selEdgeG){const l=selEdgeG.querySelector(".edgeline"); if(l)l.classList.add("sel");}
+  const aName=e.a.box?e.a.box.label:(e.a.d&&e.a.d.name)||e.a.label, bName=(e.b.d&&e.b.d.name)||e.b.label;
+  const ck=e.clusterKey&&CLUSTERS[e.clusterKey];
+  const fn=EDGE_NOVICE[e.type]||(()=> "");
+  let novice = e.type==="cluster-feed"? fn(aName)+(ck?" ABOUT THIS CLUSTER: "+ck.novice:"")
+    : e.type==="orbit"? fn(aName,(e.a.d&&e.a.d.cluster)||"") : fn(aName,bName);
+  if(e.note) novice += " NOTE: "+e.note;
+  popTitle.textContent=aName+" → "+bName;
+  popKind.textContent="EDGE · "+e.type.replace(/-/g," ").toUpperCase()+(e.dotted?" · DOTTED = CLAIMED/PARTIAL/DEFERRED":"");
+  popBody.innerHTML=`<div class="lbl">NEW HERE? WHAT THIS CONNECTION MEANS</div><div class="novice">${novice}</div>`;
+  popTopic={kind:"edge",name:aName+" → "+bName,meta:e.type,novice:novice.slice(0,500)};
+  popIn.placeholder=`ask Leo about this ${e.type} edge…`;
+  place(ev);
+}
+window.jump=id=>{const n=nodes.find(n=>n.id===id);if(n)openNode(n,null);};
+// ---------- Leo chat ----------
+async function askLeo(){
+  const q=popIn.value.trim();
+  if(!q||!popTopic||popSend.disabled)return;
+  popIn.value=""; popSend.disabled=true;
+  const uDiv=document.createElement("div");uDiv.className="u";uDiv.textContent="YOU · "+q;popLog.appendChild(uDiv);
+  const aDiv=document.createElement("div");aDiv.className="a";aDiv.textContent="…";popLog.appendChild(aDiv);
+  popLog.scrollTop=popLog.scrollHeight;
+  const content = miniThread.length? q :
+    `[fleet-navigator] I'm looking at "${popTopic.name}" (${popTopic.meta}) on the fleet map. Map context: ${popTopic.novice} — My question: ${q}`;
+  miniThread.push({role:"user",content});
+  try{
+    const resp=await fetch(COCKPIT+"/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({messages:miniThread})});
+    if(!resp.ok) throw new Error("HTTP "+resp.status);
+    const reader=resp.body.getReader(), dec=new TextDecoder();
+    let buf="", text="", meta="";
+    for(;;){
+      const {done,value}=await reader.read();
+      if(done)break;
+      buf+=dec.decode(value,{stream:true});
+      const events=buf.split("\n\n"); buf=events.pop();
+      for(const evt of events){
+        const em=evt.match(/^event: (\S+)/m), dm=evt.match(/^data: (.*)$/m);
+        if(!em||!dm)continue;
+        const data=JSON.parse(dm[1]);
+        if(em[1]==="meta") meta=`LEO · ${data.model||"local"}`;
+        else if(em[1]==="token"){ text+=data.text; aDiv.textContent=text; popLog.scrollTop=popLog.scrollHeight; }
+        else if(em[1]==="fallback"){ text=data.text+"\n[deterministic fallback — "+data.reason+"]"; aDiv.textContent=text; }
+      }
+    }
+    miniThread.push({role:"assistant",content:text});
+    const mDiv=document.createElement("div");mDiv.className="meta";mDiv.textContent=meta||"LEO";popLog.insertBefore(mDiv,aDiv);
+  }catch(err){
+    aDiv.textContent="Leo unreachable ("+err.message+"). Start the cockpit server: pnpm dev:server in morning-cockpit (port 3040), with Ollama running.";
+    miniThread.pop();
+  }
+  popSend.disabled=false; popLog.scrollTop=popLog.scrollHeight; popIn.focus();
+}
+popSend.onclick=askLeo;
+popIn.addEventListener("keydown",e=>{if(e.key==="Enter")askLeo();});
+pop.addEventListener("mousedown",e=>e.stopPropagation());
+pop.addEventListener("click",e=>e.stopPropagation());
+pop.addEventListener("wheel",e=>e.stopPropagation());
+// ---------- stats + query ----------
+function totals(){const t={ready:0,queued:0,merged:0,dispatched:0};FLEET.northstars.forEach(n=>{if(n.slices)for(const k in n.slices)t[k]+=n.slices[k];});return t;}
+const T=totals();
+document.getElementById("stats").innerHTML=`<span><b>20</b> northstars</span><span><b>13</b> roadmaps</span><span><span class="rd">${T.ready} ready</span> · <b>${T.queued}</b> queued · <b>${T.merged}</b> merged · <b>${T.dispatched}</b> dispatched</span><span><b>${FLEET.unregistered.length}</b> unregistered repos placed</span><span><b>9</b> wayfinder maps</span><span><b>696</b> vault wiki pages</span><span><b>${FLEET.census.repos}</b> repos in census</span>`;
+function matchesNode(n,q){
+  const d=n.d||{};
+  for(const tok of q.split(/\s+/).filter(Boolean)){
+    const [k,v]=tok.includes(":")?tok.split(":"):[null,tok];
+    if(k==="cluster"){ if((d.cluster||"")!==v) return false; }
+    else if(k==="tier"){ if((d.tier||"").toLowerCase().indexOf(v.toLowerCase())!==0) return false; }
+    else if(k==="kind"){ if(n.kind!==v) return false; }
+    else if(k==="status"){
+      if(["ready","queued","merged","dispatched"].includes(v)){ if(!(d.slices&&d.slices[v])) return false; }
+      else if((d.status||"")!==v) return false;
+    }
+    else if(v==="unregistered"){ if(!d.unregistered) return false; }
+    else { const hay=((d.name||"")+" "+(n.label||"")+" "+(d.desc||"")+" "+(d.novice||"")+" "+(d.path||"")).toLowerCase(); if(!hay.includes(v.toLowerCase())) return false; }
+  }
+  return true;
+}
+function matchesEdge(e,q){
+  if(q.includes(":"))return false;
+  const aName=e.a.box?e.a.box.label:(e.a.d&&e.a.d.name)||e.a.label||"", bName=(e.b.d&&e.b.d.name)||e.b.label||"";
+  const hay=(e.type+" "+(e.label||"")+" "+aName+" "+bName).toLowerCase();
+  return q.split(/\s+/).filter(Boolean).every(t=>hay.includes(t.toLowerCase()));
+}
+function runQuery(q){
+  q=q.trim();
+  const res=[], eres=[];
+  nodes.forEach(n=>{
+    const m=!q||matchesNode(n,q);
+    groupByNode.get(n.id).classList.toggle("dimmed",q&&!m);
+    if(q&&m)res.push(n);
+  });
+  EDGES.forEach(e=>{
+    const g=groupByEdge.get(e.id); if(!g)return;
+    const m=!q||matchesEdge(e,q);
+    g.classList.toggle("dimmed",q&&!m&&!matchesNode(e.a.box?{d:{}}:e.a,q)&&!matchesNode(e.b,q));
+    if(q&&m)eres.push(e);
+  });
+  const R=document.getElementById("results");
+  if(!q){R.innerHTML="";return;}
+  R.innerHTML=`<div class="kind" style="margin-top:14px">${res.length} node${res.length===1?"":"s"} · ${eres.length} edge${eres.length===1?"":"s"}</div>`
+    +res.map(n=>{
+      const d=n.d||{},s=d.slices?`<small>${Object.entries(d.slices).map(([k,v])=>v+" "+k).join(", ")}</small>`:(d.unregistered?`<small>unregistered</small>`:"");
+      return `<div class="r" data-n="${n.id}">${d.name||n.label}${s}</div>`;
+    }).join("")
+    +eres.map(e=>`<div class="r edge" data-e="${e.id}">↔ ${e.label||e.type}<small>${e.type}</small></div>`).join("");
+  R.querySelectorAll("[data-n]").forEach(x=>x.onclick=()=>jump(x.dataset.n));
+  R.querySelectorAll("[data-e]").forEach(x=>x.onclick=()=>{const e=EDGES.find(e=>e.id===x.dataset.e);if(e)openEdge(e,null);});
+}
+document.getElementById("query").addEventListener("input",e=>runQuery(e.target.value));
+document.querySelectorAll(".chip").forEach(c=>c.onclick=()=>{document.getElementById("query").value=c.dataset.q;runQuery(c.dataset.q);});
+redraw(); fit();
+</script>
+</body>
+</html>
