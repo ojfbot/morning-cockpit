@@ -32,6 +32,7 @@ export const REPO_META: RepoMeta[] = [
   { name: 'capture-agent', role: 'Golf capture agent — TX imagery → segmentation model → HF', phase: 'P1' },
   { name: 'fairway', role: 'Golf digital twin — explorable twin surface', phase: 'P1' },
   { name: 'cca-prep', role: 'Multi-exam Claude-cert prep engine — generation-over-content drills', phase: 'P0' },
+  { name: 'jim-camera', role: 'jim.camera portfolio — Lightroom pipeline + manifest-fed gallery', phase: 'P0' },
   { name: 'asset-foundry', role: 'Asset pipeline — parametric 3D foundry', phase: 'EXP' },
   // Added 2026-07-22: portfolio-first gap-closers (operator sitting; core#249).
   { name: 'dive-briefing', role: 'Dive RAG service — cited answers, tiered corpora', phase: 'EXP' },
