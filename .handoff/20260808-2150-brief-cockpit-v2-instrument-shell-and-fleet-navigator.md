@@ -7,9 +7,12 @@ to: code-claude
 session_id: 2026-08-08T21:50:00Z
 refs:
   - file:research/fleet-navigator-rfi-response.md
+  - file:research/design-handoff-cockpit-v2/README.md
   - adr:0005
   - adr:0012
   - bead:20260808-2150-brief-canon-wayfinder-closeouts-and-token-vocabulary
+repo: morning-cockpit
+design_package: "research/design-handoff-cockpit-v2/ (README.md is the spec; the .dc.html is the reference)"
 status: live
 created_at: 2026-08-08T21:50:00Z
 labels:
