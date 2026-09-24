@@ -97,6 +97,16 @@ export const config = {
   },
 
   /**
+   * Fleet-structure pane (roadmap S10) — the strategy layer, read-only. Registry +
+   * northstar/roadmap/wayfinder files resolve off delivery.coreRoot; vault wiki counts
+   * come from profile.vaultRoot (the loop-adapter ~/selfco precedent). Slow-moving
+   * files → a longer TTL than the beads snapshot.
+   */
+  fleetStructure: {
+    ttlMs: Number(process.env.COCKPIT_FLEET_STRUCTURE_TTL_MS ?? 30_000),
+  },
+
+  /**
    * Loop pane — the self-improvement telemetry loop, read-only. Capture health + the
    * disposition funnel come from core's shadow-mode OPAV hooks (ADR-0095) writing into
    * the selfco tracking dir; odometer freshness re-reads status.jsonl (delivery.coreRoot);

@@ -174,6 +174,22 @@ a number down. A deviation logged is the plan telling us what it didn't know.
      back would have hot-swapped it — the exact hazard the brief warned about from the other
      direction.
 
+- **#17 — S10: the brief said "import, never reimplement" `northstar-fm.mjs`; ADR-0001 says
+  mirror, never import.** The design brief's parenthetical asks for a cross-repo import of
+  core's frontmatter lib; this repo's foundational posture (ADR-0001, and the merged
+  delivery.ts precedent with its dated `// Mirrors` comments) is standalone mirroring — and a
+  runtime import from `../core` would also make the adapter untestable in CI, where no sibling
+  checkout exists. Took the repo posture: reused `@cockpit/shared` `parseFrontmatter` (the
+  blessed mirror) and mirrored `resolvePath`/`repoRootOf` with dated comments. The ratified
+  S10 roadmap text (which omits the parenthetical) is the contract this follows.
+
+- **#18 — S10: the census has no machine-readable home.** RFI A9 sources the "45 census" from
+  a 2026-07 record that turns out to live in `~/.claude/plans/` (Documents 1–3) — outside any
+  repo, unreadable from CI and not a stable adapter source. Vendored the 45-name enumeration
+  into `packages/server/src/fleet-authored.ts` as a DATED authored record (asOf 2026-07-25,
+  source path kept), with renames handled as aliases (gcgcca → capture-agent) so drift renders
+  as TD-007 disagreement, never as fake membership. A future census walk updates one file.
+
 ## Log
 
 - **2026-07-28** — Branched `feat/anthropic-watch-stage1` from `origin/main` (`cec5678`).
