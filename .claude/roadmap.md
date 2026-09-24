@@ -144,7 +144,9 @@ slices:
     claimable_by: agent_eligible
     kind: m
     status: delivered
-  - id: S9B
+  # Registered 2026-08-02 as S9B (0e7ab49); renamed to S18 2026-09-24 because the schema's
+  # slice ids are S<n> and roadmap-lint rejected the letter suffix. Same slice, same delivery.
+  - id: S18
     phase: PH2
     title: "Bead-lane P0 quartet: age is the organizing principle of the pickup queue"
     advances: "ns:l1-morning-cockpit#P2"
