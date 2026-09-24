@@ -9,6 +9,8 @@ import type {
   ChatHistoryEntry,
   ChatMessage,
   ChatPreload,
+  ChatTab,
+  NorthstarPreload,
   CockpitSnapshot,
   CrossLinkSuggestion,
   HandoffDraft,
@@ -126,25 +128,40 @@ export async function dismissSuggestion(id: string): Promise<void> {
 // ── Cockpit Chat ───────────────────────────────────────────────────────────
 
 export interface ChatContextResponse {
-  preload: ChatPreload;
+  /** Leo grounds on the pods; Northstar grounds on the delivery snapshot for one unit (S9). */
+  preload: ChatPreload | NorthstarPreload;
   systemPrompt: string;
   model: string;
 }
 
-export async function fetchChatContext(signal?: AbortSignal): Promise<ChatContextResponse> {
-  const res = await fetch('/api/chat/context', { signal });
+/**
+ * Which conversation a chat call addresses (S9). Omitted / `leo` keeps the original global
+ * thread; `northstar` is scoped to one fleet unit.
+ */
+export interface ChatScope {
+  tab: ChatTab;
+  repo?: string;
+}
+
+function scopeQuery(scope?: ChatScope): string {
+  if (!scope || scope.tab !== 'northstar' || !scope.repo) return '';
+  return `?tab=northstar&repo=${encodeURIComponent(scope.repo)}`;
+}
+
+export async function fetchChatContext(scope?: ChatScope, signal?: AbortSignal): Promise<ChatContextResponse> {
+  const res = await fetch(`/api/chat/context${scopeQuery(scope)}`, { signal });
   if (!res.ok) throw new Error(`chat context ${res.status}`);
   return (await res.json()) as ChatContextResponse;
 }
 
-export async function fetchChatHistory(signal?: AbortSignal): Promise<ChatHistoryEntry[]> {
-  const res = await fetch('/api/chat/history', { signal });
+export async function fetchChatHistory(scope?: ChatScope, signal?: AbortSignal): Promise<ChatHistoryEntry[]> {
+  const res = await fetch(`/api/chat/history${scopeQuery(scope)}`, { signal });
   if (!res.ok) throw new Error(`chat history ${res.status}`);
   return ((await res.json()) as { messages: ChatHistoryEntry[] }).messages;
 }
 
-export async function clearChatHistory(): Promise<void> {
-  const res = await fetch('/api/chat/history', { method: 'DELETE' });
+export async function clearChatHistory(scope?: ChatScope): Promise<void> {
+  const res = await fetch(`/api/chat/history${scopeQuery(scope)}`, { method: 'DELETE' });
   if (!res.ok) throw new Error(`chat clear ${res.status}`);
 }
 
@@ -152,8 +169,9 @@ export async function clearChatHistory(): Promise<void> {
 export async function streamChat(
   messages: ChatMessage[],
   attachments: ChatAttachment[] = [],
+  scope?: ChatScope,
 ): Promise<AsyncGenerator<SseEvent>> {
-  const res = await fetch('/api/chat', {
+  const res = await fetch(`/api/chat${scopeQuery(scope)}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ messages, attachments }),

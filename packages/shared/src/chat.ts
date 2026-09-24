@@ -8,8 +8,29 @@
 import type { CockpitSnapshot, WorkItem, WorkItemLane } from './work-item.js';
 import type { ReadingSnapshot } from './reading.js';
 import type { PapersSnapshot } from './papers.js';
+import type { DeliverySnapshot } from './delivery.js';
 
 export type ChatRole = 'user' | 'assistant';
+
+/**
+ * Which conversation the sidebar is holding (roadmap S9). `leo` is the original global
+ * chief-of-staff thread; `northstar` is per-focused-unit. Threads never mix.
+ */
+export type ChatTab = 'leo' | 'northstar';
+
+export const CHAT_TABS: readonly ChatTab[] = ['leo', 'northstar'] as const;
+
+export function isChatTab(v: unknown): v is ChatTab {
+  return v === 'leo' || v === 'northstar';
+}
+
+/**
+ * Thread identity. Leo stays one global thread (unchanged from v1); Northstar is keyed by the
+ * focused unit, so pivoting the Fleet selection pivots the conversation with it.
+ */
+export function chatThreadKey(tab: ChatTab, unit?: string): string {
+  return tab === 'northstar' ? `northstar:${unit ?? 'unknown'}` : 'leo';
+}
 
 export interface ChatMessage {
   role: ChatRole;
@@ -231,5 +252,162 @@ export function chatFallbackText(preload: ChatPreload): string {
     preload.dayGoalBrief,
     '',
     preload.indexSkeleton,
+  ].join('\n');
+}
+
+// ── Northstar tab (roadmap S9) ─────────────────────────────────────────────
+
+/**
+ * What the Northstar tab opens pre-grounded with, for ONE focused fleet unit. Built purely
+ * from the DeliverySnapshot the Delivery pane already reads — no new reader, no re-parse of
+ * core's registry. `grounded: false` means the unit has no registered northstar; the prompt
+ * then says so rather than inventing one.
+ */
+export interface NorthstarPreload {
+  generatedAt: string;
+  /** The focused fleet unit (repo name), verbatim from the Fleet selection. */
+  unit: string;
+  grounded: boolean;
+  /** Northstar slug when grounded (e.g. "l1-morning-cockpit"). */
+  northstar?: string;
+  /** Properties with honest currents and their gaps. */
+  compass: string;
+  /** Roadmap slices by phase + recent recorded movement. */
+  ladder: string;
+}
+
+function propertyLine(p: { id: string; name: string; current: number; target: string }): string[] {
+  return [
+    `- ${p.id} "${clipTitle(p.name)}" — current ${p.current} · gap ${100 - p.current}`,
+    `    target: ${p.target}`,
+  ];
+}
+
+/**
+ * Compass + ladder for one unit. Pure and deterministic: every number here is read off disk
+ * (northstar `current:`, slice `moves_from`/`moves_to`, `status.jsonl` lines) — nothing is
+ * inferred, so the model can quote it and the user can check it.
+ */
+export function buildNorthstarPreload(delivery: DeliverySnapshot, unit: string): NorthstarPreload {
+  const generatedAt = delivery.generatedAt;
+  const ns = delivery.northstars.find((n) => n.app === unit);
+
+  if (!ns) {
+    /**
+     * Truthful empty state. Note the careful wording: the delivery snapshot only surfaces
+     * northstars that have a REGISTERED ROADMAP, so absence here does not prove absence in
+     * core's registry. Saying "no northstar registered" would be a fabricated negative for the
+     * handful of apps that carry a northstar but no roadmap yet. Say what was actually checked.
+     */
+    return {
+      generatedAt,
+      unit,
+      grounded: false,
+      compass: [
+        `## Compass — ${unit}`,
+        `- (not surfaced: no northstar with a registered roadmap was found for "${unit}")`,
+        `  This does NOT prove ${unit} has no northstar. The cockpit reads northstar+roadmap`,
+        `  PAIRS, so an app whose northstar has no roadmap yet looks identical to an`,
+        `  unregistered one from here. Check core/decisions/northstar/README.md to tell them`,
+        `  apart. Do not assert either way.`,
+      ].join('\n'),
+      ladder: ['## Roadmap', `- (no roadmap surfaced for "${unit}")`].join('\n'),
+      // (no `northstar` slug — there is nothing verified to name)
+    };
+  }
+
+  const compass = [`## Compass — ${ns.slug} (${ns.tier})`];
+  if (ns.properties.length === 0) compass.push('- (northstar registered but declares no properties)');
+  for (const p of ns.properties) compass.push(...propertyLine(p));
+
+  const roadmap = delivery.roadmaps.find((r) => r.northstar === ns.slug);
+  const ladder: string[] = [];
+  if (!roadmap) {
+    ladder.push('## Roadmap', `- (no roadmap registered for ${ns.slug})`);
+  } else {
+    ladder.push(`## Roadmap — ${roadmap.slug}`);
+    for (const phase of roadmap.phases) {
+      const slices = roadmap.slices.filter((s) => s.phase === phase.id);
+      ladder.push(`### ${phase.id} — ${phase.name}${slices.length ? '' : ' (no slices)'}`);
+      for (const s of slices) {
+        const repo = s.repo ? ` [lands in ${s.repo}]` : '';
+        ladder.push(
+          `- ${s.id} "${clipTitle(s.title)}" → ${s.advances} · ${s.moves_from}→${s.moves_to} · ${s.status}${repo}`,
+        );
+      }
+    }
+  }
+
+  const moves = delivery.movements.filter((m) => m.northstar === ns.slug).slice(-8);
+  ladder.push('', '## Recorded movement');
+  if (moves.length === 0) {
+    ladder.push('- (none recorded — this northstar has never moved in status.jsonl)');
+  } else {
+    for (const m of moves) {
+      const src = m.source ? ` · ${m.source}` : '';
+      ladder.push(`- ${m.date} ${m.property} ${m.from}→${m.to}${src}`);
+    }
+  }
+
+  return {
+    generatedAt,
+    unit,
+    grounded: true,
+    northstar: ns.slug,
+    compass: compass.join('\n'),
+    ladder: ladder.join('\n'),
+  };
+}
+
+/**
+ * Northstar system prompt.
+ *
+ * DELIBERATELY NOT the full roadtrip question ladder — the cadence (one-thread-at-a-time vs
+ * freeform), the exact evidence-line field list, and whether decomposition belongs in this
+ * thread at all are OPEN TICKETS in core/decisions/wayfinder/cockpit-northstar-conversation.md.
+ * S9 ships grounding + guardrails only; the ladder is S11's, after those tickets close.
+ *
+ * The guardrails encode operator ruling D5: the tab may draft slice INTENT, never a slice.
+ */
+export function buildNorthstarSystemPrompt(preload: NorthstarPreload): string {
+  return [
+    `You are the Morning Cockpit's Northstar conversation, focused on "${preload.unit}".`,
+    'You discuss this unit\'s compass — its vision, its properties, whether they are the right',
+    'axes, and whether each `current` is honest. Push back on framing; do not validate by',
+    'default. The user wants the sharpest version, not agreement.',
+    '',
+    '# Grounding rules',
+    '- Every number below was read off disk. Quote them; never round, restate, or improve them.',
+    '- Never invent a property id, a slice ref, a percentage, a movement line, or a northstar',
+    '  slug. If it is not below, say it is not below.',
+    '- Aspiration belongs in `target` and vision; honesty belongs in `current`. The gap is the',
+    '  roadmap. Never deflate a target to make a percentage look better.',
+    '',
+    '# What you may and may not author',
+    'You may propose slice INTENT: a title, a deliverable, which phase it sits in, and which',
+    'property it advances (only one that appears below). `moves_from` is simply the property\'s',
+    'current, so you may state it.',
+    'You may NOT author `moves_to`, `entrance`, `success`, or `check:`. Those are the gate.',
+    'A `check:` command you invented would silently mark a slice agent-claimable and let the',
+    'day-runner pick it up — never write one. Say "the operator sets this" instead.',
+    'You never write files, never touch `current:`, and never append to status.jsonl. Movement',
+    'is recorded at merge by the person merging, not proposed here.',
+    '',
+    `# ${preload.unit} (generated ${preload.generatedAt})`,
+    '',
+    preload.compass,
+    '',
+    preload.ladder,
+  ].join('\n');
+}
+
+/** Deterministic floor for the Northstar tab — same posture as chatFallbackText. */
+export function northstarFallbackText(preload: NorthstarPreload): string {
+  return [
+    `Model unavailable — no synthesized answer. Deterministic compass for "${preload.unit}":`,
+    '',
+    preload.compass,
+    '',
+    preload.ladder,
   ].join('\n');
 }

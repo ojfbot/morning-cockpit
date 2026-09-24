@@ -160,6 +160,43 @@ a number down. A deviation logged is the plan telling us what it didn't know.
   authoring context: one needed someone to multiply two constants in different files, the
   other needed someone to read a comment against the code without knowing what was intended.
 
+- **#14 — The roadmap schema refused the four undecided PH4 slices, and it was right to.**
+  The approved plan appended S9–S13 for the northstar conversation surface, with S10–S13
+  deliberately carrying *no* `moves_from`/`moves_to` on the grounds that a ladder authored
+  before the decisions shaping the work is a fabricated ladder. `roadmap-lint.mjs:126` treats
+  a non-numeric `moves_from`/`moves_to` as an **ERROR**, not a warning — and ERRORs gate CI.
+  So the schema does not admit a slice whose ladder is undecided. Took the conservative option:
+  only **S9** (the shell, fully decidable today, lints with zero warnings) went onto the
+  roadmap; S10–S13 stayed as open tickets in
+  `core/decisions/wayfinder/cockpit-northstar-conversation.md`.
+  The territory turned out *better* than the plan: `/wayfinder`'s own rule already says slices
+  are appended at handoff, when the frontier empties — and the frontier has seven open tickets.
+  The lint is independently enforcing the two-ledger boundary (questions closed by answers vs
+  deliveries closed by merged PRs). Worth noting fleet-wide: **"required `moves_to`" is not a
+  data-entry rule, it is the mechanism that keeps undecided work out of the delivery ledger.**
+
+- **#15 — Two honesty defects the tests could not have caught, both found by driving the UI.**
+  Verification of S9 in the live browser turned up two failures that every unit test passed:
+  1. **The chat rail would have silently collapsed.** The plan said to "adopt the
+     already-declared-but-unused `chatOpen`". It is not unused *in storage* — it ships in the
+     `mc.cockpit.v1` blob and is persisted every save; it is only unread by the sidebar, which
+     kept the live value in `cockpit-chat-open`. So the migration condition
+     `if (stored.chatOpen === undefined)` never fires, the dead `false` wins, and an open rail
+     closes on first load. Fixed: the legacy key wins whenever present, then is consumed.
+  2. **The empty state asserted a fact it could not know.** `adapters/delivery.ts` surfaces only
+     northstar+**roadmap** PAIRS — its own health note reads "6 registry northstar(s) without a
+     roadmap" (13 of 19 entries surfaced). "No northstar registered for X" is therefore a
+     *fabricated negative* for every app whose northstar has no roadmap yet (shell, blogengine,
+     capture-agent, cv-builder, …). Took the conservative option — the message now states only
+     what was checked ("no northstar **with a registered roadmap** was found… this does NOT
+     prove X has none… do not assert either way") rather than widening the slice into the
+     adapter. The adapter fix is queued separately.
+  The gap between plan and territory: **"unused" was inferred from the reading code and was
+  false in the writing code**, and **an adapter's absence was read as the world's absence**.
+  Both are the same class of error — treating a partial view as the whole one — which is exactly
+  the failure mode this tab exists to design against. Neither was reachable from the tests,
+  because the tests assert on the data the code was given.
+
 - **#16 — Phase 0 of the v2 pickup (2026-08-08): three territory facts the brief didn't have.**
   1. The brief's `git worktree add ../mc-v2 prototype/fleet-navigator` could not succeed as
      written — the branch was still checked out in the staging session's scratchpad worktree.
@@ -189,6 +226,43 @@ a number down. A deviation logged is the plan telling us what it didn't know.
   into `packages/server/src/fleet-authored.ts` as a DATED authored record (asOf 2026-07-25,
   source path kept), with renames handled as aliases (gcgcca → capture-agent) so drift renders
   as TD-007 disagreement, never as fake membership. A future census walk updates one file.
+
+- **#19 — The "sibling worktrees" were screenshots, and the merge commit was a no-op.**
+  The pickup brief warned that `mc-motion`, `mc-perf` and `mc-v2` were sibling worktrees of this
+  repo and to run `git worktree list` before touching anything. Ran it: exactly ONE worktree
+  existed (the live clone). `../mc-*` resolves to PNG screenshots — `mc-s6-chat-open.png`,
+  `mc-resp-1440.png` and friends — left beside the repo by earlier verification sessions. There
+  was nothing to protect. Separately, the plan called for rebasing #43's TWO commits; inspecting
+  `6d0beb3` showed its entire contribution over `3805710` was `0e7ab49`, already on main via #42,
+  plus the roadmap union. So a single `git cherry-pick -n 3805710` onto `ce5e254` reproduces the
+  branch losslessly and the merge commit was dropped rather than replayed. Took the conservative
+  reading both times: verify the hazard before working around it.
+
+- **#20 — The "pre-existing lint error on main" was not firing, because lint reads the worktree.**
+  The brief listed a roadmap-lint ERROR for slice id `S9B` (`roadmap-lint.mjs:101`, `/^S\d+$/`) as
+  a standing failure on main needing its own PR. `node scripts/roadmap-lint.mjs` from core reported
+  **0 errors, 66 warnings**. The rule is real and `S9B` genuinely is on main at
+  `.claude/roadmap.md:131` — but the linter reads each registered roadmap from the **working tree**,
+  and the live clone was two commits behind on a branch predating the S9B block. The error is
+  therefore LATENT: it appears the moment the clone is moved to main, which makes the fix
+  downstream of the cutover rather than independent of it. Logged rather than silently reordered,
+  because "the gate is green" and "the gate cannot see the file" are different facts.
+
+- **#21 — The cockpit has been running with its primary data source dark.**
+  Checking what to restart after the cutover turned up `/api/health` reporting `dolt-bead: down —
+  connect ECONNREFUSED 127.0.0.1:3398`, with only the handoff adapter up. `COCKPIT_DOLT_PORT=3398`
+  exists in NO file on the machine — not a `.env` (the server loads no dotenv at all), not a shell
+  rc, not a plist, not this repo — only in the environment of the running dev-server process. The
+  canonical `dev.ojfbot.dolt-beads` launchd job binds **3307** against `~/.beads-dolt`, which is
+  `config.ts:65,69`'s own defaults, and that server holds 269 beads / 269 `bead_events` with the
+  newest event the same afternoon. `research/S6-autonomous-claim-handoff.md:111` documents the knob
+  pointing at a *scratch* Dolt during verification, so 3398 is a stale S6-era override that was
+  never unset. Since Overnight is timestamp-driven off `bead_events` and agent liveness is derived
+  from `agent-*` event recency, both had been reading structurally empty rather than genuinely
+  quiet. The conservative fix is to set nothing: the code default is already correct, and pinning
+  the port explicitly would recreate the same trap. Unexported at the cutover restart, proven by a
+  separate before/after screenshot so the git ref and the data source never move in one step.
+
 
 ## Log
 

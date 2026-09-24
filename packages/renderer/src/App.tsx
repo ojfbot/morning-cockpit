@@ -98,7 +98,13 @@ export function App() {
           <LoopSection />
           {/* Add more cockpit sections here as <Section title="…">…</Section> */}
         </main>
-        <ChatSidebar />
+        <ChatSidebar
+          open={ui.chatOpen}
+          onOpenChange={(open) => setUi((s) => ({ ...s, chatOpen: open }))}
+          tab={ui.activeChatTab}
+          onTabChange={(activeChatTab) => setUi((s) => ({ ...s, activeChatTab }))}
+          selectedRepo={ui.selectedRepo}
+        />
       </div>
 
       {snapshot && <HealthBar health={snapshot.health} />}
