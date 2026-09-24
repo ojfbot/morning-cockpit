@@ -13,7 +13,9 @@ phases:
   - id: PH3
     name: "Focus-surface completion"
     goal: "Track L launch surface lands; the fleet focus-swap is a complete operator loop (see, pivot, launch)."
-  # PH4 intentionally skipped: a concurrent main-checkout WIP may be minting it; ids are immutable, gaps are fine.
+  - id: PH4
+    name: "The northstar conversation surface"
+    goal: "Focusing a fleet unit opens a grounded conversation about its compass — the roadtrip's cadence at the desk, converging on a proposal that leaves through the existing gate."
   - id: PH5
     name: "Cockpit v2 — instrument shell + fleet structure"
     goal: "The design_handoff_cockpit_v2 program: fleet-structure adapter + three-mode Fleet section + keyed Leo threads + instrument shell, per the ruled decisions in research/design-handoff-cockpit-v2/README.md. Entrance/check values below are PROPOSED drafts from the design brief — operator ratifies by flipping queued → ready."
@@ -123,6 +125,20 @@ slices:
     deliverable: "PR: handoff adapter builds a closes:-ref index over open beads; a live bead referenced by an open successor derives decided-in-flight (pure logic + tests in packages/shared); such beads leave the Briefing decision pool immediately and render chained with their successor as ONE Pickup item; behavior reverts when the successor closes at delivery. Regression fixture: the real 20260628-2015 / 20260717-1717 bead pair."
     entrance: "Operator-verified defect 2026-07-17: after Approve & emit, Pickup counted both beads (16->17), the Briefing re-seeded the identical DECISION NEEDED thread, and the item rendered 8x — closes: is write-only, nothing on the read side consumes it. Design settled: derivation, never bead mutation (ADR-0005 single write path)."
     success: "With the real pair on disk: the decided item leaves DECISION NEEDED, Pickup shows one chained item (count drops by 1), dangling closes: refs and closed successors are covered by tests; full suite green."
+    check: "pnpm test"
+    autonomy: gate-0
+    claimable_by: agent_eligible
+    kind: m
+    status: ready
+  - id: S9
+    phase: PH4
+    title: "Chat tabs + focus-scoped Northstar thread (shell only)"
+    advances: "ns:l1-morning-cockpit#P3"
+    moves_from: 55
+    moves_to: 60
+    deliverable: "PR: tab strip in ChatSidebar (Leo | Northstar); ui.selectedRepo threaded from App.tsx into the sidebar; chat-store threads keyed by (tab, unit) instead of one global array; chatOpen + activeChatTab reconciled into mc.cockpit.v1 and the stray cockpit-chat-open key retired; buildNorthstarPreload(delivery, repo) in packages/shared/src/chat.ts building a deterministic per-unit grounding from the existing DeliverySnapshot; ?tab= and ?repo= on the chat routes."
+    entrance: "selectedRepo already drives the repo-scoped briefing (ADR-0012) and /api/delivery already serves northstars, roadmaps and movements — the shell needs no new reader. No open wayfinder ticket in cockpit-northstar-conversation gates the shell: the cadence, provider, evidence-line and thread-keying questions all sit above it."
+    success: "Switching fleet tiles re-scopes the Northstar thread; Leo's thread stays global and behaviourally unchanged; a repo with no registered northstar renders a truthful empty state rather than a fabricated one; the /api/cockpit snapshot contract and GraphQL drift gate are untouched; full suite green."
     check: "pnpm test"
     autonomy: gate-0
     claimable_by: agent_eligible
@@ -288,3 +304,18 @@ lands — dogfooding from line one).
 
 Track L (tile launch surface) in two slices, sequenced L1 links then L2 probe + L3 popover. This is
 the remaining 45% of P3 after the Flow-01 focus-swap shipped.
+
+## PH4 — The northstar conversation surface
+
+Focus-swap currently opens onto a *view*. PH4 makes it open onto a *conversation*: a second sidebar
+chat tab that runs the Northstar Roadtrip's cadence — vision first, one thread at a time, the
+property set attacked as a set, then per-property honesty, then the ladder check — scoped to the
+focused unit, converging on a proposal that leaves through the ADR-0005 gate.
+
+S9 is the shell alone: tabs, focus plumbing, per-unit threads, and a deterministic grounding built
+from the `/api/delivery` snapshot the Delivery pane already reads. It is deliberately the only PH4
+slice on this roadmap today. The cadence, the provider seam, the evidence line, and thread-keying
+behaviour are **open decisions**, charted as tickets in
+`core/decisions/wayfinder/cockpit-northstar-conversation.md`. Their slices get appended here when
+that map's frontier empties — a slice whose `moves_to` isn't yet decidable is a question, not a
+delivery, and the two ledgers never merge.

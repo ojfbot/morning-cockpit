@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import type { ChatAttachment, ChatHistoryEntry, ChatMessage, HandoffDraft } from '@cockpit/shared';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import type { ChatAttachment, ChatHistoryEntry, ChatMessage, ChatTab, HandoffDraft } from '@cockpit/shared';
 import {
   clearChatHistory,
   draftHandoff,
@@ -8,6 +8,7 @@ import {
   fetchHandoffDrafts,
   streamChat,
   type ChatContextResponse,
+  type ChatScope,
 } from '../../api.js';
 import { ChatComposer } from './ChatComposer.js';
 import { ChatContextDisclosure } from './ChatContextDisclosure.js';
@@ -16,30 +17,45 @@ import { HandoffDraftCard } from './HandoffDraftCard.js';
 /**
  * Cockpit Chat — a collapsible right sidebar (a fourth context, NOT a pod; ADR-0006).
  * Grounded discussion over the pods via local Ollama; honest deterministic fallback.
+ *
+ * S9: two tabs. `leo` is the original global chief-of-staff thread, unchanged. `northstar` is
+ * scoped to the focused Fleet unit — pivoting the tile pivots the conversation, and each unit
+ * keeps its own thread server-side.
  */
-
-const OPEN_KEY = 'cockpit-chat-open';
-
-function initialOpen(): boolean {
-  try {
-    const stored = localStorage.getItem(OPEN_KEY);
-    if (stored === 'open' || stored === 'closed') return stored === 'open';
-  } catch {
-    /* localStorage unavailable */
-  }
-  return false; // default collapsed (design: the rail is an open line, not a panel that eats width)
-}
 
 interface DisplayMessage extends ChatMessage {
   id: string;
   fallback?: boolean;
 }
 
+const TAB_LABEL: Record<ChatTab, string> = { leo: 'Leo', northstar: 'Northstar' };
+
+/**
+ * Whether the loaded Northstar grounding actually found a registered northstar.
+ * `undefined` = context not loaded yet (say nothing rather than guess).
+ */
+function northstarGrounded(context: ChatContextResponse | null): boolean | undefined {
+  if (!context) return undefined;
+  const p = context.preload as { grounded?: unknown };
+  return typeof p.grounded === 'boolean' ? p.grounded : undefined;
+}
+
 let localId = 0;
 const nextId = () => `local-${++localId}`;
 
-export function ChatSidebar() {
-  const [open, setOpen] = useState<boolean>(initialOpen);
+export function ChatSidebar({
+  open,
+  onOpenChange,
+  tab,
+  onTabChange,
+  selectedRepo,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  tab: ChatTab;
+  onTabChange: (tab: ChatTab) => void;
+  selectedRepo: string;
+}) {
   const [loaded, setLoaded] = useState(false);
   const [context, setContext] = useState<ChatContextResponse | null>(null);
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
@@ -51,23 +67,31 @@ export function ChatSidebar() {
   const [draftNote, setDraftNote] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(OPEN_KEY, open ? 'open' : 'closed');
-    } catch {
-      /* ignore */
-    }
-  }, [open]);
+  // The conversation this sidebar currently addresses. Northstar re-scopes with the Fleet tile.
+  const scope: ChatScope = useMemo(
+    () => (tab === 'northstar' ? { tab, repo: selectedRepo } : { tab: 'leo' }),
+    [tab, selectedRepo],
+  );
+  const scopeId = tab === 'northstar' ? `northstar:${selectedRepo}` : 'leo';
 
-  // Load history + grounding context on first open.
+  // Switching tab or focused unit is a different thread: drop the view and reload.
+  useEffect(() => {
+    setLoaded(false);
+    setMessages([]);
+    setContext(null);
+    setError(null);
+    setStreamText(null);
+  }, [scopeId]);
+
+  // Load history + grounding context on first open of each thread.
   useEffect(() => {
     if (!open || loaded) return;
     let active = true;
     void (async () => {
       try {
         const [history, ctx, drafts] = await Promise.all([
-          fetchChatHistory(),
-          fetchChatContext(),
+          fetchChatHistory(scope),
+          fetchChatContext(scope),
           fetchHandoffDrafts().catch(() => [] as HandoffDraft[]),
         ]);
         if (!active) return;
@@ -82,14 +106,14 @@ export function ChatSidebar() {
     return () => {
       active = false;
     };
-  }, [open, loaded]);
+  }, [open, loaded, scope]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
   }, [messages, streamText]);
 
   const refreshContext = () => {
-    void fetchChatContext()
+    void fetchChatContext(scope)
       .then(setContext)
       .catch((err: unknown) => setError(err instanceof Error ? err.message : String(err)));
   };
@@ -105,7 +129,7 @@ export function ChatSidebar() {
     let acc = '';
     let fallback = false;
     try {
-      const stream = await streamChat([...history, { role: 'user', content: text }], attachments);
+      const stream = await streamChat([...history, { role: 'user', content: text }], attachments, scope);
       for await (const evt of stream) {
         if (evt.event === 'token') {
           acc += (evt.data as { text: string }).text;
@@ -128,7 +152,7 @@ export function ChatSidebar() {
   };
 
   const clear = () => {
-    void clearChatHistory()
+    void clearChatHistory(scope)
       .then(() => setMessages([]))
       .catch((err: unknown) => setError(err instanceof Error ? err.message : String(err)));
   };
@@ -152,7 +176,7 @@ export function ChatSidebar() {
   if (!open) {
     return (
       <aside className="chat-rail">
-        <button className="chat-rail-toggle" onClick={() => setOpen(true)} title="Open cockpit chat" aria-label="Open cockpit chat">
+        <button className="chat-rail-toggle" onClick={() => onOpenChange(true)} title="Open cockpit chat" aria-label="Open cockpit chat">
           ▸ Ask the Chief of Staff
         </button>
       </aside>
@@ -174,18 +198,57 @@ export function ChatSidebar() {
         <button className="chat-head-btn" onClick={clear} title="Clear conversation" disabled={streaming || messages.length === 0}>
           clear
         </button>
-        <button className="chat-head-btn" onClick={() => setOpen(false)} title="Collapse chat" aria-label="Collapse chat">
+        <button className="chat-head-btn" onClick={() => onOpenChange(false)} title="Collapse chat" aria-label="Collapse chat">
           ❯
         </button>
       </header>
 
+      <div className="chat-tabs" role="tablist" aria-label="Conversation">
+        {(['leo', 'northstar'] as const).map((t) => (
+          <button
+            key={t}
+            role="tab"
+            aria-selected={tab === t}
+            className={`chat-tab${tab === t ? ' chat-tab--on' : ''}`}
+            onClick={() => onTabChange(t)}
+            disabled={streaming}
+            title={
+              t === 'northstar'
+                ? `Compass conversation for ${selectedRepo} — follows the focused Fleet tile`
+                : 'Chief of staff — beads, reading, papers'
+            }
+          >
+            {TAB_LABEL[t]}
+            {t === 'northstar' && <span className="chat-tab-unit"> · {selectedRepo}</span>}
+          </button>
+        ))}
+      </div>
+
       <ChatContextDisclosure context={context} onRefresh={refreshContext} />
 
       <div className="chat-messages" ref={scrollRef}>
-        {messages.length === 0 && streamText === null && (
+        {messages.length === 0 && streamText === null && tab === 'leo' && (
           <p className="chat-empty">
             Pre-grounded in today's beads, reading, and papers — ask away. Answers come from the
             local model and cite real item titles.
+          </p>
+        )}
+        {messages.length === 0 && streamText === null && tab === 'northstar' && (
+          <p className="chat-empty">
+            {northstarGrounded(context) === false ? (
+              <>
+                No northstar <em>with a roadmap</em> is surfaced for <strong>{selectedRepo}</strong>.
+                That isn't proof it has none — the cockpit reads northstar+roadmap pairs, so an app
+                whose northstar has no roadmap yet looks the same from here. Check core's registry
+                to tell them apart.
+              </>
+            ) : (
+              <>
+                Grounded in <strong>{selectedRepo}</strong>'s compass — properties, honest currents,
+                roadmap slices, and recorded movement. Every number is read off disk. This tab can
+                propose slice <em>intent</em>; it never writes entrance, success, or check.
+              </>
+            )}
           </p>
         )}
         {messages.map((m) => (
@@ -214,7 +277,15 @@ export function ChatSidebar() {
       {draftNote && <p className="chat-error">handoff — {draftNote}</p>}
       {error && <p className="chat-error">chat error — {error}</p>}
 
-      <ChatComposer disabled={streaming} onSend={(t, atts) => void send(t, atts)} />
+      <ChatComposer
+        disabled={streaming}
+        onSend={(t, atts) => void send(t, atts)}
+        placeholder={
+          tab === 'northstar'
+            ? `Ask about ${selectedRepo}'s properties, currents, or gap…`
+            : 'Ask about beads, reading, or papers…'
+        }
+      />
     </aside>
   );
 }

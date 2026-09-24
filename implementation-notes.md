@@ -160,6 +160,43 @@ a number down. A deviation logged is the plan telling us what it didn't know.
   authoring context: one needed someone to multiply two constants in different files, the
   other needed someone to read a comment against the code without knowing what was intended.
 
+- **#14 — The roadmap schema refused the four undecided PH4 slices, and it was right to.**
+  The approved plan appended S9–S13 for the northstar conversation surface, with S10–S13
+  deliberately carrying *no* `moves_from`/`moves_to` on the grounds that a ladder authored
+  before the decisions shaping the work is a fabricated ladder. `roadmap-lint.mjs:126` treats
+  a non-numeric `moves_from`/`moves_to` as an **ERROR**, not a warning — and ERRORs gate CI.
+  So the schema does not admit a slice whose ladder is undecided. Took the conservative option:
+  only **S9** (the shell, fully decidable today, lints with zero warnings) went onto the
+  roadmap; S10–S13 stayed as open tickets in
+  `core/decisions/wayfinder/cockpit-northstar-conversation.md`.
+  The territory turned out *better* than the plan: `/wayfinder`'s own rule already says slices
+  are appended at handoff, when the frontier empties — and the frontier has seven open tickets.
+  The lint is independently enforcing the two-ledger boundary (questions closed by answers vs
+  deliveries closed by merged PRs). Worth noting fleet-wide: **"required `moves_to`" is not a
+  data-entry rule, it is the mechanism that keeps undecided work out of the delivery ledger.**
+
+- **#15 — Two honesty defects the tests could not have caught, both found by driving the UI.**
+  Verification of S9 in the live browser turned up two failures that every unit test passed:
+  1. **The chat rail would have silently collapsed.** The plan said to "adopt the
+     already-declared-but-unused `chatOpen`". It is not unused *in storage* — it ships in the
+     `mc.cockpit.v1` blob and is persisted every save; it is only unread by the sidebar, which
+     kept the live value in `cockpit-chat-open`. So the migration condition
+     `if (stored.chatOpen === undefined)` never fires, the dead `false` wins, and an open rail
+     closes on first load. Fixed: the legacy key wins whenever present, then is consumed.
+  2. **The empty state asserted a fact it could not know.** `adapters/delivery.ts` surfaces only
+     northstar+**roadmap** PAIRS — its own health note reads "6 registry northstar(s) without a
+     roadmap" (13 of 19 entries surfaced). "No northstar registered for X" is therefore a
+     *fabricated negative* for every app whose northstar has no roadmap yet (shell, blogengine,
+     capture-agent, cv-builder, …). Took the conservative option — the message now states only
+     what was checked ("no northstar **with a registered roadmap** was found… this does NOT
+     prove X has none… do not assert either way") rather than widening the slice into the
+     adapter. The adapter fix is queued separately.
+  The gap between plan and territory: **"unused" was inferred from the reading code and was
+  false in the writing code**, and **an adapter's absence was read as the world's absence**.
+  Both are the same class of error — treating a partial view as the whole one — which is exactly
+  the failure mode this tab exists to design against. Neither was reachable from the tests,
+  because the tests assert on the data the code was given.
+
 - **#16 — Phase 0 of the v2 pickup (2026-08-08): three territory facts the brief didn't have.**
   1. The brief's `git worktree add ../mc-v2 prototype/fleet-navigator` could not succeed as
      written — the branch was still checked out in the staging session's scratchpad worktree.
