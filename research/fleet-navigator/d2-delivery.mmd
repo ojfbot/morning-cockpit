@@ -1,0 +1,22 @@
+---
+title: How decisions become recorded movement
+---
+flowchart LR
+  WF["Wayfinder maps<br/>5 working / 4 charting"]
+  NS["Northstar registry<br/>20 northstars, ladder-linted"]
+  RM["Roadmaps<br/>13 registered, slices w/ status"]
+  Compile(["roadmap-compile"])
+  Q["Dispatch queue<br/>ready + check: slices"]
+  W(["Worker sessions<br/>26 agents live today"])
+  BD["Beads + Dolt ledger"]
+  CK["Morning Cockpit<br/>read-model dashboard"]
+  SJ["status.jsonl<br/>property movement"]
+  WF -- "yields decisions" --> RM
+  NS -- "anchors" --> RM
+  RM -- "consumes" --> Compile
+  Compile -- "yields" --> Q
+  Q -- "claims" --> W
+  W -- "yields" --> BD
+  BD -- "consumed by" --> CK
+  W -. "movement proposal" .-> SJ
+  SJ -- "affects" --> NS

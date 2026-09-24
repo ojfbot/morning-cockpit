@@ -160,6 +160,20 @@ a number down. A deviation logged is the plan telling us what it didn't know.
   authoring context: one needed someone to multiply two constants in different files, the
   other needed someone to read a comment against the code without knowing what was intended.
 
+- **#16 — Phase 0 of the v2 pickup (2026-08-08): three territory facts the brief didn't have.**
+  1. The brief's `git worktree add ../mc-v2 prototype/fleet-navigator` could not succeed as
+     written — the branch was still checked out in the staging session's scratchpad worktree.
+     That worktree was clean and synced with origin, so its registration was released first,
+     then `../mc-v2` added. Nothing was destroyed.
+  2. The main checkout carried an untracked `research/fleet-navigator-rfi-response.md` the
+     brief didn't list — the pre-vendoring original of `rfi/rfi-response.md` on the prototype
+     branch. Excluded from the S9 preservation commit (it is not S9 work) and left untracked.
+  3. The main checkout was left ON `feat/northstar-chat-tab-ph4-s9` after the preservation
+     commit rather than switched back to `main`: the WIP was already in the served tree, so
+     staying on the branch keeps the live :3040/:5180 cockpit byte-identical, while switching
+     back would have hot-swapped it — the exact hazard the brief warned about from the other
+     direction.
+
 ## Log
 
 - **2026-07-28** — Branched `feat/anthropic-watch-stage1` from `origin/main` (`cec5678`).

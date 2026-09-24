@@ -1,0 +1,26 @@
+---
+title: selfco vault internals (page counts 2026-08-08)
+---
+flowchart LR
+  RAW["raw/<br/>append-only source layer"]
+  SRC["wiki/sources<br/>247 pages"]
+  ENT["wiki/entities<br/>166 pages"]
+  CON["wiki/concepts<br/>162 pages"]
+  SYN["wiki/synthesis<br/>121 pages"]
+  IDX["index.md + log.md<br/>master catalog"]
+  TRK["tracking/<br/>l2-selfco northstar home (outside lint)"]
+  DIA["diagrams/<br/>standing fleet maps (this file's home)"]
+  Vault(["/vault skill<br/>ingest / research / query / lint / sync"])
+  BOX(["selfco-box on Pi<br/>Notion + PLAUD pollers, 15-min timer"])
+  OBS["Obsidian<br/>renders Mermaid + graph UI"]
+  RAW -- "consumed by" --> Vault
+  BOX -- "yields captures" --> RAW
+  Vault -- "yields" --> SRC
+  Vault -- "yields" --> ENT
+  Vault -- "yields" --> CON
+  Vault -- "yields" --> SYN
+  SRC -- "cataloged in" --> IDX
+  ENT -- "cataloged in" --> IDX
+  IDX -- "read via" --> OBS
+  TRK -.-> IDX
+  DIA -- "read via" --> OBS

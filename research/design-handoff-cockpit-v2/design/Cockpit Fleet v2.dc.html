@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+html,body{margin:0;padding:0;background:#12100d;color:#efe8db;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;}
+a{color:#efe8db;} a:hover{color:#ff4b3e;}
+*{box-sizing:border-box;}
+::selection{background:#ff4b3e;color:#12100d;}
+input{outline:none;}
+::-webkit-scrollbar{width:8px;height:8px;}::-webkit-scrollbar-thumb{background:#2e2924;border-radius:4px;}::-webkit-scrollbar-track{background:transparent;}
+@keyframes mcpulse{0%,100%{opacity:1;}50%{opacity:.2;}}
+@media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important;}}
+</style>
+</helmet>
+<div style="height:100vh;display:grid;grid-template-rows:40px auto 1fr;background:#12100d;overflow:hidden;">
+  <header style="display:flex;align-items:center;gap:14px;padding:0 24px;border-bottom:1px solid #2e2924;background:#14110e;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:10px;letter-spacing:.12em;color:#847a6c;">
+    <span>FLEET CONTROL PLANE</span>
+    <span style="color:#3a342c;">·</span>
+    <span>{{ dateLine }}</span>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:14px;">
+      <div style="display:flex;align-items:center;gap:6px;" title="Shadow-mode loop capture is running">
+        <span style="{{ pulseSt }}"></span>
+        <span>LOOP 80/7D</span>
+      </div>
+      <span style="border:1px solid #2e2924;padding:3px 8px;">{{ phaseChip }}</span>
+      <span style="color:#b5aa99;">{{ clock }}</span>
+    </div>
+  </header>
+  <section data-screen-label="Hero" style="display:flex;align-items:center;gap:40px;padding:36px 28px 30px;border-bottom:2px solid #efe8db;background:#14110e;">
+    <div style="flex:1;min-width:0;">
+      <div style="font-size:84px;font-weight:800;letter-spacing:-.01em;line-height:.9;">{{ wordmark }}</div>
+      <div style="font-size:29px;font-weight:700;line-height:1.28;margin-top:20px;max-width:820px;text-wrap:pretty;">
+        <sc-for list="{{ heroParts }}" as="p" hint-placeholder-count="3"><span style="{{ p.st }}">{{ p.t }}</span></sc-for>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:10px;flex-shrink:0;">
+      <svg viewBox="0 0 190 190" style="width:196px;height:196px;" title="The day dial — 24h, phase arcs, loop events, and now">
+        <circle cx="95" cy="95" r="74" style="fill:none;stroke:#221d18;stroke-width:9;"></circle>
+        <sc-for list="{{ dialArcs }}" as="a" hint-placeholder-count="4">
+          <path d="{{ a.d }}" style="{{ a.st }}"></path>
+        </sc-for>
+        <sc-for list="{{ dialEvents }}" as="e" hint-placeholder-count="3">
+          <circle cx="{{ e.cx }}" cy="{{ e.cy }}" r="2.6" style="fill:#8fbd8f;"></circle>
+        </sc-for>
+        <circle cx="{{ dialNow.cx }}" cy="{{ dialNow.cy }}" r="5" style="fill:#efe8db;stroke:#14110e;stroke-width:2;"></circle>
+        <sc-for list="{{ dialLabels }}" as="l" hint-placeholder-count="4">
+          <text x="{{ l.x }}" y="{{ l.y }}" style="{{ l.st }}">{{ l.t }}</text>
+        </sc-for>
+        <text x="95" y="92" style="{{ dialNumSt }}">{{ dialCount }}</text>
+        <text x="95" y="108" style="{{ dialLabSt }}">{{ dialLabel }}</text>
+        <text x="95" y="124" style="fill:#847a6c;font-size:7px;letter-spacing:.1em;text-anchor:middle;font-family:ui-monospace,Menlo,monospace;">42 BEADS · 0 STALE</text>
+        <text x="95" y="140" style="fill:#5d564c;font-size:7px;letter-spacing:.14em;text-anchor:middle;font-family:ui-monospace,Menlo,monospace;">{{ dialPhase }}</text>
+      </svg>
+      <div style="text-align:center;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:10px;color:#847a6c;line-height:1.7;white-space:nowrap;">
+        <div><span style="color:#8fbd8f;">●</span> LIVE · {{ loopDelta }} LOOP EVENTS SINCE LAST LOOK · {{ sinceGap }}</div>
+        <div>THE LOOP RUNS WHETHER YOU WATCH OR NOT</div>
+      </div>
+    </div>
+  </section>
+  <div style="display:grid;grid-template-columns:192px 1fr 372px;min-height:0;">
+    <nav style="border-right:1px solid #2e2924;padding:16px 0;display:flex;flex-direction:column;gap:2px;background:#14110e;overflow-y:auto;">
+      <sc-for list="{{ spine }}" as="s" hint-placeholder-count="8">
+        <div onClick="{{ s.go }}" style="{{ s.st }}" title="{{ s.tip }}">
+          <div style="display:flex;align-items:baseline;gap:8px;">
+            <span style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:9px;color:#847a6c;">{{ s.num }}</span>
+            <span style="font-size:12px;font-weight:600;letter-spacing:.04em;">{{ s.t }}</span>
+            <sc-if value="{{ s.hot }}" hint-placeholder-val="{{ false }}"><span style="width:6px;height:6px;border-radius:50%;background:#ff4b3e;margin-left:auto;" title="Needs a decision"></span></sc-if>
+          </div>
+          <div style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:9.5px;color:#847a6c;margin-top:2px;">{{ s.sub }}</div>
+        </div>
+      </sc-for>
+      <div style="margin-top:auto;padding:12px 16px;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:9px;color:#5d564c;line-height:1.6;">Bright rows are live — click to navigate. Red means one thing: a decision needs you.</div>
+    </nav>
+    <main style="display:flex;flex-direction:column;min-width:0;min-height:0;overflow-y:auto;">
+      <sc-if value="{{ vBriefing }}" hint-placeholder-val="{{ false }}">
+      <section data-screen-label="00 Briefing" style="padding:18px 20px 24px;border-bottom:1px solid #2e2924;">
+        <div style="display:flex;align-items:baseline;gap:14px;margin-bottom:14px;">
+          <span style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:10px;letter-spacing:.14em;color:#847a6c;">00 — BRIEFING</span>
+          <span style="font-size:26px;font-weight:800;letter-spacing:.01em;">The First Move</span>
+          <span style="margin-left:auto;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:9.5px;color:#847a6c;text-align:right;">deterministic · scoped to {{ briefScope }}<br></br>every thread ends in a handoff artifact</span>
+        </div>
+        <div style="display:grid;grid-template-columns:270px 1fr;gap:18px;align-items:start;">
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:9.5px;letter-spacing:.12em;color:#847a6c;">SEEDED THREADS — {{ briefCount }}</div>
+            <sc-for list="{{ briefThreads }}" as="b" hint-placeholder-count="3">
+              <div onClick="{{ b.go }}" style="{{ b.st }}">
+                <span style="{{ b.chipSt }}">{{ b.chip }}</span>
+                <div style="font-size:12.5px;font-weight:700;line-height:1.35;margin:7px 0 5px;">{{ b.title }}</div>
+                <div style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:9.5px;color:#847a6c;">pickup · {{ b.repo }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="border:1px solid #2e2924;background:#1a1713;padding:16px 18px;">
+            <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:10px;">
+              <span style="width:7px;height:7px;border-radius:50%;background:#8fbd8f;align-self:center;"></span>
+              <span style="font-size:12px;font-weight:700;letter-spacing:.08em;">CHIEF OF STAFF</span>
+              <span style="margin-left:auto;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:9px;color:#847a6c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:50%;">briefing · {{ briefFile }}</span>
+            </div>
+            <div style="border-left:2px solid #3a342c;padding:2px 0 2px 12px;font-size:12px;color:#b5aa99;line-height:1.5;margin-bottom:12px;">{{ briefCatchup }}</div>
+            <div style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:9.5px;letter-spacing:.12em;color:#ff4b3e;margin-bottom:6px;">DECISION</div>
+            <div style="font-size:18px;font-weight:700;line-height:1.3;margin-bottom:12px;text-wrap:pretty;">{{ briefQuestion }}</div>
+            <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px;">
+              <sc-for list="{{ briefOpts }}" as="o" hint-placeholder-count="2">
+                <div onClick="{{ o.go }}" style="{{ o.st }}">
+                  <span style="font-size:13px;font-weight:700;">{{ o.t }}</span>
+                  <sc-if value="{{ o.rec }}" hint-placeholder-val="{{ false }}"><span style="margin-left:auto;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:8.5px;letter-spacing:.1em;border:1px solid #ff4b3e;color:#ff4b3e;padding:2px 6px;">RECOMMENDED</span></sc-if>
+                </div>
+              </sc-for>
+            </div>
+            <sc-if value="{{ showDraft }}" hint-placeholder-val="{{ true }}">
+              <div style="border:1px solid #ff4b3e;padding:14px 16px;">
+                <div style="display:flex;gap:8px;margin-bottom:8px;">
+                  <span style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:9px;letter-spacing:.12em;color:#ff4b3e;">HANDOFF ARTIFACT · DRAFT</span>
+                  <span style="margin-left:auto;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:9px;color:#847a6c;">{{ briefScope }}/.handoff/</span>
+                </div>
+                <div style="font-size:14px;font-weight:700;line-height:1.35;margin-bottom:10px;">Pick up: {{ briefTitle }}</div>
+                <div style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:9px;letter-spacing:.12em;color:#847a6c;">DELIVERY TASK</div>
+                <div style="font-size:11.5px;color:#d8cfc0;line-height:1.5;margin:3px 0 10px;">Investigate and resolve in {{ briefScope }}; either complete it or close it with a recorded rationale.</div>
+                <div style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:9px;letter-spacing:.12em;color:#847a6c;">ACCEPTANCE CRITERIA</div>
+                <div style="font-size:11.5px;color:#d8cfc0;line-height:1.6;margin:3px 0 12px;">☐ Item investigated, a clear decision recorded (complete or close)<br></br>☐ If completed: change verified; if closed: one-line rationale on the bead</div>
+                <sc-if value="{{ notEmitted }}" hint-placeholder-val="{{ true }}">
+                  <button onClick="{{ emit }}" style="background:#ff4b3e;color:#12100d;border:none;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:11px;font-weight:700;padding:8px 14px;cursor:pointer;">Approve &amp; emit →</button>
+                </sc-if>
+                <sc-if value="{{ emitted }}" hint-placeholder-val="{{ false }}">
+                  <div style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:10.5px;color:#8fbd8f;">✓ EMITTED → {{ briefScope }}/.handoff/ · the only write, per-emission approval (ADR-0005)</div>
+                </sc-if>
+              </div>
+            </sc-if>
+            <sc-if value="{{ showDefer }}" hint-placeholder-val="{{ false }}">
+              <div style="border:1px dashed #3a342c;padding:12px 16px;font-size:11.5px;color:#847a6c;">Deferred 7 days — resurfaces Sat 15 Aug. Nothing is written; deferral is a read-model note, not a bead mutation.</div>
+            </sc-if>
+          </div>
+        </div>
+      </section>
+      </sc-if>
+      <sc-if value="{{ vFleet }}" hint-placeholder-val="{{ true }}">
+      <div style="padding:14px 20px 0;display:flex;flex-direction:column;gap:10px;">
+        <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+          <div style="display:flex;align-items:baseline;gap:10px;">
+            <span style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:10px;letter-spacing:.14em;color:#847a6c;">01 — FLEET</span>
+            <span style="font-size:15px;font-weight:700;letter-spacing:.02em;">{{ modeTitle }}</span>
+          </div>
+          <div style="display:flex;border:1px solid #2e2924;">
+            <sc-for list="{{ modeBtns }}" as="m" hint-placeholder-count="3">
+              <button onClick="{{ m.go }}" style="{{ m.st }}">{{ m.t }}</button>
+            </sc-for>
+          </div>
+          <div style="margin-left:auto;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:10px;color:#847a6c;letter-spacing:.06em;">{{ statLine }}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <input value="{{ q }}" onChange="{{ onQ }}" placeholder="filter the fleet…" style="background:#1a1713;border:1px solid #2e2924;color:#efe8db;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:11px;padding:6px 10px;width:220px;"></input>
+          <sc-for list="{{ chips }}" as="c" hint-placeholder-count="5">
+            <button onClick="{{ c.go }}" style="{{ c.st }}">{{ c.t }}</button>
+          </sc-for>
+          <span style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:10px;color:#847a6c;">{{ matchLine }}</span>
+        </div>
+      </div>
+      <sc-if value="{{ isGrid }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="Fleet — Grid" style="padding:16px 20px 32px;">
+          <div style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:10px;letter-spacing:.14em;color:#847a6c;margin-bottom:10px;">SIGNAL — OPEN WORK OR RECENT ACTIVITY</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;">
+            <sc-for list="{{ sigCards }}" as="r" hint-placeholder-count="5">
+              <div onClick="{{ r.pick }}" style="{{ r.st }}">
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <span style="{{ r.dotSt }}" title="{{ r.liveT }}"></span>
+                  <span style="font-size:13.5px;font-weight:700;">{{ r.n }}</span>
+                  <span style="margin-left:auto;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:9px;border:1px solid #2e2924;padding:1px 5px;color:#847a6c;">{{ r.phase }}</span>
+                </div>
+                <div style="font-size:11.5px;color:#b5aa99;margin:6px 0 8px;line-height:1.4;">{{ r.role }}</div>
+                <div style="display:flex;gap:12px;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:10.5px;color:#847a6c;">
+                  <span style="color:#efe8db;font-weight:600;">{{ r.open }} open</span>
+                  <span>{{ r.act }}</span>
+                  <span style="margin-left:auto;">{{ r.slLine }}</span>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:10px;letter-spacing:.14em;color:#847a6c;margin:22px 0 8px;">DORMANT — 30 REPOS · NO OPEN BEADS</div>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <sc-for list="{{ dormant }}" as="d" hint-placeholder-count="8">
+              <div style="display:flex;gap:10px;align-items:baseline;border-top:1px solid #201c17;padding-top:6px;">
+                <span style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:9.5px;letter-spacing:.1em;min-width:130px;color:{{ d.hue }};">{{ d.cluster }}</span>
+                <div style="display:flex;flex-wrap:wrap;gap:4px 14px;">
+                  <sc-for list="{{ d.repos }}" as="r" hint-placeholder-count="4">
+                    <span onClick="{{ r.pick }}" style="{{ r.st }}">{{ r.n }}</span>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="margin-top:18px;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:10px;color:#5d564c;">Dotted names are unregistered — invisible to delivery. See <span onClick="{{ goTiers }}" style="color:#b5aa99;cursor:pointer;text-decoration:underline;">Tiers</span> for the gap.</div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ isCanvas }}" hint-placeholder-val="{{ true }}">
+        <div data-screen-label="Fleet — Canvas" style="flex:1;position:relative;min-height:460px;">
+          <svg viewBox="{{ vb }}" onMouseDown="{{ panStart }}" onMouseMove="{{ panMove }}" onMouseUp="{{ panEnd }}" onMouseLeave="{{ panEnd }}" style="{{ svgSt }}">
+            <sc-for list="{{ edges }}" as="e" hint-placeholder-count="8">
+              <path d="{{ e.d }}" style="{{ e.st }}"></path>
+            </sc-for>
+            <sc-for list="{{ boxes }}" as="b" hint-placeholder-count="8">
+              <g>
+                <rect x="{{ b.x }}" y="{{ b.y }}" width="{{ b.w }}" height="{{ b.h }}" style="{{ b.st }}"></rect>
+                <text x="{{ b.tx }}" y="{{ b.ty }}" style="{{ b.tst }}">{{ b.label }}</text>
+              </g>
+            </sc-for>
+            <sc-for list="{{ nodes }}" as="n" hint-placeholder-count="20">
+              <g onClick="{{ n.pick }}" style="{{ n.gst }}">
+                <rect x="{{ n.x }}" y="{{ n.y }}" width="{{ n.w }}" height="{{ n.h }}" style="{{ n.st }}"></rect>
+                <rect x="{{ n.x }}" y="{{ n.y }}" width="3" height="{{ n.h }}" style="{{ n.tabSt }}"></rect>
+                <text x="{{ n.nx }}" y="{{ n.ny }}" style="{{ n.nSt }}">{{ n.label }}</text>
+                <text x="{{ n.nx }}" y="{{ n.sy }}" style="{{ n.subSt }}">{{ n.sub }}</text>
+              </g>
+            </sc-for>
+            <sc-for list="{{ dots }}" as="n" hint-placeholder-count="20">
+              <g onClick="{{ n.pick }}" style="{{ n.gst }}">
+                <circle cx="{{ n.cx }}" cy="{{ n.cy }}" r="{{ n.r }}" style="{{ n.st }}"></circle>
+                <text x="{{ n.lx }}" y="{{ n.ly }}" style="{{ n.lst }}">{{ n.label }}</text>
+              </g>
+            </sc-for>
+          </svg>
+          <div style="position:absolute;top:12px;right:14px;display:flex;gap:6px;align-items:center;">
+            <sc-if value="{{ filterOnV }}" hint-placeholder-val="{{ false }}"><span style="background:#efe8db;color:#12100d;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:9.5px;font-weight:700;letter-spacing:.08em;padding:5px 9px;">{{ matchLine }}</span></sc-if>
+            <button onClick="{{ zoomIn }}" style="background:#1a1713;border:1px solid #2e2924;color:#efe8db;width:28px;height:26px;font-size:13px;cursor:pointer;">+</button>
+            <button onClick="{{ zoomOut }}" style="background:#1a1713;border:1px solid #2e2924;color:#efe8db;width:28px;height:26px;font-size:13px;cursor:pointer;">−</button>
+            <button onClick="{{ resetView }}" style="background:#1a1713;border:1px solid #2e2924;color:#b5aa99;height:26px;padding:0 10px;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:9.5px;letter-spacing:.1em;cursor:pointer;">RESET</button>
+          </div>
+          <div style="position:absolute;bottom:10px;left:14px;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:9.5px;color:#5d564c;">drag to pan · solid = registered northstar · dashed = unregistered (the gap) · cluster assignment is <span style="color:#847a6c;">[JUDGMENT]</span></div>
+        </div>
+      </sc-if>
+      </sc-if>
+      <sc-if value="{{ vReading }}" hint-placeholder-val="{{ false }}">
+      <section data-screen-label="05 Reading" style="padding:18px 20px 32px;display:flex;flex-direction:column;gap:16px;">
+        <div style="display:flex;align-items:baseline;gap:14px;">
+          <span style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:10px;letter-spacing:.14em;color:#847a6c;">05 — READING</span>
+          <span style="font-size:26px;font-weight:800;">Intel</span>
+          <span style="margin-left:auto;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:9.5px;color:#847a6c;">curated feeds · 9 new since 48h</span>
+        </div>
+        <div style="border:1px solid #2e2924;background:#1a1713;padding:14px 16px;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+            <span style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:9.5px;letter-spacing:.12em;color:#847a6c;">DIGEST · ollama (qwen2.5:32b)</span>
+            <button onClick="{{ noop }}" style="margin-left:auto;background:none;border:1px solid #2e2924;color:#b5aa99;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:9px;letter-spacing:.1em;padding:4px 9px;cursor:pointer;">SYNTHESIZE ↻</button>
+          </div>
+          <div style="font-size:15px;font-weight:700;margin-bottom:8px;">AI tooling updates and industry insights lead the day's reading.</div>
+          <div style="display:flex;flex-direction:column;gap:5px;">
+            <sc-for list="{{ readDigest }}" as="b" hint-placeholder-count="3">
+              <div style="font-size:12px;color:#b5aa99;line-height:1.5;">▪ {{ b }}</div>
+            </sc-for>
+          </div>
+          <div style="font-size:12px;color:#d8cfc0;font-style:italic;margin-top:10px;">→ Read the Claude Code auto-mode note first. Skip "Quoting John Gruber."</div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;align-items:start;">
+          <sc-for list="{{ readSrc }}" as="s" hint-placeholder-count="3">
+            <div style="border:1px solid #2e2924;padding:12px 14px;">
+              <div style="display:flex;align-items:baseline;gap:8px;border-bottom:1px solid #201c17;padding-bottom:8px;margin-bottom:8px;">
+                <span style="font-size:13px;font-weight:700;">{{ s.n }}</span>
+                <span style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:8.5px;border:1px solid #2e2924;padding:1px 5px;color:#847a6c;">{{ s.tier }}</span>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:8px;">
+                <sc-for list="{{ s.items }}" as="i" hint-placeholder-count="3">
+                  <div style="display:flex;gap:10px;align-items:baseline;">
+                    <span style="font-size:11.5px;line-height:1.4;color:#d8cfc0;flex:1;">{{ i.t }}</span>
+                    <span style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:9px;color:#5d564c;white-space:nowrap;">{{ i.age }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:9.5px;color:#5d564c;">quiet: Steve Yegge, Andrej Karpathy, The Pragmatic Engineer, Ahead of AI, Lilian Weng, Eugene Yan, Chip Huyen, Import AI</div>
+      </section>
+      </sc-if>
+      <sc-if value="{{ vResearch }}" hint-placeholder-val="{{ false }}">
+      <section data-screen-label="06 Research" style="padding:18px 20px 32px;display:flex;flex-direction:column;gap:14px;">
+        <div style="display:flex;align-items:baseline;gap:14px;">
+          <span style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:10px;letter-spacing:.14em;color:#847a6c;">06 — RESEARCH</span>
+          <span style="font-size:26px;font-weight:800;">Signal</span>
+          <span style="margin-left:auto;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:9.5px;color:#847a6c;">HF Daily Papers — top 3 · explained for you</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:10px;color:#847a6c;flex-wrap:wrap;">
+          <span style="letter-spacing:.12em;">READING AS</span>
+          <span style="color:#b5aa99;">senior SWE · ojfbot fleet architecture · NASA-grade SE · ML/AI internals</span>
+          <button onClick="{{ noop }}" style="background:none;border:1px solid #2e2924;color:#847a6c;font-size:8.5px;letter-spacing:.1em;padding:2px 7px;cursor:pointer;font-family:inherit;">EDIT PROFILE</button>
+        </div>
+        <sc-for list="{{ papers }}" as="p" hint-placeholder-count="2">
+          <div style="border:1px solid #2e2924;padding:14px 16px;">
+            <div style="display:flex;gap:12px;align-items:baseline;">
+              <span style="font-size:15px;font-weight:700;flex:1;line-height:1.3;">{{ p.t }}</span>
+              <span style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:10px;color:#847a6c;white-space:nowrap;">▲ {{ p.v }} · PDF · HF</span>
+            </div>
+            <div style="font-size:11px;color:#847a6c;margin:3px 0 10px;">{{ p.a }}</div>
+            <div style="border:1px solid #201c17;background:#1a1713;padding:12px 14px;">
+              <div style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:9px;letter-spacing:.12em;color:#847a6c;margin-bottom:6px;">EXPLAINER · ollama (qwen2.5:32b)</div>
+              <div style="font-size:13px;font-weight:700;margin-bottom:6px;">{{ p.head }}</div>
+              <div style="display:flex;flex-direction:column;gap:4px;">
+                <sc-for list="{{ p.bullets }}" as="b" hint-placeholder-count="3">
+                  <div style="font-size:11.5px;color:#b5aa99;line-height:1.5;">▪ {{ b }}</div>
+                </sc-for>
+              </div>
+              <div style="font-size:11.5px;color:#d8cfc0;font-style:italic;margin-top:8px;">→ {{ p.verdict }}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap;">
+              <span style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:9px;letter-spacing:.1em;color:#5d564c;">PREREQS {{ p.pre }}</span>
+              <div style="margin-left:auto;display:flex;gap:6px;">
+                <sc-for list="{{ p.conn }}" as="c" hint-placeholder-count="2">
+                  <span style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:9px;border:1px solid #2e2924;color:#b5aa99;padding:2px 7px;">{{ c }}</span>
+                </sc-for>
+                <button onClick="{{ noop }}" style="background:none;border:1px solid #2e2924;color:#efe8db;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:9px;padding:2px 9px;cursor:pointer;">⊕ DEEP DIVE (Sonnet, full PDF)</button>
+              </div>
+            </div>
+          </div>
+        </sc-for>
+      </section>
+      </sc-if>
+      <sc-if value="{{ vNewline }}" hint-placeholder-val="{{ false }}">
+      <section data-screen-label="08 Newline" style="padding:18px 20px 32px;">
+        <div style="display:flex;align-items:baseline;gap:14px;margin-bottom:14px;">
+          <span style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:10px;letter-spacing:.14em;color:#847a6c;">08 — NEWLINE</span>
+          <span style="font-size:26px;font-weight:800;">Course Ops</span>
+          <span style="margin-left:auto;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:9.5px;color:#847a6c;">newline accelerator · 6 sittings logged · vault-backed</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 300px;gap:18px;align-items:start;">
+          <div style="border:1px solid #2e2924;">
+            <div style="display:flex;gap:10px;padding:10px 14px;border-bottom:1px solid #2e2924;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:9.5px;letter-spacing:.12em;color:#847a6c;">
+              <span>UNITS</span><span style="margin-left:auto;">{{ nlProg }} <span style="border:1px solid #2e2924;padding:1px 5px;margin-left:4px;">DERIVED — VAULT NOTES</span></span>
+            </div>
+            <sc-for list="{{ nlUnits }}" as="u" hint-placeholder-count="8">
+              <div style="{{ u.st }}">
+                <span style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:11px;font-weight:700;width:44px;">{{ u.u }}</span>
+                <span style="font-size:12px;color:#d8cfc0;flex:1;">{{ u.t }}</span>
+                <span style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:10px;color:#847a6c;width:70px;text-align:right;">{{ u.m }}</span>
+                <span style="{{ u.chipSt }}">{{ u.s }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:12px;">
+            <div style="border:1px solid #ff4b3e;padding:12px 14px;">
+              <div style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:9px;letter-spacing:.12em;color:#ff4b3e;margin-bottom:6px;">NEXT SITTING — DECISION WAITING</div>
+              <div style="font-size:13px;font-weight:700;line-height:1.4;margin-bottom:8px;">Sitting 7 — U14's 9 unread content modules + two cheap targeted reads (U1 M6, U8 ETL)</div>
+              <div style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:9px;color:#847a6c;margin-bottom:10px;">fb-20260803-0200-brief-newline-u14</div>
+              <button onClick="{{ nlToBrief }}" style="background:#efe8db;color:#12100d;border:none;font-size:11px;font-weight:700;padding:7px 12px;cursor:pointer;">Open in Briefing ↗</button>
+            </div>
+            <div style="border:1px solid #2e2924;padding:12px 14px;">
+              <div style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:9px;letter-spacing:.12em;color:#847a6c;margin-bottom:8px;">MINIPROJECTS</div>
+              <div style="display:flex;flex-direction:column;gap:6px;font-size:11.5px;color:#d8cfc0;">
+                <div>MP1 · diy-repair-qa-eval <span style="color:#8fbd8f;">✓ shipped</span></div>
+                <div>MP4 · buddy-check seam <span style="color:#8fbd8f;">✓ shipped</span></div>
+                <div>MP5 · <span style="color:#847a6c;">queued — waits on U4 seam</span></div>
+              </div>
+            </div>
+            <div style="border:1px solid #2e2924;padding:12px 14px;">
+              <div style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:9px;letter-spacing:.12em;color:#847a6c;margin-bottom:8px;">VAULT</div>
+              <div style="font-size:11.5px;color:#b5aa99;line-height:1.55;">Backfill current through sitting 6 — U14MP, U6, U11 landed 2026-08-03. The vault keeps understanding; the spine keeps work.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+      </sc-if>
+      <sc-if value="{{ vCanon }}" hint-placeholder-val="{{ false }}">
+      <section data-screen-label="09 Canon" style="padding:18px 20px 32px;display:flex;flex-direction:column;gap:16px;">
+        <div style="display:flex;align-items:baseline;gap:14px;">
+          <span style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:10px;letter-spacing:.14em;color:#847a6c;">09 — CANON</span>
+          <span style="font-size:26px;font-weight:800;">How the system works</span>
+          <span style="margin-left:auto;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:9.5px;color:#847a6c;text-align:right;">AUTHORED · canon: ~/selfco/diagrams/fleet-map.md<br></br>the cockpit shows, the vault keeps</span>
+        </div>
+        <sc-for list="{{ canon }}" as="dg" hint-placeholder-count="2">
+          <div style="border:1px solid #2e2924;padding:16px 18px;">
+            <div style="font-size:15px;font-weight:700;margin-bottom:6px;">{{ dg.t }}</div>
+            <div style="font-size:12px;color:#b5aa99;line-height:1.55;max-width:820px;margin-bottom:14px;">{{ dg.cap }}</div>
+            <svg viewBox="{{ dg.vb }}" style="width:100%;max-width:940px;display:block;">
+              <sc-for list="{{ dg.lines }}" as="l" hint-placeholder-count="6">
+                <path d="{{ l.d }}" style="{{ l.st }}"></path>
+              </sc-for>
+              <sc-for list="{{ dg.boxes }}" as="b" hint-placeholder-count="6">
+                <g>
+                  <rect x="{{ b.x }}" y="{{ b.y }}" width="{{ b.w }}" height="{{ b.h }}" style="{{ b.st }}"></rect>
+                  <text x="{{ b.tx }}" y="{{ b.ty }}" style="{{ b.tst }}">{{ b.l }}</text>
+                  <text x="{{ b.tx }}" y="{{ b.sy }}" style="{{ b.sst }}">{{ b.s }}</text>
+                </g>
+              </sc-for>
+              <sc-for list="{{ dg.notes }}" as="n" hint-placeholder-count="2">
+                <text x="{{ n.x }}" y="{{ n.y }}" style="{{ n.st }}">{{ n.t }}</text>
+              </sc-for>
+            </svg>
+          </div>
+        </sc-for>
+        <div style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:9.5px;color:#5d564c;">D7–D8 remain in the vault. These panels are authored editorial — they go stale silently; a future slice regenerates D5 from the registry.</div>
+      </section>
+      </sc-if>
+      <sc-if value="{{ vStub }}" hint-placeholder-val="{{ false }}">
+      <section style="padding:48px 40px;display:flex;flex-direction:column;gap:8px;">
+        <div style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:10px;letter-spacing:.14em;color:#847a6c;">{{ stubNum }} — {{ stubTitle }}</div>
+        <div style="font-size:16px;font-weight:700;">Not rebuilt in this prototype.</div>
+        <div style="font-size:12px;color:#847a6c;max-width:420px;line-height:1.5;">This section still lives in the running cockpit; its condensation pass is queued (audit §6). The spine keeps its one-line state honest meanwhile.</div>
+      </section>
+      </sc-if>
+    </main>
+    <aside style="border-left:1px solid #2e2924;background:#14110e;display:grid;grid-template-rows:minmax(60px,1fr) minmax(120px,46%);min-height:0;">
+      <div style="overflow-y:auto;min-height:0;padding:14px 16px 16px;">
+        <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:12px;border-bottom:1px solid #201c17;padding-bottom:8px;">
+          <span style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:9.5px;letter-spacing:.14em;color:#efe8db;">INSPECTOR</span>
+          <span style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:9px;color:#5d564c;">{{ inspCtx }}</span>
+        </div>
+        <sc-if value="{{ hasSel }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;align-items:baseline;gap:10px;">
+            <span style="font-size:16px;font-weight:700;">{{ d_name }}</span>
+            <button onClick="{{ clearSel }}" style="margin-left:auto;background:none;border:1px solid #2e2924;color:#847a6c;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:9px;padding:2px 7px;cursor:pointer;">ESC</button>
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 12px;">
+            <sc-for list="{{ d_badges }}" as="b" hint-placeholder-count="3">
+              <span style="{{ b.st }}">{{ b.t }}</span>
+            </sc-for>
+          </div>
+          <div style="font-size:12.5px;line-height:1.55;color:#d8cfc0;">{{ d_prose }}</div>
+          <div style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:9px;color:#847a6c;margin:4px 0 14px;">{{ d_proseTag }}</div>
+          <sc-if value="{{ d_hasSlices }}" hint-placeholder-val="{{ false }}">
+            <div style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:9.5px;letter-spacing:.12em;color:#847a6c;margin-bottom:6px;">DELIVERY — {{ d_sliceTotal }} SLICES <span style="border:1px solid #2e2924;padding:1px 5px;margin-left:4px;">DERIVED</span></div>
+            <div style="display:flex;height:8px;border:1px solid #2e2924;margin-bottom:5px;">
+              <div style="{{ d_barM }}" title="merged"></div>
+              <div style="{{ d_barR }}" title="ready"></div>
+              <div style="{{ d_barQ }}" title="queued"></div>
+            </div>
+            <div style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:10px;color:#b5aa99;margin-bottom:14px;">{{ d_sliceLine }}</div>
+          </sc-if>
+          <sc-if value="{{ d_unreg }}" hint-placeholder-val="{{ false }}">
+            <div style="border:1px dashed #4a423a;padding:10px 12px;margin-bottom:14px;font-size:11.5px;color:#b5aa99;line-height:1.5;">Unregistered — invisible to delivery, the daily sweep, and this rail's slice view (TD-007). To register: add <span style="font-family:ui-monospace,Menlo,monospace;">.claude/northstar.md</span> + a registry row.</div>
+          </sc-if>
+          <div style="display:flex;flex-direction:column;gap:5px;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:10.5px;color:#b5aa99;margin-bottom:14px;">
+            <div>ladders up to <span style="color:#efe8db;">{{ d_ladder }}</span></div>
+            <div style="color:#847a6c;">{{ d_path }}</div>
+            <div>{{ d_ops }}</div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button onClick="{{ openBriefing }}" title="Fleet selection follows the map — ADR-0012 binding" style="background:#efe8db;color:#12100d;border:none;font-size:11px;font-weight:700;padding:7px 12px;cursor:pointer;letter-spacing:.03em;">Open briefing ↗</button>
+            <button onClick="{{ askAbout }}" style="background:none;border:1px solid #2e2924;color:#efe8db;font-size:11px;padding:7px 12px;cursor:pointer;">Ask Leo ↓</button>
+          </div>
+          <sc-if value="{{ briefingNote }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top:8px;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:9.5px;color:#847a6c;">→ 00 — Briefing re-scoped to {{ d_name }} (ADR-0012)</div>
+          </sc-if>
+        </sc-if>
+        <sc-if value="{{ noSel }}" hint-placeholder-val="{{ true }}">
+          <div style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:9.5px;letter-spacing:.12em;color:#847a6c;margin-bottom:7px;">DELIVERY PIPELINE <span style="border:1px solid #2e2924;padding:1px 5px;margin-left:4px;">DERIVED</span></div>
+          <div style="display:flex;height:14px;border:1px solid #2e2924;margin-bottom:6px;">
+            <div style="width:34.4%;background:#efe8db;" title="67 merged"></div>
+            <div style="width:8.7%;background:#c9b48c;" title="17 ready"></div>
+            <div style="width:56.9%;background:#3a342c;" title="111 queued"></div>
+          </div>
+          <div style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:9px;color:#847a6c;margin-bottom:16px;"><span style="color:#efe8db;">■ 67 MERGED</span> · <span style="color:#c9b48c;">■ 17 READY</span> · ■ 111 QUEUED — 195 SLICES / 13 ROADMAPS</div>
+          <div style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:9.5px;letter-spacing:.12em;color:#847a6c;margin-bottom:7px;">REGISTRATION — THE GAP</div>
+          <div style="display:flex;height:14px;border:1px solid #2e2924;margin-bottom:6px;">
+            <div style="width:42%;background:#847a6c;" title="19 registered"></div>
+            <div style="width:58%;background:repeating-linear-gradient(45deg,#4a423a 0 4px,transparent 4px 9px);" title="26 unregistered"></div>
+          </div>
+          <div style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:9px;color:#847a6c;margin-bottom:16px;">26 OF 45 CENSUS REPOS INVISIBLE TO DELIVERY (TD-007) — <span onClick="{{ gapsGo }}" style="color:#b5aa99;cursor:pointer;text-decoration:underline;">SHOW THE GAP</span></div>
+          <div style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:9.5px;letter-spacing:.12em;color:#847a6c;margin-bottom:7px;">LOOP · LAST 14D</div>
+          <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:6px;">
+            <sc-for list="{{ loopRows }}" as="r" hint-placeholder-count="3">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:9px;color:#b5aa99;width:64px;">{{ r.k }}</span>
+                <div style="flex:1;height:7px;border:1px solid #201c17;"><div style="{{ r.st }}"></div></div>
+                <span style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:9px;color:#efe8db;width:28px;text-align:right;">{{ r.v }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:9px;color:#5d564c;margin-bottom:16px;">RATES SUPPRESSED — NO CAPTURE-QUALITY ARTIFACT YET</div>
+          <div style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:9.5px;color:#847a6c;border-top:1px solid #201c17;padding-top:10px;">20 NS · 13 ROADMAPS · 9 MAPS · 696 VAULT PAGES</div>
+          <div style="margin-top:10px;font-size:11.5px;color:#847a6c;line-height:1.5;">Click any node to inspect it — delivery state, ladder, and a scoped Leo thread.</div>
+        </sc-if>
+      </div>
+      <div style="border-top:1px solid #2e2924;display:flex;flex-direction:column;min-height:0;overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:2px;padding:8px 12px 0;">
+          <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="2">
+            <button onClick="{{ t.go }}" style="{{ t.st }}">{{ t.t }}</button>
+          </sc-for>
+          <sc-if value="{{ showShare }}" hint-placeholder-val="{{ false }}">
+            <button onClick="{{ toggleShare }}" title="When on, this thread's conclusions surface in the Global thread" style="{{ shareSt }}">{{ shareT }}</button>
+          </sc-if>
+        </div>
+        <div style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:9px;color:#5d564c;padding:4px 12px 6px;border-bottom:1px solid #201c17;">{{ threadNote }}</div>
+        <div style="flex:1;overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;gap:10px;">
+          <sc-for list="{{ msgs }}" as="m" hint-placeholder-count="2">
+            <div style="{{ m.st }}">
+              <div style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:8.5px;letter-spacing:.12em;color:#847a6c;margin-bottom:3px;">{{ m.who }}</div>
+              <div style="font-size:11.5px;line-height:1.5;color:#d8cfc0;">{{ m.t }}</div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="display:flex;gap:6px;padding:10px 12px;border-top:1px solid #201c17;">
+          <input value="{{ input }}" onChange="{{ onInput }}" onKeyDown="{{ onKey }}" placeholder="{{ composerPh }}" style="flex:1;background:#1a1713;border:1px solid #2e2924;color:#efe8db;font-size:11.5px;padding:7px 10px;"></input>
+          <button onClick="{{ send }}" style="background:none;border:1px solid #2e2924;color:#efe8db;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:10px;padding:0 12px;cursor:pointer;">ASK</button>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;phase&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;auto&quot;,&quot;morning&quot;,&quot;midday&quot;,&quot;evening&quot;,&quot;night&quot;],&quot;default&quot;:&quot;auto&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Masthead&quot;},&quot;loopPulse&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Masthead&quot;},&quot;defaultMode&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;tiers&quot;,&quot;grid&quot;,&quot;constellation&quot;],&quot;default&quot;:&quot;tiers&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Fleet&quot;}}">
+class Component extends DCLogic {
+  state = { mode: null, sel: null, q: '', chip: null, now: new Date(), vbs: {}, drag: null, thread: 'GLOBAL', openTabs: [], input: '', share: true, threads: null, briefed: false, briefSel: 0, briefOpt: 'pick', emittedIds: [], briefScope: 'core', view: 'briefing' };
+
+  canonData(MONO) {
+    if (this._canon) return this._canon;
+    const boxSt = (dash) => 'fill:#1a1713;stroke:#3a342c;stroke-width:1;' + (dash ? 'stroke-dasharray:4 3;' : '');
+    const lnSt = (dash) => 'fill:none;stroke:#4a423a;stroke-width:1;opacity:.7;' + (dash ? 'stroke-dasharray:3 4;' : '');
+    const B = (x, y, w, h, l, s, dash) => ({ x, y, w, h, l, s, dash, tx: x + 10, ty: y + 19, sy: y + 34, st: boxSt(dash), tst: 'fill:#efe8db;font-size:12px;font-weight:700;font-family:Helvetica,Arial,sans-serif;', sst: MONO + 'fill:#847a6c;font-size:9px;' });
+    const clus = ['Platform spine|4 NS', 'Frame apps|2 NS', 'F1 stack|4 NS', 'Golf-geo|3 NS', 'Dive pair|2 NS', 'Story worlds|2 NS', 'Client|1 NS'];
+    const d5boxes = [B(360, 14, 180, 46, 'L3 APEX', 'ojfbot + selfco shared'), B(300, 122, 150, 46, 'l2-ojfbot', '18 L1s ladder here'), B(485, 122, 160, 46, 'l2-selfco', 'deferred — vault tracking/', 1)]
+      .concat(clus.map((c, i) => { const [l, s] = c.split('|'); return B(28 + i * 124, 238, 112, 46, l, s); }));
+    const d5lines = [{ d: 'M 375 122 C 375 92, 450 92, 450 60', st: lnSt(0) }, { d: 'M 565 122 C 565 92, 450 92, 450 60', st: lnSt(1) }]
+      .concat(clus.map((c, i) => { const x = 28 + i * 124 + 56; return { d: 'M ' + x + ' 238 C ' + x + ' 205, 375 205, 375 168', st: lnSt(0) }; }));
+    const flow = ['Wayfinder maps|9 · open questions', 'Decisions|decisions/ + ADRs', 'Roadmaps|13 · slices', 'Dispatch queue|roadmap-compile', 'Worker sessions|beads emitted', 'Dolt ledger|the cockpit reads'];
+    const d6boxes = flow.map((c, i) => { const [l, s] = c.split('|'); return B(20 + i * 146, 64, 132, 48, l, s); });
+    const d6lines = [];
+    for (let i = 0; i < 5; i++) d6lines.push({ d: 'M ' + (152 + i * 146) + ' 88 L ' + (166 + i * 146) + ' 88', st: lnSt(0) + 'stroke-width:1.5;' });
+    d6lines.push({ d: 'M 674 64 C 620 18, 400 18, 330 62', st: lnSt(1) });
+    this._canon = [
+      { t: 'D5 · The constellation at altitude', vb: '0 0 900 300', cap: 'The ladder, read bottom-up: 18 L1 northstars in seven presentation clusters ladder into l2-ojfbot, which ladders into the shared L3 apex. l2-selfco is dashed = declared-but-deferred: it will live in the vault\u2019s tracking/, owned by selfco, referenced by core.', boxes: d5boxes, lines: d5lines, notes: [{ x: 385, y: 90, t: 'ladders up to', st: MONO + 'fill:#5d564c;font-size:9px;' }] },
+      { t: 'D6 · How decisions become recorded movement', vb: '0 0 900 140', cap: 'Wayfinder maps yield decisions into roadmaps; roadmap-compile projects ready slices into the dispatch queue; worker sessions yield beads into the Dolt ledger, which the cockpit reads. Dotted edge: sessions propose movement — they never write current:.', boxes: d6boxes, lines: d6lines, notes: [{ x: 340, y: 30, t: 'sessions propose movement — never write current:', st: MONO + 'fill:#5d564c;font-size:9px;' }] }
+    ];
+    return this._canon;
+  }
+
+  dial(phase, nDec) {
+    const C = 95, R = 74, MONO = 'font-family:ui-monospace,Menlo,monospace;';
+    const pt = (h, r) => { const a = (h / 24) * Math.PI * 2 - Math.PI / 2; return [C + Math.cos(a) * r, C + Math.sin(a) * r]; };
+    const arc = (h1, h2, active) => {
+      const [x1, y1] = pt(h1, R), [x2, y2] = pt(h2, R), laf = h2 - h1 > 12 ? 1 : 0;
+      return { d: 'M ' + x1 + ' ' + y1 + ' A ' + R + ' ' + R + ' 0 ' + laf + ' 1 ' + x2 + ' ' + y2, st: 'fill:none;stroke:' + (active ? '#c9b48c' : '#2e2924') + ';stroke-width:' + (active ? 9 : 5) + ';stroke-linecap:round;' };
+    };
+    const segs = [['morning', 5, 11], ['midday', 11, 17], ['evening', 17, 22], ['night', 22, 28.6]];
+    const now = this.state.now, nh = now.getHours() + now.getMinutes() / 60;
+    const [ncx, ncy] = pt(nh, R);
+    return {
+      dialArcs: segs.map(([p, a, b]) => arc(a + 0.25, b - 0.25, p === phase)),
+      dialEvents: [14.2, 17.6, 19.3].map((h) => { const [cx, cy] = pt(h, R); return { cx, cy }; }),
+      dialNow: { cx: ncx, cy: ncy },
+      dialLabels: [[0, '00'], [6, '06'], [12, '12'], [18, '18']].map(([h, t]) => { const [x, y] = pt(h, 88); return { x, y: y + 2.5, t, st: MONO + 'fill:#5d564c;font-size:7px;text-anchor:middle;' }; }),
+      dialPhase: phase.toUpperCase(),
+      dialCount: String(nDec),
+      dialLabel: nDec === 0 ? 'ALL DECIDED' : 'DECISION' + (nDec !== 1 ? 'S' : '') + ' WAITING',
+      dialNumSt: 'fill:' + (nDec > 0 ? '#ff4b3e' : '#8fbd8f') + ';font-size:34px;font-weight:800;text-anchor:middle;font-family:Helvetica,Arial,sans-serif;',
+      dialLabSt: 'fill:' + (nDec > 0 ? '#ff4b3e' : '#8fbd8f') + ';font-size:7.5px;letter-spacing:.14em;text-anchor:middle;font-family:ui-monospace,Menlo,monospace;'
+    };
+  }
+
+  briefs() {
+    return [
+      { title: "Newline curriculum sitting 6: U14's 9 unread content modules + two cheap targeted reads (U1 M6, U8 ETL)", repo: 'core', file: 'fb-20260803-0200-brief-newline-u14' },
+      { title: 'diagram-first-output: work the frontier (#368 research first)', repo: 'core', file: 'fb-20260803-1209-brief-diagram-first' },
+      { title: 'Deliver rm:rm-l1-morning-cockpit#S8 — derive decided-in-flight from closes: refs', repo: 'morning-cockpit', file: 'fb-20260704-brief-s8-decided-in-flight' }
+    ];
+  }
+
+  componentDidMount() { this._t = setInterval(() => this.setState({ now: new Date() }), 30000); }
+  componentWillUnmount() { clearInterval(this._t); }
+
+  data() {
+    if (this._d) return this._d;
+    const C = (id, name, hue, repos) => ({ id, name, hue, repos });
+    const r = (n, o = {}) => ({ n, reg: 0, open: 0, act: null, live: 'dark', ...o });
+    const clusters = [
+      C('spine', 'PLATFORM SPINE', '#c9b48c', [
+        r('core', { reg: 1, role: 'Workflow engine — 30+ skills + bead store', phase: 'P2', open: 23, act: '4d ago', live: 'stale', sl: { r: 6, q: 11, m: 16 }, prose: 'The workflow engine. Skills, the bead store, and the registry every other surface reads. If the fleet has a spine, this is it.' }),
+        r('shell', { reg: 1, role: 'Frame OS — MF host + agent gateway', phase: 'P1', prose: 'Frame OS host — Module Federation shell plus the frame-agent LLM gateway. Registered, no roadmap yet.' }),
+        r('morning-cockpit', { reg: 1, here: 1, role: 'You are here — this command deck', phase: 'EXP', open: 2, act: 'now', live: 'live', sl: { r: 4, q: 4, m: 1 }, prose: 'You are here. The fleet\u2019s read-model: lanes of work, the briefing, and this map. Read-only with one gated write (handoff emission).' }),
+        r('switchboard', { reg: 1, role: 'LLM gateway — budgets, failover, observability', phase: 'EXP', sl: { r: 1, q: 8, m: 1 }, prose: 'The LLM gateway. Per-app budgets, labeled failover (never silent), observability. Model orchestration is a fleet concern; this is where it lives.' }),
+        r('daily-logger', { role: 'Dev blog — cross-repo sweep → Claude', phase: 'P9' }), r('gastown-pilot', { role: 'Coordination dash — reads the bead store', phase: 'P4' }),
+        r('core-reader', { role: 'Docs viewer — renders core framework', phase: 'P3' }), r('github-actions', { role: 'Fleet CI — shared workflows', phase: 'P1' }),
+        r('frame-ui-components', { role: 'UI library — shared Carbon DS', phase: 'P2' }), r('workstation-yuri', { role: 'Workstation automation', phase: 'EXP' }), r('selfco-box', { role: 'Vault runner (paused)', phase: 'EXP' })
+      ]),
+      C('frame', 'FRAME APPS', '#8fa8bd', [
+        r('cv-builder', { reg: 1, role: 'Resume builder — multi-agent, visual-reg CI', phase: 'P6', prose: 'Resume builder. Multi-agent pipeline with visual-regression CI. Registered, no roadmap yet.' }),
+        r('BlogEngine', { reg: 1, role: 'Blog platform — daily-logger publishes here', phase: 'P5', prose: 'The blog platform daily-logger publishes into. Registered, no roadmap yet.' }),
+        r('TripPlanner', { role: 'Trip planner — 11-phase pipeline', phase: 'P3' }), r('purefoy', { role: 'Deakins KB — cinematography corpus', phase: 'P2' }),
+        r('lean-canvas', { role: 'Lean canvas — business-model tool', phase: 'P1' }), r('MrPlug', { role: 'UI/UX feedback browser extension', phase: 'EXP' }),
+        r('landing', { role: 'jim.software — portfolio landing', phase: 'SHIP' }), r('GroupThink', { role: 'Tab grouping — LLM semantic treemap', phase: 'SHIP' })
+      ]),
+      C('f1', 'F1 STACK', '#c98f8f', [
+        r('f1-substrate', { reg: 1, role: 'F1 telemetry substrate — DuckDB + FastAPI', phase: 'P1', sl: { r: 2, q: 7, m: 2 }, prose: 'The F1 telemetry substrate — DuckDB + FastAPI. The numbers every other F1 surface quotes; nothing else computes.' }),
+        r('f1-pit-wall', { reg: 1, role: 'F1 dashboard — telemetry literacy', phase: 'P1', sl: { r: 2, q: 14, m: 3 }, prose: 'The F1 dashboard — telemetry literacy and claim grounding against substrate\u2019s export.' }),
+        r('f1-press-room', { reg: 1, role: 'F1 teaching studio — claim-checked articles', phase: 'EXP', sl: { r: 0, q: 10, m: 2 }, prose: 'Turns the F1 stack\u2019s outputs into teaching content — articles and video shorts where every claim is checked against substrate\u2019s export before publishing. The \u2018content\u2019 seat of the four-repo stack.' }),
+        r('f1-doctrine', { reg: 1, role: 'RAQG question layer — doctrine corpus', phase: 'P1', sl: { r: 0, q: 4, m: 2 }, prose: 'The question layer. A doctrine corpus + retriever that suggests strategist questions bound to substrate calls — it never computes numbers.' }),
+        r('f1-learning-studio', { role: 'F1 learning surface', phase: 'EXP' })
+      ]),
+      C('golf', 'GOLF-GEO', '#9bbd8f', [
+        r('mirrorworld', { reg: 1, role: 'Geospatial track — places as three.js scenes', phase: 'EXP', sl: { r: 0, q: 16, m: 2 }, prose: 'The geospatial track — real places as three.js scenes. Fairway decomposed from it 2026-07-30.' }),
+        r('fairway', { reg: 1, role: 'Golf digital twin — explorable surface', phase: 'P1', open: 1, act: '9d ago', live: 'stale', sl: { r: 1, q: 3, m: 1 }, prose: 'The golf digital twin — an explorable twin surface, decomposed from mirrorworld.' }),
+        r('capture-agent', { reg: 1, role: 'Golf capture — TX imagery → segmentation → HF', phase: 'P1', open: 1, act: '11d ago', live: 'stale', prose: 'The golf capture agent — TX imagery through a segmentation model to Hugging Face. Renamed from gcgcca 2026-07-30.' }),
+        r('golf-platform-scripts', { role: 'Golf platform automation', phase: 'EXP' }), r('fPlatonikGolf', { role: 'Golf experiments', phase: 'EXP' })
+      ]),
+      C('dive', 'DIVE PAIR', '#8fbdb5', [
+        r('buddy-check', { reg: 1, role: 'Dive Q&A eval lab — judge calibration', phase: 'P2', prose: 'SME-calibrated synthetic dive-storefront Q&A + eval harness. Registered, no roadmap yet.' }),
+        r('dive-briefing', { reg: 1, role: 'Dive RAG service — cited answers', phase: 'EXP', sl: { r: 1, q: 7, m: 1 }, prose: 'Standards-grounded dive Q&A — the pre-dive briefing as a service. Hybrid retrieval, cited answers, tiered corpora.' }),
+        r('scdive-sdi-mcp', { role: 'Dive standards MCP', phase: 'EXP' }), r('diy-repair-qa-eval', { role: 'Repair Q&A eval — newline MP1', phase: 'EXP' })
+      ]),
+      C('story', 'STORY WORLDS', '#b09fc9', [
+        r('silicon-empires', { reg: 1, role: 'AI-infra RTS — queues, capital, silicon', phase: 'P1', sl: { r: 0, q: 12, m: 20 }, prose: 'An AI-infrastructure RTS — queues, capital, energy, silicon. The most merged roadmap outside the spine.' }),
+        r('virtualLight', { reg: 1, role: 'Book-to-cinema pipeline', phase: 'EXP', sl: { r: 1, q: 6, m: 0 }, prose: 'Book-to-cinema: deterministic passage extraction + cinematography-styled video prompts. Corpora as packs.' }),
+        r('lofi-beaver', { role: '1-bit isometric story-world', phase: 'EXP' }), r('beaverGame', { role: 'Cozy beaver sim — three.js', phase: 'EXP' }),
+        r('asset-foundry', { role: 'Parametric 3D asset pipeline', phase: 'EXP', open: 1, act: '91d ago', live: 'dark' }), r('foundry-recipes', { role: 'Blender recipe extraction', phase: 'EXP' })
+      ]),
+      C('corpus', 'CORPUS & STUDY', '#bda58f', [
+        r('bldgblog-corpus', { role: 'BLDGBLOG ingest — 2,512 posts', phase: 'EXP' }), r('newline-ai-course', { role: 'Accelerator curriculum vault', phase: 'EXP' }),
+        r('agent-anatomy', { role: 'Orchestration atlas — article companion', phase: 'EXP' }), r('seh-study', { role: 'NASA SEH spaced repetition', phase: 'P2' })
+      ]),
+      C('client', 'CLIENT', '#c9c08f', [
+        r('fieldwork-1', { reg: 1, role: 'Client engagement (texas-rr)', phase: 'P1', prose: 'Client engagement — texas-rr. Registered, no roadmap yet.' })
+      ])
+    ];
+    const layers = [
+      C('wayfinder', 'WAYFINDER FRONTIER — 9 MAPS', '#847a6c', ['diagram-first-output', 'f1-learning-studio', 'neistat-ai-bulletin', 'operating-surface-pair', 'teach-in-the-loop', 'cockpit-northstar-conv', 'ide-operating-presence', 'teach-persistence', 'texas-rr-engagement'].map((n) => ({ n, kind: 'map', sub: n === 'cockpit-northstar-conv' || n === 'ide-operating-presence' || n === 'teach-persistence' || n === 'texas-rr-engagement' ? 'charting' : 'working' }))),
+      C('vault', 'SELFCO VAULT — 696 PAGES', '#847a6c', [{ n: 'sources', kind: 'layer', sub: '247' }, { n: 'entities', kind: 'layer', sub: '166' }, { n: 'concepts', kind: 'layer', sub: '162' }, { n: 'synthesis', kind: 'layer', sub: '121' }])
+    ];
+    const byName = {};
+    clusters.forEach((c) => c.repos.forEach((x) => { x.cluster = c.name; x.hue = c.hue; byName[x.n] = x; }));
+    layers.forEach((c) => c.repos.forEach((x) => { x.cluster = c.name; x.hue = c.hue; byName[x.n] = x; }));
+    this._d = { clusters, layers, byName };
+    return this._d;
+  }
+
+  layoutTiers() {
+    if (this._lt) return this._lt;
+    const { clusters, layers } = this.data();
+    const NW = 186, NH = 46, GAP = 8, PAD = 14, HEAD = 30, BW = PAD * 2 + NW * 2 + GAP;
+    const colX = [36, 36 + 420, 36 + 840, 36 + 1260], colY = [176, 176, 176, 176];
+    const boxes = [], nodes = [], edges = [];
+    const l2 = { x: 700, y: 34, w: 280, h: 66 };
+    nodes.push({ id: 'l2-ojfbot', label: 'l2-ojfbot', sub: '18 L1s ladder here · 6 ready · 11 queued', kind: 'l2', x: l2.x, y: l2.y, w: l2.w, h: l2.h, big: 1 });
+    const l2s = { x: 1310, y: 40, w: 240, h: 54 };
+    nodes.push({ id: 'l2-selfco', label: 'l2-selfco', sub: 'deferred — lives in vault tracking/', kind: 'l2', dash: 1, x: l2s.x, y: l2s.y, w: l2s.w, h: l2s.h });
+    const place = (c, isLayer) => {
+      const rows = Math.ceil(c.repos.length / 2);
+      const h = HEAD + PAD + rows * (NH + GAP);
+      let ci = 0; for (let k = 1; k < 4; k++) if (colY[k] < colY[ci]) ci = k;
+      const bx = colX[ci], by = colY[ci];
+      colY[ci] += h + 26;
+      const reg = c.repos.filter((x) => x.reg).length, unreg = c.repos.length - reg;
+      boxes.push({ x: bx, y: by, w: BW, h, label: isLayer ? c.name : c.name + ' — ' + reg + ' NS · ' + unreg + ' UNREG', hue: c.hue });
+      c.repos.forEach((x, i) => {
+        const col = i % 2, row = Math.floor(i / 2);
+        nodes.push({ id: x.n, label: x.n, sub: this.nodeSub(x), kind: x.kind || 'repo', dash: x.kind ? (x.kind === 'map' ? 0 : 0) : (x.reg ? 0 : 1), hue: c.hue, x: bx + PAD + col * (NW + GAP), y: by + HEAD + row * (NH + GAP), w: NW, h: NH });
+      });
+      const tx = bx + BW / 2, ty = by;
+      const tgt = isLayer ? { x: l2s.x + l2s.w / 2, y: l2s.y + l2s.h } : { x: l2.x + l2.w / 2, y: l2.y + l2.h };
+      edges.push({ d: 'M ' + tx + ' ' + ty + ' C ' + tx + ' ' + (ty - 50) + ', ' + tgt.x + ' ' + (tgt.y + 50) + ', ' + tgt.x + ' ' + tgt.y, dash: isLayer ? 1 : 0 });
+    };
+    clusters.forEach((c) => place(c, false));
+    layers.forEach((c) => place(c, true));
+    this._lt = { boxes, nodes, edges, H: Math.max(...colY) + 20 };
+    return this._lt;
+  }
+
+  layoutConst() {
+    if (this._lc) return this._lc;
+    const { clusters } = this.data();
+    const CX = 840, CY = 520, nodes = [], edges = [];
+    nodes.push({ id: 'l2-ojfbot', label: 'l2-ojfbot', kind: 'l2c', cx: CX, cy: CY, r: 34 });
+    nodes.push({ id: 'l2-selfco', label: 'l2-selfco', kind: 'l2c', dash: 1, cx: CX, cy: 90, r: 20 });
+    edges.push({ d: 'M ' + CX + ' ' + (CY - 34) + ' L ' + CX + ' 110', dash: 1 });
+    const total = clusters.reduce((a, c) => a + c.repos.length, 0);
+    let ang = -Math.PI / 2;
+    clusters.forEach((c) => {
+      const span = (c.repos.length / total) * Math.PI * 2;
+      c.repos.forEach((x, i) => {
+        const a = ang + span * ((i + 0.5) / c.repos.length);
+        const rad = x.reg ? 250 + (i % 2) * 34 : 430 + (i % 2) * 36;
+        const cx = CX + Math.cos(a) * rad, cy = CY + Math.sin(a) * rad * 0.82;
+        nodes.push({ id: x.n, label: x.n, kind: 'dot', dash: x.reg ? 0 : 1, hue: c.hue, cx, cy, r: x.reg ? 7 : 4.5, a });
+        edges.push({ d: 'M ' + (CX + Math.cos(a) * 40) + ' ' + (CY + Math.sin(a) * 34) + ' L ' + cx + ' ' + cy, dash: x.reg ? 0 : 1, faint: x.reg ? 0 : 1 });
+      });
+      ang += span;
+    });
+    this._lc = { nodes, edges, H: 1040 };
+    return this._lc;
+  }
+
+  nodeSub(x) {
+    if (x.kind === 'map') return x.sub;
+    if (x.kind === 'layer') return x.sub + ' wiki pages';
+    if (!x.reg) return 'UNREGISTERED — no northstar';
+    if (!x.sl) return 'registered · no roadmap yet';
+    const p = [];
+    if (x.sl.r) p.push(x.sl.r + ' ready'); if (x.sl.q) p.push(x.sl.q + ' queue'); if (x.sl.m) p.push(x.sl.m + ' merge');
+    return p.join(' · ') || 'roadmap empty';
+  }
+
+  phase() {
+    const p = this.props.phase;
+    if (p && p !== 'auto') return p;
+    const h = this.state.now.getHours();
+    return h >= 5 && h < 11 ? 'morning' : h >= 11 && h < 17 ? 'midday' : h >= 17 && h < 22 ? 'evening' : 'night';
+  }
+
+  mode() { return this.state.mode || this.props.defaultMode || 'tiers'; }
+
+  matches(x) {
+    const q = this.state.q.trim().toLowerCase(), chip = this.state.chip;
+    if (!q && !chip) return true;
+    let ok = true;
+    if (chip === 'ready') ok = !!(x.sl && x.sl.r);
+    else if (chip === 'gaps') ok = !x.reg && !x.kind;
+    else if (chip === 'f1' || chip === 'golf') ok = (x.cluster || '').toLowerCase().indexOf(chip === 'f1' ? 'f1' : 'golf') >= 0;
+    else if (chip === 'vault') ok = x.kind === 'layer' || x.kind === 'map';
+    if (!ok) return false;
+    if (q) ok = (x.n + ' ' + (x.cluster || '') + ' ' + (x.role || '')).toLowerCase().indexOf(q) >= 0;
+    return ok;
+  }
+
+  vbFor(mode) {
+    if (this.state.vbs[mode]) return this.state.vbs[mode];
+    const H = mode === 'tiers' ? this.layoutTiers().H : this.layoutConst().H;
+    return { x: 0, y: 0, w: 1680, h: H };
+  }
+  setVB(vb) { this.setState((s) => ({ vbs: { ...s.vbs, [this.mode()]: vb } })); }
+
+  pickNode(id) {
+    this.setState({ sel: id, briefed: false });
+  }
+
+  threadsInit() {
+    return this.state.threads || { GLOBAL: [{ who: 'LEO · qwen2.5:32b (local)', t: 'Evening brief holds: 42 briefs want a decision, zero going stale. The loop captured 3 events since your last visit.' }] };
+  }
+
+  send() {
+    const txt = this.state.input.trim();
+    if (!txt) return;
+    const th = this.state.thread, threads = { ...this.threadsInit() };
+    threads[th] = [...(threads[th] || []), { who: 'YOU', t: txt }];
+    this.setState({ threads, input: '' });
+    const d = this.data().byName[th];
+    setTimeout(() => {
+      const threads2 = { ...this.threadsInit() };
+      const reply = d ? (d.prose || 'No explainer authored for ' + th + ' yet — I can only quote its registry line: ' + (d.role || 'no role recorded') + '.') : 'Grounded on today\u2019s snapshot: 17 slices ready across 6 repos; the nearest decision is the core keep/discard metric.';
+      threads2[th] = [...(threads2[th] || []), { who: 'LEO · qwen2.5:32b (local)' + (d && this.state.share ? ' · shared → Global' : ''), t: reply }];
+      this.setState({ threads: threads2 });
+    }, 500);
+  }
+
+  renderVals() {
+    const S = this.state, d = this.data(), mode = this.mode(), phase = this.phase();
+    const MONO = "font-family:ui-monospace,'SF Mono',Menlo,monospace;";
+    const wordmarks = { morning: 'MORNING COCKPIT', midday: 'MIDDAY COCKPIT', evening: 'EVENING COCKPIT', night: 'NIGHT WATCH' };
+    const nDec = this.briefs().length - S.emittedIds.length;
+    const DW = ['zero', 'one', 'two', 'three', 'four', 'five'];
+    const dw = DW[nDec] || String(nDec), pl = nDec !== 1;
+    const heroMap = nDec === 0 ? {
+      morning: [{ t: 'Clear board. Nothing waits on you — go build.' }],
+      midday: [{ t: 'Clear board. Nothing waits on you — the loop carries the rest.' }],
+      evening: [{ t: 'All decided. Close the lid — tomorrow starts clean.' }],
+      night: [{ t: 'All decided. The loop runs; sleep well.' }]
+    } : {
+      morning: [{ t: 'First move: ' }, { t: dw + ' decision' + (pl ? 's' : ''), red: 1 }, { t: ' clear' + (pl ? '' : 's') + ' the day. Zero went stale overnight.' }],
+      midday: [{ t: 'Steady. ' }, { t: dw + ' decision' + (pl ? 's' : ''), red: 1 }, { t: ' waiting · 42 pickups queued · nothing stale.' }],
+      evening: [{ t: 'Wind-down: ' }, { t: dw + ' small decision' + (pl ? 's' : ''), red: 1 }, { t: ' now buy' + (pl ? '' : 's') + ' a clean morning.' }],
+      night: [{ t: 'Night watch. ' }, { t: dw + ' decision' + (pl ? 's' : ''), red: 1 }, { t: ' can wait for daylight — the loop has the rest.' }]
+    };
+    const DAYS = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+    const MONTHS = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'];
+    const chipMap = { morning: '◔ MORNING', midday: '◑ MIDDAY', evening: '◕ EVENING', night: '● NIGHT' };
+    const hh = String(S.now.getHours()).padStart(2, '0'), mm = String(S.now.getMinutes()).padStart(2, '0');
+    const spineData = [
+      { num: '00', t: 'BRIEFING', sub: nDec + ' decision' + (nDec !== 1 ? 's' : '') + ' waiting', hot: nDec > 0, view: 'briefing', live: true },
+      { num: '01', t: 'FLEET', sub: '35 repos · 5 signal', view: 'fleet', live: true },
+      { num: '02', t: 'CRITICAL PATH', sub: '3 blockers · 1 gates all', hot: true, view: 'stub', stub: 'CRITICAL PATH' },
+      { num: '03', t: 'DELIVERY', sub: 'asserted %s — first-cut', view: 'stub', stub: 'DELIVERY' },
+      { num: '04', t: 'WORK', sub: '42 pickup · 0 overnight', view: 'stub', stub: 'WORK' },
+      { num: '05', t: 'READING', sub: '9 new since 48h', view: 'reading', live: true },
+      { num: '06', t: 'RESEARCH', sub: '3 papers explained', view: 'research', live: true },
+      { num: '07', t: 'LOOP', sub: '80 events / 7d', view: 'stub', stub: 'LOOP' },
+      { num: '08', t: 'NEWLINE', sub: 'sitting 7 queued · U14: 9 unread', hot: true, view: 'newline', live: true },
+      { num: '09', t: 'CANON', sub: 'the system, explained · D5–D6', view: 'canon', live: true }
+    ];
+    const spine = spineData.map((s) => {
+      const active = S.view === s.view && (s.view !== 'stub' || S.stub === s.stub);
+      return {
+        ...s,
+        tip: s.live ? 'Open ' + s.t.toLowerCase() : 'Not rebuilt yet — shows a stub',
+        go: () => this.setState({ view: s.view, stub: s.stub || null, stubNum: s.num }),
+        st: 'padding:9px 16px;cursor:pointer;border-left:2px solid ' + (active ? '#efe8db' : 'transparent') + ';' + (active ? 'background:#1a1713;' : s.live ? '' : 'opacity:.62;')
+      };
+    });
+    const modeBtns = ['grid', 'tiers', 'constellation'].map((m) => ({
+      t: m.toUpperCase(), go: () => this.setState({ mode: m }),
+      st: MONO + 'font-size:10px;letter-spacing:.1em;padding:6px 12px;cursor:pointer;border:none;background:' + (m === mode ? '#efe8db' : 'transparent') + ';color:' + (m === mode ? '#12100d' : '#b5aa99') + ';'
+    }));
+    const chips = [['ready', 'READY WORK'], ['gaps', 'GAPS'], ['f1', 'F1'], ['golf', 'GOLF'], ['vault', 'VAULT']].map(([id, t]) => ({
+      t, go: () => this.setState({ chip: S.chip === id ? null : id }),
+      st: MONO + 'font-size:9.5px;letter-spacing:.08em;padding:5px 10px;cursor:pointer;background:' + (S.chip === id ? '#efe8db' : 'none') + ';color:' + (S.chip === id ? '#12100d' : '#b5aa99') + ';border:1px solid ' + (S.chip === id ? '#efe8db' : '#2e2924') + ';'
+    }));
+    const filterOn = !!(S.q.trim() || S.chip);
+    const allRepos = []; d.clusters.forEach((c) => c.repos.forEach((x) => allRepos.push(x)));
+    const nMatch = allRepos.filter((x) => this.matches(x)).length;
+    const dim = (x) => filterOn && !this.matches(x);
+
+    // grid
+    const sig = allRepos.filter((x) => x.open > 0);
+    const liveC = { live: '#8fbd8f', stale: '#c9a35f', dark: '#4a423a' };
+    const sigCards = sig.map((x) => ({
+      n: x.n, role: x.role, phase: x.phase, open: x.open, act: x.act || '—',
+      slLine: x.sl ? this.nodeSub(x) : (x.reg ? 'no roadmap' : 'unregistered'),
+      liveT: x.live, dotSt: 'width:7px;height:7px;border-radius:50%;background:' + liveC[x.live] + ';',
+      pick: () => this.pickNode(x.n),
+      st: 'border:1px solid ' + (S.sel === x.n ? '#efe8db' : filterOn && !dim(x) ? '#847a6c' : '#2e2924') + ';background:#1a1713;padding:12px 14px;cursor:pointer;opacity:' + (dim(x) ? '.15' : '1') + ';'
+    }));
+    const dormant = d.clusters.map((c) => ({
+      cluster: c.name, hue: c.hue,
+      repos: c.repos.filter((x) => !x.open).map((x) => ({
+        n: x.n, pick: () => this.pickNode(x.n),
+        st: 'font-size:11.5px;cursor:pointer;color:' + (filterOn && !dim(x) ? '#efe8db' : '#b5aa99') + ';opacity:' + (dim(x) ? '.15' : '1') + ';' + (x.reg ? '' : 'border-bottom:1px dotted #5d564c;')
+      }))
+    })).filter((g) => g.repos.length);
+
+    // canvas
+    const isTiers = mode === 'tiers', isCanvas = mode !== 'grid';
+    const vb = this.vbFor(mode);
+    let boxes = [], nodes = [], dots = [], edges = [];
+    if (isTiers) {
+      const L = this.layoutTiers();
+      boxes = L.boxes.map((b) => ({
+        ...b, tx: b.x + 12, ty: b.y + 20,
+        st: 'fill:none;stroke:#2e2924;stroke-width:1;',
+        tst: MONO + 'font-size:10px;letter-spacing:1.5px;fill:' + b.hue + ';', label: b.label
+      }));
+      edges = L.edges.map((e) => ({ d: e.d, st: 'fill:none;stroke:#4a423a;stroke-width:1;opacity:.55;' + (e.dash ? 'stroke-dasharray:3 4;' : '') }));
+      nodes = L.nodes.map((n) => {
+        const x = d.byName[n.id], sel = S.sel === n.id, dm = x ? dim(x) : (filterOn && S.chip !== 'vault' && n.kind !== 'l2');
+        return {
+          ...n, nx: n.x + 12, ny: n.y + (n.big ? 26 : 19), sy: n.y + (n.big ? 46 : 35),
+          pick: () => this.pickNode(n.id),
+          gst: 'cursor:pointer;opacity:' + (dm ? '.14' : '1') + ';',
+          st: 'fill:#1a1713;stroke:' + (sel ? '#efe8db' : filterOn && !dm && n.kind !== 'l2' ? '#a89a84' : n.kind === 'l2' ? '#847a6c' : '#3a342c') + ';stroke-width:' + (sel ? 2 : filterOn && !dm && n.kind !== 'l2' ? 1.5 : 1) + ';' + (n.dash ? 'stroke-dasharray:4 3;' : ''),
+          tabSt: 'fill:' + (n.hue || '#847a6c') + ';opacity:' + (n.dash ? '.35' : '.8') + ';',
+          nSt: 'fill:#efe8db;font-size:' + (n.big ? 15 : 12) + 'px;font-weight:700;font-family:Helvetica,Arial,sans-serif;',
+          subSt: MONO + 'fill:#847a6c;font-size:9px;',
+          label: n.label, sub: n.sub
+        };
+      });
+    } else if (mode === 'constellation') {
+      const L = this.layoutConst();
+      edges = L.edges.map((e) => ({ d: e.d, st: 'fill:none;stroke:#4a423a;stroke-width:1;opacity:' + (e.faint ? '.18' : '.4') + ';' + (e.dash ? 'stroke-dasharray:2 4;' : '') }));
+      dots = L.nodes.map((n) => {
+        const x = d.byName[n.id], sel = S.sel === n.id, dm = x ? dim(x) : false;
+        const right = !n.a || Math.cos(n.a) >= 0;
+        return {
+          ...n, lx: n.kind === 'l2c' ? n.cx : n.cx + (right ? n.r + 6 : -(n.r + 6)), ly: n.kind === 'l2c' ? n.cy + n.r + 16 : n.cy + 3,
+          pick: () => this.pickNode(n.id),
+          gst: 'cursor:pointer;opacity:' + (dm ? '.14' : '1') + ';',
+          st: n.dash ? 'fill:none;stroke:' + (sel ? '#efe8db' : n.hue || '#847a6c') + ';stroke-width:' + (sel ? 2 : 1) + ';stroke-dasharray:2 2;' : 'fill:' + (n.hue || '#efe8db') + ';stroke:' + (sel ? '#efe8db' : 'none') + ';stroke-width:2;',
+          lst: MONO + 'fill:' + (sel ? '#efe8db' : '#b5aa99') + ';font-size:10px;' + (n.kind === 'l2c' || right ? '' : 'text-anchor:end;'),
+          label: n.label
+        };
+      });
+    }
+
+    // rail detail
+    const selX = S.sel ? d.byName[S.sel] : null;
+    const isL2 = S.sel && !selX;
+    let det = {};
+    if (S.sel) {
+      const x = selX || {};
+      const badges = [];
+      const bs = MONO + 'font-size:8.5px;letter-spacing:.1em;padding:2px 6px;border:1px solid #2e2924;color:#b5aa99;';
+      if (isL2) badges.push({ t: 'L2 · VENTURE', st: bs });
+      else if (x.kind === 'map') badges.push({ t: 'WAYFINDER MAP · ' + (x.sub || '').toUpperCase(), st: bs });
+      else if (x.kind === 'layer') badges.push({ t: 'VAULT LAYER', st: bs });
+      else {
+        badges.push({ t: (x.reg ? 'L1 · ' : '') + (x.cluster || ''), st: bs });
+        badges.push(x.reg ? { t: 'REGISTERED', st: bs } : { t: 'UNREGISTERED', st: bs + 'border-style:dashed;' });
+        if (x.here) badges.push({ t: 'YOU ARE HERE', st: bs + 'color:#efe8db;border-color:#847a6c;' });
+      }
+      const sl = x.sl, tot = sl ? sl.r + sl.q + sl.m : 0;
+      det = {
+        d_name: S.sel,
+        d_badges: badges,
+        d_prose: isL2 ? (S.sel === 'l2-ojfbot' ? 'The venture tier. 18 L1 northstars ladder into it; it ladders into the shared L3 apex with l2-selfco.' : 'Declared but deferred — it will live in the vault\u2019s tracking/, owned by selfco, referenced by core.') : x.kind === 'map' ? 'A wayfinder map — questions closed by answers, never merged with roadmap slices.' : x.kind === 'layer' ? 'A selfco vault layer. The vault keeps understanding; the spine keeps work.' : (x.prose || 'No explainer authored for this repo yet.'),
+        d_proseTag: (isL2 || x.kind) ? 'AUTHORED · registry read 2026-08-08' : (x.prose ? 'AUTHORED — goes stale silently; regenerate candidate' : 'gap — authoring is part of registration'),
+        d_hasSlices: !!sl, d_sliceTotal: tot,
+        d_barM: sl ? 'width:' + (sl.m / tot) * 100 + '%;background:#efe8db;' : '',
+        d_barR: sl ? 'width:' + (sl.r / tot) * 100 + '%;background:#847a6c;' : '',
+        d_barQ: sl ? 'width:' + (sl.q / tot) * 100 + '%;background:#3a342c;' : '',
+        d_sliceLine: sl ? sl.m + ' merged · ' + sl.r + ' ready · ' + sl.q + ' queued (rm-l1-' + S.sel + ')' : '',
+        d_unreg: !isL2 && !x.kind && !x.reg,
+        d_ladder: isL2 ? 'L3 apex' : x.kind ? 'l2-selfco' : x.reg ? 'l2-ojfbot' : '— (register to ladder)',
+        d_path: isL2 ? 'core/decisions/northstar/' : x.kind === 'layer' ? '~/selfco/wiki/' + S.sel + '/' : x.kind === 'map' ? 'core/decisions/wayfinder/' : S.sel + '/.claude/northstar.md',
+        d_ops: !isL2 && !x.kind ? (x.open || 0) + ' open beads · ' + (x.act || 'no activity') + ' · ' + (x.live || 'dark') : '—'
+      };
+    }
+    const summary = [
+      { k: 'Northstars', v: '20' }, { k: 'Roadmaps', v: '13' }, { k: 'Slices ready', v: '17' }, { k: 'Queued / merged', v: '111 / 67' },
+      { k: 'Unregistered repos', v: '26' }, { k: 'Wayfinder maps', v: '9' }, { k: 'Vault wiki pages', v: '696' }, { k: 'Repos in census', v: '45' }
+    ];
+
+    // chat
+    const threads = this.threadsInit();
+    const canThread = selX && !selX.kind;
+    const tabList = ['GLOBAL', ...S.openTabs];
+    const tabs = tabList.map((t) => ({
+      t: t === 'GLOBAL' ? 'GLOBAL · LEO' : t, go: () => this.setState({ thread: t }),
+      st: MONO + 'font-size:9px;letter-spacing:.08em;padding:5px 9px;cursor:pointer;border:none;border-bottom:2px solid ' + (S.thread === t ? '#efe8db' : 'transparent') + ';background:none;color:' + (S.thread === t ? '#efe8db' : '#847a6c') + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px;'
+    }));
+    const msgs = (threads[S.thread] || [{ who: 'LEO', t: 'New thread, scoped to ' + S.thread + '. Grounded on today\u2019s snapshot — I\u2019ll say so when I\u2019m guessing.' }]).map((m) => ({
+      ...m, st: 'border-left:2px solid ' + (m.who === 'YOU' ? '#3a342c' : '#847a6c') + ';padding-left:10px;'
+    }));
+
+    return {
+      wordmark: wordmarks[phase],
+      heroParts: heroMap[phase].map((p) => ({ t: p.t, st: p.red ? 'color:#ff4b3e;' : '' })),
+      ...this.dial(phase, nDec),
+      dateLine: DAYS[S.now.getDay()] + ' ' + S.now.getDate() + ' ' + MONTHS[S.now.getMonth()] + ' ' + S.now.getFullYear(),
+      phaseChip: chipMap[phase], clock: hh + ':' + mm,
+      sinceGap: phase === 'night' ? '4H' : '2H', loopDelta: '3',
+      pulseSt: 'width:7px;height:7px;border-radius:50%;background:#8fbd8f;' + (this.props.loopPulse === false ? '' : 'animation:mcpulse 2.4s ease-in-out infinite;'),
+      spine, modeBtns, chips, q: S.q,
+      onQ: (e) => this.setState({ q: e.target.value }),
+      modeTitle: mode === 'grid' ? 'Operations' : mode === 'tiers' ? 'Structure' : 'Constellation',
+      statLine: mode === 'grid' ? '35 REPOS · 40 OPEN · 0 LIVE · 8 STALE · 27 DARK' : '20 NS · 13 ROADMAPS · 17 READY · 111 QUEUED · 67 MERGED · 26 UNREGISTERED',
+      matchLine: filterOn ? nMatch + ' match' : '',
+      isGrid: mode === 'grid', isCanvas, goTiers: () => this.setState({ mode: 'tiers' }),
+      sigCards, dormant,
+      vb: vb.x + ' ' + vb.y + ' ' + vb.w + ' ' + vb.h,
+      svgSt: 'width:100%;height:100%;display:block;cursor:' + (S.drag ? 'grabbing' : 'grab') + ';',
+      boxes, nodes, dots, edges,
+      panStart: (e) => { e.preventDefault(); this.setState({ drag: { mx: e.clientX, my: e.clientY, vb } }); },
+      panMove: (e) => { const dr = this.state.drag; if (!dr) return; const rc = e.currentTarget.getBoundingClientRect(); const sc = dr.vb.w / rc.width; this.setVB({ ...dr.vb, x: dr.vb.x - (e.clientX - dr.mx) * sc, y: dr.vb.y - (e.clientY - dr.my) * sc }); },
+      panEnd: () => { if (this.state.drag) this.setState({ drag: null }); },
+      zoomIn: () => { const v = this.vbFor(mode), f = 0.78; this.setVB({ x: v.x + v.w * (1 - f) / 2, y: v.y + v.h * (1 - f) / 2, w: v.w * f, h: v.h * f }); },
+      zoomOut: () => { const v = this.vbFor(mode), f = 1.28; this.setVB({ x: v.x + v.w * (1 - f) / 2, y: v.y + v.h * (1 - f) / 2, w: v.w * f, h: v.h * f }); },
+      resetView: () => this.setState((s) => { const vbs = { ...s.vbs }; delete vbs[mode]; return { vbs }; }),
+      hasSel: !!S.sel, noSel: !S.sel, ...det, summary,
+      briefCount: this.briefs().length,
+      briefThreads: this.briefs().map((b, i) => {
+        const em = S.emittedIds.indexOf(i) >= 0;
+        return {
+          title: b.title.length > 88 ? b.title.slice(0, 86) + '…' : b.title, repo: b.repo,
+          chip: em ? '✓ EMITTED' : 'DECISION NEEDED',
+          chipSt: MONO + 'font-size:8.5px;letter-spacing:.1em;padding:2px 6px;' + (em ? 'border:1px solid #2e2924;color:#8fbd8f;' : 'background:#2a1512;color:#ff4b3e;'),
+          go: () => this.setState({ briefSel: i, briefOpt: 'pick', briefScope: b.repo }),
+          st: 'border:1px solid ' + (S.briefSel === i ? '#3a342c' : '#201c17') + ';border-left:2px solid ' + (S.briefSel === i ? (em ? '#8fbd8f' : '#ff4b3e') : '#201c17') + ';background:' + (S.briefSel === i ? '#1a1713' : 'transparent') + ';padding:10px 12px;cursor:pointer;' + (em ? 'opacity:.6;' : '')
+        };
+      }),
+      briefScope: S.briefScope,
+      briefFile: this.briefs()[S.briefSel].file,
+      briefTitle: this.briefs()[S.briefSel].title,
+      briefCatchup: '"' + this.briefs()[S.briefSel].title + '" is open for pickup in ' + this.briefs()[S.briefSel].repo + '. (Deterministic brief — read straight from the lane data; the local Chief-of-Staff model was not consulted.)',
+      briefQuestion: 'How do you want to move on "' + this.briefs()[S.briefSel].title.slice(0, 52) + '…"?',
+      briefOpts: [{ id: 'pick', t: 'Pick it up now', rec: true }, { id: 'defer', t: 'Defer 7 days', rec: false }].map((o) => ({
+        ...o, go: () => this.setState({ briefOpt: o.id, emitted: false }),
+        st: 'display:flex;align-items:center;border:1px solid ' + (S.briefOpt === o.id ? '#efe8db' : '#2e2924') + ';border-left:3px solid ' + (S.briefOpt === o.id ? '#ff4b3e' : '#2e2924') + ';padding:10px 14px;cursor:pointer;'
+      })),
+      showDraft: S.briefOpt === 'pick', showDefer: S.briefOpt === 'defer',
+      notEmitted: S.emittedIds.indexOf(S.briefSel) < 0, emitted: S.emittedIds.indexOf(S.briefSel) >= 0,
+      emit: () => this.setState((s) => ({ emittedIds: s.emittedIds.indexOf(s.briefSel) < 0 ? [...s.emittedIds, s.briefSel] : s.emittedIds })),
+      clearSel: () => this.setState({ sel: null, briefed: false }),
+      openBriefing: () => { const x = d.byName[S.sel]; this.setState({ briefed: true, view: 'briefing', briefScope: x && !x.kind ? S.sel : S.briefScope }); },
+      vBriefing: S.view === 'briefing', vFleet: S.view === 'fleet', vReading: S.view === 'reading', vResearch: S.view === 'research', vNewline: S.view === 'newline', vCanon: S.view === 'canon', vStub: S.view === 'stub',
+      filterOnV: filterOn,
+      canon: this.canonData(MONO),
+      stubNum: S.stubNum || '02', stubTitle: S.stub || '',
+      noop: () => {},
+      readDigest: [
+        'Auto mode is now the default in Claude Code for Pro, Max, and Team plans — a shift toward streamlined AI-driven development.',
+        'A timeline of the OpenAI accidental attack against Hugging Face gives context on recent industry security events.',
+        'Zawinski\u2019s Law of MultiAgents (AINews) aligns with the Yegge/Karpathy applied-AI thread you follow.'
+      ],
+      readSrc: [
+        { n: 'Simon Willison', tier: 'T1', items: [{ t: 'Auto mode is now the default in Claude Code for Pro, Max, and Team plans', age: '2h' }, { t: 'Now we have a timeline of the OpenAI accidental attack against Hugging Face', age: '11h' }, { t: 'Quoting John Gruber', age: '1d' }, { t: 'Moonlight & Mayhem (Raccoon Heist by Codex + GPT-5.6 Sol Ultra)', age: '1d' }, { t: 'The Tokenpocalypse Is Here: Companies Are Scrambling To Stop Spending So Much on AI', age: '1d' }] },
+        { n: 'Latent Space', tier: 'T1', items: [{ t: '[AINews] Zawinski\u2019s Law of MultiAgents', age: '1d' }, { t: '[AINews] AMD buys Taalas', age: '1d' }] },
+        { n: 'Dwarkesh Patel', tier: 'T2', items: [{ t: '8 Predictions for the Era of Continual Learning', age: '1d' }] }
+      ],
+      papers: [
+        { t: 'Recursive Synthesis for Long-Horizon Terminal Tasks', a: 'Zhongzhi Li, Yucheng Shi, Zongxia Li, Ruhan Wang, Anhao Li et al.', v: 218, head: 'A framework for recursively generating high-quality long-horizon tasks for terminal agents.', bullets: ['RST extends verified seed tasks through recursive rounds, keeping instructions, environments, solutions, and verifiers consistent.', 'Over 37,000 synthesized tasks at ~$0.05 per task across fifteen rounds of increasing complexity.', 'Fine-tuning on the synthesized set improves benchmarks by up to 10 points over base.'], verdict: 'Worth your time for LLM tooling + systems engineering — method section first, then results.', pre: 'transformers · training · evals · distributed systems', conn: ['LLM Tooling', 'SE Competency', 'Systems Eng'] },
+        { t: 'AgentOPSD: Recursive Self-Distillation for Agentic Reinforcement Learning', a: 'Zi-Han Wang, Zhengxi Lu, Zhiyuan Yao, Jinyang Wu, Jie Wu et al.', v: 75, head: 'A critic-free method for credit assignment in agentic RL using recursive self-distillation.', bullets: ['Aggregates token-level log-probability gaps into turn-level evidence for credit assignment.', 'Updates a Bayesian belief state recursively in log-odds space — no critic, no extra rollouts.', 'Converts sparse outcome supervision into actionable turn-level signals.'], verdict: 'Skim unless you\u2019re on RL this quarter — the credit-assignment trick is the transferable idea.', pre: 'RL basics · log-probs', conn: ['ML/AI Internals'] }
+      ],
+      nlProg: '30 / 43 MODULES READ',
+      nlUnits: [
+        { u: 'U1', t: 'Foundations', m: '5/6', s: 'M6 PENDING', warn: 1 },
+        { u: 'U4', t: 'Eval design', m: '4/4', s: '✓' },
+        { u: 'U6', t: 'Data quality', m: '3/3', s: '✓ VAULT' },
+        { u: 'U8', t: 'ETL', m: '3/4', s: 'READ QUEUED', warn: 1 },
+        { u: 'U9', t: 'Judge calibration', m: '3/3', s: '✓' },
+        { u: 'U11', t: 'Retrieval', m: '2/2', s: '✓ VAULT' },
+        { u: 'U12', t: 'Agent patterns', m: '4/4', s: '✓' },
+        { u: 'U14', t: 'Applied agents', m: '4/13', s: '9 UNREAD', hot: 1 },
+        { u: 'U15', t: 'Ship & measure', m: '3/3', s: '✓' },
+        { u: 'U16', t: 'Cost & latency', m: '2/2', s: '✓' },
+        { u: 'U17', t: 'Capstone prep', m: '3/3', s: '✓' }
+      ].map((u) => ({
+        ...u,
+        st: 'display:flex;align-items:center;gap:12px;padding:9px 14px;border-bottom:1px solid #201c17;' + (u.hot ? 'border-left:2px solid #ff4b3e;background:#1a1713;' : 'border-left:2px solid transparent;'),
+        chipSt: MONO + 'font-size:8.5px;letter-spacing:.08em;padding:2px 7px;width:92px;text-align:center;border:1px solid ' + (u.hot ? '#ff4b3e;color:#ff4b3e;' : u.warn ? '#4a423a;color:#c9a35f;' : '#2e2924;color:#8fbd8f;')
+      })),
+      nlToBrief: () => this.setState({ view: 'briefing', briefSel: 0, briefOpt: 'pick', briefScope: 'core' }),
+      inspCtx: S.sel ? S.sel + ' · ' + mode : 'fleet · ' + mode + ' · nothing selected',
+      gapsGo: () => this.setState({ view: 'fleet', chip: 'gaps' }),
+      loopRows: [['ignored', 169, 100], ['engaged', 27, 16], ['acted', 2, 3]].map(([k, v, w]) => ({ k, v: String(v), st: 'width:' + w + '%;height:100%;background:#847a6c;' })),
+      briefingNote: S.briefed,
+      askAbout: () => {
+        if (!canThread) return;
+        const tabsN = S.openTabs.indexOf(S.sel) < 0 ? [...S.openTabs, S.sel] : S.openTabs;
+        const th = { ...this.threadsInit() };
+        if (!th[S.sel]) {
+          const x = selX;
+          th[S.sel] = [{ who: 'LEO · qwen2.5:32b (local) · scoped', t: (x.prose || 'No explainer authored for this repo yet.') + ' ' + (x.sl ? 'Delivery: ' + x.sl.m + ' merged · ' + x.sl.r + ' ready · ' + x.sl.q + ' queued.' : x.reg ? 'Registered — no roadmap yet.' : 'Unregistered — invisible to delivery (TD-007).') }];
+        }
+        this.setState({ openTabs: tabsN, thread: S.sel, threads: th });
+      },
+      tabs, msgs, input: S.input,
+      showShare: S.thread !== 'GLOBAL',
+      shareT: S.share ? 'context → Global: ON' : 'context → Global: OFF',
+      shareSt: MONO + 'margin-left:auto;font-size:8.5px;padding:4px 7px;cursor:pointer;background:none;border:1px solid #2e2924;color:' + (S.share ? '#8fbd8f' : '#847a6c') + ';',
+      toggleShare: () => this.setState({ share: !S.share }),
+      threadNote: S.thread === 'GLOBAL' ? 'the standing thread — everything Leo knows lands here' : 'scoped thread · keyed to ' + S.thread + ' · closes #340\u2019s prefix workaround',
+      composerPh: S.thread === 'GLOBAL' ? 'ask about the fleet…' : 'ask about ' + S.thread + '…',
+      onInput: (e) => this.setState({ input: e.target.value }),
+      onKey: (e) => { if (e.key === 'Enter') this.send(); },
+      send: () => this.send()
+    };
+  }
+}
+</script>
+</body>
+</html>
