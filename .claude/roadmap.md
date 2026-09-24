@@ -212,7 +212,7 @@ slices:
     moves_from: 62
     moves_to: 66
     deliverable: "PR: extend S9's ThreadMap/chatThreadKey with Leo scope — 'leo' stays the global thread (S9's v1→leo migration already preserves history; no new migration), 'leo:<repo>' per-repo; scoped seed reusing the buildNorthstarPreload pattern (authored prose + delivery counts); context → Global ON/OFF toggle; thread tabs open from the S12 inspector's Ask Leo; selection changes the INSPECTOR, never yanks a pinned Leo thread — Northstar tab keeps its S9 follow-focus behaviour (per-tab contract, coexist ruling ratified 2026-08-08). Implements core wayfinder #340's recommended answer — record the decision on that map (core brief owns the map edit)."
-    entrance: "rm:rm-l1-morning-cockpit#S9 delivered (PR #__R2__, supersedes #43); S12 selection seam merged (thread tabs open from the inspector's Ask Leo)."
+    entrance: "rm:rm-l1-morning-cockpit#S9 delivered (PR #49, supersedes #43); S12 selection seam merged (thread tabs open from the inspector's Ask Leo)."
     success: "Global + repo threads hold distinct histories across restarts; focus-change mid-thread keeps a pinned Leo thread pinned while the Northstar tab re-scopes; S9's 'leo' history byte-for-byte intact after upgrade; Vitest on the store."
     check: "pnpm test"
     autonomy: gate-0
