@@ -135,6 +135,7 @@ export type {
   PopulationFunnel,
 } from './loop.js';
 export {
+  parseCodexHygiene,
   parseDispositionLines,
   buildCaptureHealth,
   countDispositions,
