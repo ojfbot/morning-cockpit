@@ -7,10 +7,12 @@ import type { FleetAuthoredData } from '@cockpit/shared';
  * registry live, unregistered membership derives from `census − registry` at request time,
  * and annotation keys that match nothing surface NOTHING (RFI C18 — never hand list #5).
  *
- *   census    the 2026-07-25 fleet-census walk (44 ~/ojfbot repos + ~/selfco = 45), from
- *             ~/.claude/plans/output-a-full-report-sequential-prism.md Documents 1–3.
- *             Stale-capable by design (RFI C17): repos born after the walk are invisible
- *             until the next census record — disclosed via stats.censusAsOf, not papered.
+ *   census    FALLBACK ONLY. The adapter walks every `~/ojfbot/<name>/.git` live (core
+ *             fleet-onboard surface 15); this 2026-07-25 record (44 ~/ojfbot repos + ~/selfco = 45, from
+ *             ~/.claude/plans/output-a-full-report-sequential-prism.md Documents 1–3) serves
+ *             only when that root is unreadable from the vantage. Stale-capable (RFI C17):
+ *             repos born after it are invisible on the fallback — disclosed via
+ *             stats.censusAsOf. Its `aliases` apply to the live walk too.
  *   clusters  hand cluster assignment [JUDGMENT] — presentation-level; no file records it.
  *   prose     desc/novice text vendored from the fleet-navigator prototype (2026-08-08),
  *             where it was authored for the "explain the fleet to a guest" reading.
@@ -97,6 +99,9 @@ export const FLEET_AUTHORED: FleetAuthoredData = {
     'silicon-empires': 'story',
     virtualLight: 'story',
     'fieldwork-1': 'client',
+    // play-well: the grouping core's registry carries in comments until the cluster tier ships.
+    'lego-village-pipeline': 'play-well',
+    'play-well-library': 'play-well',
     // Unregistered census repos placed by hand.
     'daily-logger': 'platform',
     'gastown-pilot': 'platform',
@@ -123,6 +128,8 @@ export const FLEET_AUTHORED: FleetAuthoredData = {
     'newline-ai-course': 'corpus',
     'agent-anatomy': 'corpus',
     'seh-study': 'corpus',
+    // Founded after the 2026-07-25 census (TD-010); visible once the census went live.
+    dealdesk: 'client',
     // ojfbot (org README), core-library, todo-todo, hailstone: no cluster claim — they
     // derive into the residual set. Absence here IS the record.
   },
