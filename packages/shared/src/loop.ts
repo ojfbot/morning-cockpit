@@ -90,8 +90,27 @@ export interface LoopHealth {
   audit: AdapterHealth;
 }
 
+export type HygieneFiring =
+  | { kind: 'never-fired'; nextRunAt?: string }
+  | { kind: 'missed'; nextRunAt: string }
+  | { kind: 'succeeded' | 'failed'; runId: string; observedAt: string; status: string }
+  | { kind: 'running' | 'unknown'; runId?: string; observedAt?: string };
+
+export type HygieneStatus =
+  | { kind: 'unavailable' | 'disabled'; reason: string }
+  | {
+      kind: 'configured';
+      scheduler: 'Codex';
+      targetThreadId: string;
+      nextRunAt?: string;
+      firing: HygieneFiring;
+      output: 'unverified';
+    };
+
 export interface LoopSnapshot {
   generatedAt: string;
+  /** External Selfco heartbeat, read from core's registry and Codex run database. */
+  hygiene: HygieneStatus;
   capture: CaptureHealth;
   funnel: { allTime: DispositionCounts; last14d: DispositionCounts };
   /** Per-population funnels (rm:rm-l1-core#S7): installed / uninstalled / legacy, eras never blended. */

@@ -1,4 +1,5 @@
 import { existsSync, readFileSync, statSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import {
   buildCaptureHealth,
@@ -12,6 +13,7 @@ import {
   type AdapterHealth,
   type DispositionEvent,
   type LoopSnapshot,
+  type HygieneStatus,
   type Movement,
 } from '@cockpit/shared';
 import { config } from '../config.js';
@@ -91,6 +93,54 @@ function probeAudit(now: Date): { mtime?: string; daysSince?: number; health: Ad
   }
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function readHygiene(): HygieneStatus {
+  const script = path.join(config.delivery.coreRoot, 'scripts', 'codex-automation-status.mjs');
+  if (!existsSync(script)) return { kind: 'unavailable', reason: 'core Codex automation reader is not installed' };
+  try {
+    const raw: unknown = JSON.parse(execFileSync('node', [script], {
+      encoding: 'utf8', timeout: 4000, stdio: ['ignore', 'pipe', 'ignore'],
+    }));
+    if (!isRecord(raw)) return { kind: 'unavailable', reason: 'Codex automation reader returned invalid data' };
+    if (raw.configured === 'disabled') {
+      return { kind: 'disabled', reason: typeof raw.reason === 'string' ? raw.reason : 'Codex automation paused' };
+    }
+    if (raw.configured !== 'configured') {
+      return { kind: 'unavailable', reason: typeof raw.reason === 'string' ? raw.reason : 'Codex configuration unavailable' };
+    }
+    const schedule = raw.schedule;
+    if (!isRecord(schedule) || typeof schedule.targetThreadId !== 'string') {
+      return { kind: 'unavailable', reason: 'Codex schedule details unavailable' };
+    }
+    const nextRunAt = typeof schedule.nextRunAt === 'string' ? schedule.nextRunAt : undefined;
+    const receipt = isRecord(raw.receipt) ? raw.receipt : undefined;
+    let firing: HygieneStatus & { kind: 'configured' };
+    // The union is built only after boundary validation. No Selfco file mtime can mark it fired.
+    if ((raw.firing === 'succeeded' || raw.firing === 'failed') &&
+        receipt && typeof receipt.threadId === 'string' &&
+        typeof receipt.observedAt === 'string' && typeof receipt.status === 'string') {
+      firing = { kind: 'configured', scheduler: 'Codex', targetThreadId: schedule.targetThreadId,
+        nextRunAt, firing: { kind: raw.firing, runId: receipt.threadId,
+          observedAt: receipt.observedAt, status: receipt.status }, output: 'unverified' };
+    } else if (raw.firing === 'missed' && nextRunAt) {
+      firing = { kind: 'configured', scheduler: 'Codex', targetThreadId: schedule.targetThreadId,
+        nextRunAt, firing: { kind: 'missed', nextRunAt }, output: 'unverified' };
+    } else if (raw.firing === 'never-fired') {
+      firing = { kind: 'configured', scheduler: 'Codex', targetThreadId: schedule.targetThreadId,
+        nextRunAt, firing: { kind: 'never-fired', nextRunAt }, output: 'unverified' };
+    } else {
+      firing = { kind: 'configured', scheduler: 'Codex', targetThreadId: schedule.targetThreadId,
+        nextRunAt, firing: { kind: 'unknown' }, output: 'unverified' };
+    }
+    return firing;
+  } catch {
+    return { kind: 'unavailable', reason: 'Codex automation reader or local database inaccessible' };
+  }
+}
+
 export function buildLoopSnapshot(now = new Date()): LoopSnapshot {
   const { events, health: dispositionsHealth } = readDispositions();
   const { movements, health: odometerHealth } = readOdometer();
@@ -99,6 +149,7 @@ export function buildLoopSnapshot(now = new Date()): LoopSnapshot {
   const fourteenDaysAgo = new Date(now.getTime() - 14 * 86_400_000);
   return {
     generatedAt: now.toISOString(),
+    hygiene: readHygiene(),
     capture: buildCaptureHealth(events, now, config.loop.staleDays),
     funnel: {
       allTime: countDispositions(events),

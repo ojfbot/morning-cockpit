@@ -129,6 +129,8 @@ export type {
   OdometerFreshness,
   LoopHealth,
   LoopSnapshot,
+  HygieneStatus,
+  HygieneFiring,
   LoopPopulation,
   PopulationFunnel,
 } from './loop.js';
