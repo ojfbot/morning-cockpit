@@ -71,3 +71,26 @@ coupling to core.
 - `core/packages/workflows/src/types/{bead,agent-bead,convoy}.ts` — shapes we mirror.
 - `daily-logger` CLAUDE.md — precedent for an intentionally-standalone ojfbot repo.
 - `GroupThink/src/styles/tokens.css` — vendored design tokens.
+
+## Extension: Selfco hygiene reader (2026-10-02)
+
+The Loop pod reads the provisional Codex automation status CLI from core#502. The core
+CLI is the existing producer of this status; it emits JSON on demand and does not
+publish a file. Cockpit invokes it asynchronously with `execFile(process.execPath, …)`,
+without a shell, and limits runtime and output size. The server validates the JSON,
+removes private thread IDs, and caches one in-flight read for each refresh. A missing
+CLI, missing dependencies, timeout, or invalid response appears as an unavailable
+status and a hygiene adapter failure. Cockpit neither schedules nor runs the heartbeat.
+
+This is an optional local runtime dependency on an installed core checkout, its
+`smol-toml` dependency, and `sqlite3`. It adds no build-time core package dependency.
+Executing the CLI trusts code at `COCKPIT_CORE_ROOT` with the cockpit server's local
+permissions; deployments must point that setting at a trusted checkout. The read
+model stays available when the CLI is absent, with the hygiene block marked unavailable.
+
+We considered a projection file. Core#502 does not produce one, and no component owns
+its refresh, atomic publication, or freshness timestamp. A file consumer would imply
+those guarantees without a producer. If core later publishes such an artifact with an
+explicit freshness contract, revisit this transport choice. Until then, the 30-second
+`/api/loop` cache bounds only cockpit's reread interval, not the age or completeness
+of Codex's retained run history.

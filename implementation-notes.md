@@ -264,6 +264,20 @@ a number down. A deviation logged is the plan telling us what it didn't know.
   separate before/after screenshot so the git ref and the data source never move in one step.
 
 
+- **#22 — The preferred file transport had no producer.** The consumer review preferred a
+  projection file, but core#502 only exposes an on-demand CLI and supplies no file refresh
+  or freshness contract. Used the operator-approved asynchronous, read-only CLI boundary
+  with an unavailable state, and documented its runtime dependency in ADR-0001.
+
+- **#23 — A missed occurrence can also carry an old-history warning.** The consumer plan
+  treated the producer's `missed` and uncertainty states as exclusive. Core emits its
+  retained-schedule verdict and retention warning independently, so the published head
+  dropped the warning on a missed occurrence. Kept both facts in the read model and UI.
+
+- **#24 — The producer's next-run field can name a past due time.** The review found that
+  a missed occurrence would display that past value as the "next occurrence" in the
+  schedule line. Used a time-neutral label while retaining the producer timestamp.
+
 ## Log
 
 - **2026-07-28** — Branched `feat/anthropic-watch-stage1` from `origin/main` (`cec5678`).

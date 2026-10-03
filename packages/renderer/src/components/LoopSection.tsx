@@ -31,9 +31,9 @@ export function LoopSection() {
 
   if (!snap) return null;
 
-  const healthNotes = [snap.health.dispositions, snap.health.odometer, snap.health.audit]
+  const healthNotes = [snap.health.dispositions, snap.health.odometer, snap.health.audit, snap.health.hygiene]
     .filter((h) => h.status !== 'up')
-    .map((h) => `${h.name}: ${h.status}${h.lastError ? ` — ${h.lastError}` : ''}`);
+    .map((h) => `${h.name}: ${h.status}${h.lastError || h.note ? ` — ${h.lastError || h.note}` : ''}`);
 
   return (
     <Section
@@ -48,6 +48,8 @@ export function LoopSection() {
         </span>
       }
     >
+      <HygieneBlock snap={snap} />
+
       {snap.capture.total === 0 ? (
         <p className="delivery-empty">
           No dispositions captured yet — the shadow hooks haven&apos;t written
@@ -67,6 +69,49 @@ export function LoopSection() {
 
       {healthNotes.length > 0 && <p className="delivery-health-note">{healthNotes.join(' · ')}</p>}
     </Section>
+  );
+}
+
+function HygieneBlock({ snap }: { snap: LoopSnapshot }) {
+  const state = snap.hygiene;
+  if (state.kind !== 'configured') {
+    return (
+      <div className="loop-capture">
+        <div className="delivery-block-head">
+          <span className="delivery-block-label">Selfco vault hygiene</span>
+          <span className="delivery-block-src">Codex heartbeat · {state.kind}</span>
+        </div>
+        <p className="delivery-empty">{state.reason}</p>
+      </div>
+    );
+  }
+  const fire = state.firing;
+  const fireLabel = fire.kind === 'succeeded' || fire.kind === 'failed'
+    ? `${fire.kind} · ${fire.observedAt}`
+    : fire.kind === 'missed' ? `missed · due ${fire.nextRunAt}`
+      : fire.kind === 'running' ? `running · ${fire.observedAt}`
+        : fire.kind === 'never-fired' ? 'no recorded run' : 'unknown';
+  return (
+    <div className="loop-capture">
+      <div className="delivery-block-head">
+        <span className="delivery-block-label">Selfco vault hygiene</span>
+        <span className="delivery-block-src">Codex heartbeat</span>
+      </div>
+      <div className="loop-capture-row">
+        <span className="loop-stat">configured · {state.scheduler}</span>
+        <span className="loop-stat">firing · {fireLabel}</span>
+        <span className="loop-stat">output · {state.output}</span>
+      </div>
+      <p className="delivery-empty">
+        Raw schedule rule {state.scheduleRule} · scheduled time (UTC) {state.nextRunAt ?? 'unknown'}
+      </p>
+      {(fire.kind === 'never-fired' || fire.kind === 'missed') && fire.historyUncertain && (
+        <p className="delivery-empty">
+          No retained run history after the declared cadence; prior pauses and retention are unknown.
+        </p>
+      )}
+      {fire.kind === 'unknown' && <p className="delivery-empty">{fire.reason}</p>}
+    </div>
   );
 }
 

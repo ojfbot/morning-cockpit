@@ -88,10 +88,32 @@ export interface LoopHealth {
   odometer: AdapterHealth;
   /** Weekly skill-architecture-audit output — mtime probe only. */
   audit: AdapterHealth;
+  /** Core's read-only Codex automation CLI. */
+  hygiene: AdapterHealth;
 }
+
+export type HygieneFiring =
+  | { kind: 'never-fired'; historyUncertain: boolean }
+  | { kind: 'missed'; nextRunAt: string; historyUncertain: boolean }
+  | { kind: 'succeeded' | 'failed'; observedAt: string; status: string }
+  | { kind: 'running'; observedAt: string }
+  | { kind: 'unknown'; reason: string };
+
+export type HygieneStatus =
+  | { kind: 'unavailable' | 'disabled'; reason: string }
+  | {
+      kind: 'configured';
+      scheduler: 'Codex';
+      scheduleRule: string;
+      nextRunAt?: string;
+      firing: HygieneFiring;
+      output: 'unverified';
+    };
 
 export interface LoopSnapshot {
   generatedAt: string;
+  /** External Selfco heartbeat, read from core's registry and Codex run database. */
+  hygiene: HygieneStatus;
   capture: CaptureHealth;
   funnel: { allTime: DispositionCounts; last14d: DispositionCounts };
   /** Per-population funnels (rm:rm-l1-core#S7): installed / uninstalled / legacy, eras never blended. */
@@ -106,6 +128,84 @@ export interface LoopSnapshot {
   odometer: OdometerFreshness;
   audit: { mtime?: string; daysSince?: number };
   health: LoopHealth;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function isIsoDate(value: unknown): value is string {
+  return typeof value === 'string' && !Number.isNaN(Date.parse(value)) &&
+    new Date(value).toISOString() === value;
+}
+
+function parseReceipt(value: unknown): { observedAt: string; status: string } {
+  if (!isRecord(value) || typeof value.threadId !== 'string' || !value.threadId ||
+      typeof value.status !== 'string' || !value.status || !isIsoDate(value.observedAt) ||
+      !isIsoDate(value.updatedAt) || value.updatedAt < value.observedAt) {
+    throw new Error('invalid Codex run receipt');
+  }
+  return { observedAt: value.observedAt, status: value.status };
+}
+
+/** Mirrors core scripts/lib/codex-automation.mjs @ 2026-10-02 (5abd7d6). Private IDs stop here. */
+export function parseCodexHygiene(raw: unknown): HygieneStatus {
+  if (!isRecord(raw) || raw.id !== 'selfco-vault-hygiene' || raw.scheduler !== 'codex') {
+    throw new Error('invalid Codex automation identity');
+  }
+  if (raw.configured === 'disabled' && raw.firing === 'disabled') {
+    return { kind: 'disabled', reason: 'Codex automation is disabled' };
+  }
+  if (raw.configured === 'missing' || raw.configured === 'mismatch' || raw.configured === 'unverifiable') {
+    if (raw.firing !== 'unknown') throw new Error('inconsistent Codex configuration state');
+    return { kind: 'unavailable', reason: `Codex automation ${raw.configured}` };
+  }
+  if (raw.configured !== 'configured' || !isRecord(raw.schedule) ||
+      typeof raw.schedule.rrule !== 'string' || !raw.schedule.rrule ||
+      typeof raw.schedule.targetThreadId !== 'string' || !raw.schedule.targetThreadId ||
+      (raw.schedule.nextRunAt !== undefined && !isIsoDate(raw.schedule.nextRunAt))) {
+    throw new Error('invalid Codex schedule');
+  }
+  if (raw.output !== undefined && raw.output !== 'unverified') {
+    throw new Error('invalid Codex output state');
+  }
+  if (raw.warning !== undefined && (typeof raw.warning !== 'string' || !raw.warning)) {
+    throw new Error('invalid Codex warning');
+  }
+  const nextRunAt = raw.schedule.nextRunAt;
+  const historyUncertain = raw.warning !== undefined;
+  let firing: HygieneFiring;
+  switch (raw.firing) {
+    case 'never-fired':
+      if (raw.receipt !== undefined || raw.output !== undefined) throw new Error('unexpected Codex run receipt');
+      firing = { kind: 'never-fired', historyUncertain };
+      break;
+    case 'missed':
+      if (!nextRunAt || raw.receipt !== undefined || raw.output !== undefined) throw new Error('invalid missed run');
+      firing = { kind: 'missed', nextRunAt, historyUncertain };
+      break;
+    case 'succeeded':
+    case 'failed':
+    case 'running': {
+      if (raw.output !== 'unverified') throw new Error('invalid Codex output state');
+      if (historyUncertain) throw new Error('unexpected Codex history warning');
+      const receipt = parseReceipt(raw.receipt);
+      firing = raw.firing === 'running'
+        ? { kind: 'running', observedAt: receipt.observedAt }
+        : { kind: raw.firing, observedAt: receipt.observedAt, status: receipt.status };
+      break;
+    }
+    case 'unknown':
+      if (raw.output !== 'unverified') throw new Error('invalid Codex output state');
+      if (historyUncertain) throw new Error('unexpected Codex history warning');
+      parseReceipt(raw.receipt);
+      firing = { kind: 'unknown', reason: 'Codex run status is unknown' };
+      break;
+    default:
+      throw new Error('invalid Codex firing state');
+  }
+  return { kind: 'configured', scheduler: 'Codex', scheduleRule: raw.schedule.rrule,
+    nextRunAt, firing, output: 'unverified' };
 }
 
 /**
