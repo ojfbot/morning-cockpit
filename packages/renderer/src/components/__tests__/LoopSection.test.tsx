@@ -44,7 +44,7 @@ describe('Selfco hygiene cockpit projection', () => {
     expect(screen.getByText('configured · Codex')).toBeInTheDocument();
     expect(screen.getByText('firing · no recorded run')).toBeInTheDocument();
     expect(screen.getByText('output · unverified')).toBeInTheDocument();
-    expect(screen.getByText(/Raw schedule rule FREQ=DAILY;BYHOUR=9;BYMINUTE=0/)).toBeInTheDocument();
+    expect(screen.getByText(/Raw schedule rule FREQ=DAILY;BYHOUR=9;BYMINUTE=0.*scheduled time \(UTC\)/)).toBeInTheDocument();
   });
 
   it.each([
@@ -80,9 +80,17 @@ describe('Selfco hygiene cockpit projection', () => {
 
   it('shows uncertainty and adapter failure', async () => {
     show({ kind: 'configured', scheduler: 'Codex', scheduleRule: 'FREQ=DAILY',
-      firing: { kind: 'unknown', reason: 'Prior pauses and retention are unknown' }, output: 'unverified' },
+      firing: { kind: 'unknown', reason: 'Codex run status is unknown' }, output: 'unverified' },
       { name: 'loop-hygiene', status: 'down', itemCount: 0, lastError: 'Reader failed' });
-    expect(await screen.findByText('Prior pauses and retention are unknown')).toBeInTheDocument();
+    expect(await screen.findByText('Codex run status is unknown')).toBeInTheDocument();
     expect(screen.getByText(/loop-hygiene: down.*Reader failed/)).toBeInTheDocument();
+  });
+
+  it('shows old-history uncertainty without claiming a confirmed miss', async () => {
+    show({ kind: 'configured', scheduler: 'Codex', scheduleRule: 'FREQ=DAILY',
+      firing: { kind: 'never-fired', historyUncertain: true }, output: 'unverified' });
+    expect(await screen.findByText('firing · no recorded run')).toBeInTheDocument();
+    expect(screen.getByText(/prior pauses and retention are unknown/)).toBeInTheDocument();
+    expect(screen.queryByText(/firing · missed/)).not.toBeInTheDocument();
   });
 });

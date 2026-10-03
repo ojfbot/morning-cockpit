@@ -103,7 +103,7 @@ function HygieneBlock({ snap }: { snap: LoopSnapshot }) {
         <span className="loop-stat">output · {state.output}</span>
       </div>
       <p className="delivery-empty">
-        Raw schedule rule {state.scheduleRule} · next occurrence (UTC) {state.nextRunAt ?? 'unknown'}
+        Raw schedule rule {state.scheduleRule} · scheduled time (UTC) {state.nextRunAt ?? 'unknown'}
       </p>
       {(fire.kind === 'never-fired' || fire.kind === 'missed') && fire.historyUncertain && (
         <p className="delivery-empty">

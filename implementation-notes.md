@@ -274,6 +274,10 @@ a number down. A deviation logged is the plan telling us what it didn't know.
   retained-schedule verdict and retention warning independently, so the published head
   dropped the warning on a missed occurrence. Kept both facts in the read model and UI.
 
+- **#24 — The producer's next-run field can name a past due time.** The review found that
+  a missed occurrence would display that past value as the "next occurrence" in the
+  schedule line. Used a time-neutral label while retaining the producer timestamp.
+
 ## Log
 
 - **2026-07-28** — Branched `feat/anthropic-watch-stage1` from `origin/main` (`cec5678`).
