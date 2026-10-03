@@ -117,25 +117,31 @@ function readHygiene(): HygieneStatus {
     }
     const nextRunAt = typeof schedule.nextRunAt === 'string' ? schedule.nextRunAt : undefined;
     const receipt = isRecord(raw.receipt) ? raw.receipt : undefined;
-    let firing: HygieneStatus & { kind: 'configured' };
+    let status: HygieneStatus & { kind: 'configured' };
     // The union is built only after boundary validation. No Selfco file mtime can mark it fired.
     if ((raw.firing === 'succeeded' || raw.firing === 'failed') &&
         receipt && typeof receipt.threadId === 'string' &&
         typeof receipt.observedAt === 'string' && typeof receipt.status === 'string') {
-      firing = { kind: 'configured', scheduler: 'Codex', targetThreadId: schedule.targetThreadId,
+      status = { kind: 'configured', scheduler: 'Codex', targetThreadId: schedule.targetThreadId,
         nextRunAt, firing: { kind: raw.firing, runId: receipt.threadId,
           observedAt: receipt.observedAt, status: receipt.status }, output: 'unverified' };
     } else if (raw.firing === 'missed' && nextRunAt) {
-      firing = { kind: 'configured', scheduler: 'Codex', targetThreadId: schedule.targetThreadId,
+      status = { kind: 'configured', scheduler: 'Codex', targetThreadId: schedule.targetThreadId,
         nextRunAt, firing: { kind: 'missed', nextRunAt }, output: 'unverified' };
     } else if (raw.firing === 'never-fired') {
-      firing = { kind: 'configured', scheduler: 'Codex', targetThreadId: schedule.targetThreadId,
+      status = { kind: 'configured', scheduler: 'Codex', targetThreadId: schedule.targetThreadId,
         nextRunAt, firing: { kind: 'never-fired', nextRunAt }, output: 'unverified' };
+    } else if (raw.firing === 'running') {
+      status = { kind: 'configured', scheduler: 'Codex', targetThreadId: schedule.targetThreadId,
+        nextRunAt, firing: { kind: 'running',
+          runId: receipt && typeof receipt.threadId === 'string' ? receipt.threadId : undefined,
+          observedAt: receipt && typeof receipt.observedAt === 'string' ? receipt.observedAt : undefined },
+        output: 'unverified' };
     } else {
-      firing = { kind: 'configured', scheduler: 'Codex', targetThreadId: schedule.targetThreadId,
+      status = { kind: 'configured', scheduler: 'Codex', targetThreadId: schedule.targetThreadId,
         nextRunAt, firing: { kind: 'unknown' }, output: 'unverified' };
     }
-    return firing;
+    return status;
   } catch {
     return { kind: 'unavailable', reason: 'Codex automation reader or local database inaccessible' };
   }
