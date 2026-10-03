@@ -251,6 +251,8 @@ export interface FleetStructureSnapshot {
     roadmaps: AdapterHealth;
     wayfinder: AdapterHealth;
     vault: AdapterHealth;
+    /** `degraded` when the live walk failed and the dated record is serving instead. */
+    census: AdapterHealth;
   };
 }
 

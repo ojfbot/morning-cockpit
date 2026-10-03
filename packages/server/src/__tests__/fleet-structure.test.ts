@@ -182,6 +182,17 @@ describe('buildFleetStructureSnapshot', () => {
     expect(snap.stats.vaultPages).toBe(2);
   });
 
+  it('falls back to the dated record on an unreadable census root, and reports it in health', () => {
+    const snap = snapshot();
+    expect(snap.census.record.live).toBeUndefined();
+    expect(snap.census.record.asOf).toBe('2026-07-25');
+    expect(snap.census.record.repos).toEqual(AUTHORED.census.repos);
+    expect(snap.stats.censusAsOf).toBe('2026-07-25');
+    expect(snap.health.census.status).toBe('degraded');
+    expect(snap.health.census.note).toContain('serving the dated record (as of 2026-07-25)');
+    expect(snap.health.census.lastError).toBeDefined();
+  });
+
   it('renders census/registry disagreement (TD-007) instead of hiding it', () => {
     const snap = snapshot();
     expect(snap.census.disagreement.renamed).toEqual([{ census: 'old-name', node: 'present-app' }]);
@@ -252,5 +263,24 @@ describe('buildFleetStructureSnapshot', () => {
     expect(snap.census.disagreement.renamed).toEqual([{ census: 'old-name', node: 'present-app' }]);
     // absent-app is registered but has no checkout here, which is a real disagreement.
     expect(snap.census.disagreement.registeredNotInCensus).toEqual(['absent-app']);
+    expect(snap.health.census.status).toBe('up');
+    expect(snap.health.census.itemCount).toBe(3);
+  });
+
+  it('counts the vault as ~/selfco in the live census when it is a checkout', async () => {
+    const censusRoot = path.join(root, 'live-census-selfco');
+    const gitVault = path.join(root, 'git-vault');
+    await mkdir(path.join(censusRoot, 'present-app', '.git'), { recursive: true });
+    await mkdir(path.join(gitVault, '.git'), { recursive: true });
+
+    const snap = buildFleetStructureSnapshot({
+      coreRoot,
+      vaultRoot: gitVault,
+      censusRoot,
+      authored: { ...AUTHORED, census: { ...AUTHORED.census, aliases: { '~/selfco': 'l2-vault' } } },
+    });
+    expect(snap.census.record.repos).toEqual(['present-app', '~/selfco']);
+    // No l2-vault node here, so the alias can't resolve and the vault reads as unregistered.
+    expect(snap.census.disagreement.unregistered).toEqual(['~/selfco']);
   });
 });

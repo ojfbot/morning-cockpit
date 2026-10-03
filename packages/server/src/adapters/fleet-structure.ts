@@ -24,7 +24,7 @@ import { config } from '../config.js';
 import { FLEET_AUTHORED } from '../fleet-authored.js';
 
 /**
- * Fleet-structure adapter (roadmap S10, read-only) — assembles the strategy layer from four
+ * Fleet-structure adapter (roadmap S10, read-only) — assembles the strategy layer from five
  * independent local-file sources, each degrading gracefully into its own health entry
  * (RFI A9/C15: every source is a local file read; no gh, no network, no write path):
  *
@@ -228,35 +228,47 @@ function readVault(
 }
 
 /**
- * The live census — every `<repoRoot>/<name>/.git` checkout, plus the vault as `~/selfco` when
- * it is one. core's fleet-onboard surface matrix declares this side REGISTRY-GENERATED; a hand-kept
+ * The census — every `<repoRoot>/<name>/.git` checkout, plus the vault as `~/selfco` when it
+ * is one. core's fleet-onboard surface matrix declares this side REGISTRY-GENERATED; a hand-kept
  * list here is how repos founded after the 2026-07-25 walk (play-well, dealdesk) went invisible.
- * Null when the root can't be read from this vantage — the caller falls back to the dated
- * authored record, which stays stale-capable and badged by `asOf` (RFI C17).
+ * When the root can't be read from this vantage it falls back to the dated authored record,
+ * which stays stale-capable and badged by `asOf` (RFI C17) — and the health entry goes
+ * `degraded` so the fallback is reported, not just inferable from a missing `live` flag.
  */
-export function readLiveCensus(
+export function readCensus(
   repoRoot: string,
   vaultRoot: string,
   authored: FleetAuthoredData,
   now: Date,
-): CensusRecord | null {
+): { census: CensusRecord; health: AdapterHealth } {
+  const health: AdapterHealth = { name: 'fleet-structure-census', status: 'up', itemCount: 0 };
   let entries: string[];
   try {
     entries = readdirSync(repoRoot);
-  } catch {
-    return null;
+  } catch (err) {
+    const census = authored.census;
+    health.status = 'degraded';
+    health.itemCount = census.repos.length;
+    health.lastError = err instanceof Error ? err.message : String(err);
+    health.note = `census root ${repoRoot} unreadable — serving the dated record (as of ${census.asOf})`;
+    return { census, health };
   }
   const repos = entries
     .filter((name) => !name.startsWith('.') && existsSync(path.join(repoRoot, name, '.git')))
     .sort();
   if (existsSync(path.join(vaultRoot, '.git'))) repos.push('~/selfco');
+  health.itemCount = repos.length;
+  health.note = `${repos.length} checkout(s) walked live under ${repoRoot}`;
   return {
-    asOf: now.toISOString().slice(0, 10),
-    source: `live readdir ${repoRoot}/*/.git`,
-    repos,
-    // Renames still resolve; an alias whose old name is gone from disk is simply never hit.
-    aliases: authored.census.aliases,
-    live: true,
+    census: {
+      asOf: now.toISOString().slice(0, 10),
+      source: `live readdir ${repoRoot}/*/.git`,
+      repos,
+      // Renames still resolve; an alias whose old name is gone from disk is simply never hit.
+      aliases: authored.census.aliases,
+      live: true,
+    },
+    health,
   };
 }
 
@@ -274,9 +286,12 @@ export function buildFleetStructureSnapshot(opts: FleetStructureOptions = {}): F
   const vaultRoot = opts.vaultRoot ?? config.profile.vaultRoot;
   const baseAuthored = opts.authored ?? FLEET_AUTHORED;
   const now = opts.now ?? new Date();
-  const census =
-    readLiveCensus(opts.censusRoot ?? config.handoff.repoRoot, vaultRoot, baseAuthored, now) ??
-    baseAuthored.census;
+  const { census, health: censusHealth } = readCensus(
+    opts.censusRoot ?? config.handoff.repoRoot,
+    vaultRoot,
+    baseAuthored,
+    now,
+  );
   const authored: FleetAuthoredData = { ...baseAuthored, census };
 
   const { northstars, roadmaps, registryHealth, roadmapsHealth } = readRegistry(coreRoot);
@@ -311,6 +326,7 @@ export function buildFleetStructureSnapshot(opts: FleetStructureOptions = {}): F
       roadmaps: roadmapsHealth,
       wayfinder: wayfinderHealth,
       vault: vaultHealth,
+      census: censusHealth,
     },
   };
 }
