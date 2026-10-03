@@ -10,6 +10,7 @@ import {
   parseFrontmatter,
   tallySlices,
   type AdapterHealth,
+  type CensusRecord,
   type FleetAuthoredData,
   type FleetStructureSnapshot,
   type Frontmatter,
@@ -34,6 +35,8 @@ import { FLEET_AUTHORED } from '../fleet-authored.js';
  *   wayfinder  core/decisions/wayfinder/*.md frontmatter — the decision frontier
  *   vault      ~/selfco/wiki/{sources,entities,concepts,synthesis} live file counts
  *              (precedent: adapters/loop.ts crossing into ~/selfco)
+ *   census     live readdir of every `<repoRoot>/<name>/.git` (core fleet-onboard surface 15);
+ *              the dated authored record is only the fallback when that root is unreadable
  *
  * A missing sibling repo degrades THAT entry with a health note, never the snapshot.
  * Served by /api/fleet-structure (REST beside the aggregate — not the G1 facade, RFI C16).
@@ -224,9 +227,44 @@ function readVault(
   }
 }
 
+/**
+ * The live census — every `<repoRoot>/<name>/.git` checkout, plus the vault as `~/selfco` when
+ * it is one. core's fleet-onboard surface matrix declares this side REGISTRY-GENERATED; a hand-kept
+ * list here is how repos founded after the 2026-07-25 walk (play-well, dealdesk) went invisible.
+ * Null when the root can't be read from this vantage — the caller falls back to the dated
+ * authored record, which stays stale-capable and badged by `asOf` (RFI C17).
+ */
+export function readLiveCensus(
+  repoRoot: string,
+  vaultRoot: string,
+  authored: FleetAuthoredData,
+  now: Date,
+): CensusRecord | null {
+  let entries: string[];
+  try {
+    entries = readdirSync(repoRoot);
+  } catch {
+    return null;
+  }
+  const repos = entries
+    .filter((name) => !name.startsWith('.') && existsSync(path.join(repoRoot, name, '.git')))
+    .sort();
+  if (existsSync(path.join(vaultRoot, '.git'))) repos.push('~/selfco');
+  return {
+    asOf: now.toISOString().slice(0, 10),
+    source: `live readdir ${repoRoot}/*/.git`,
+    repos,
+    // Renames still resolve; an alias whose old name is gone from disk is simply never hit.
+    aliases: authored.census.aliases,
+    live: true,
+  };
+}
+
 export interface FleetStructureOptions {
   coreRoot?: string;
   vaultRoot?: string;
+  /** Parent of the sibling checkouts the live census walks. Defaults to config.handoff.repoRoot. */
+  censusRoot?: string;
   authored?: FleetAuthoredData;
   now?: Date;
 }
@@ -234,8 +272,12 @@ export interface FleetStructureOptions {
 export function buildFleetStructureSnapshot(opts: FleetStructureOptions = {}): FleetStructureSnapshot {
   const coreRoot = opts.coreRoot ?? config.delivery.coreRoot;
   const vaultRoot = opts.vaultRoot ?? config.profile.vaultRoot;
-  const authored = opts.authored ?? FLEET_AUTHORED;
+  const baseAuthored = opts.authored ?? FLEET_AUTHORED;
   const now = opts.now ?? new Date();
+  const census =
+    readLiveCensus(opts.censusRoot ?? config.handoff.repoRoot, vaultRoot, baseAuthored, now) ??
+    baseAuthored.census;
+  const authored: FleetAuthoredData = { ...baseAuthored, census };
 
   const { northstars, roadmaps, registryHealth, roadmapsHealth } = readRegistry(coreRoot);
   const { maps, health: wayfinderHealth } = readWayfinder(coreRoot, authored);
