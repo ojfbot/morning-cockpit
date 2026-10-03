@@ -33,7 +33,7 @@ export function LoopSection() {
 
   const healthNotes = [snap.health.dispositions, snap.health.odometer, snap.health.audit, snap.health.hygiene]
     .filter((h) => h.status !== 'up')
-    .map((h) => `${h.name}: ${h.status}${h.lastError || h.note ? ` — ${h.lastError ?? h.note}` : ''}`);
+    .map((h) => `${h.name}: ${h.status}${h.lastError || h.note ? ` — ${h.lastError || h.note}` : ''}`);
 
   return (
     <Section
@@ -103,8 +103,13 @@ function HygieneBlock({ snap }: { snap: LoopSnapshot }) {
         <span className="loop-stat">output · {state.output}</span>
       </div>
       <p className="delivery-empty">
-        Schedule {state.scheduleRule} · next scheduled {state.nextRunAt ?? 'unknown'}
+        Raw schedule rule {state.scheduleRule} · next occurrence (UTC) {state.nextRunAt ?? 'unknown'}
       </p>
+      {(fire.kind === 'never-fired' || fire.kind === 'missed') && fire.historyUncertain && (
+        <p className="delivery-empty">
+          No retained run history after the declared cadence; prior pauses and retention are unknown.
+        </p>
+      )}
       {fire.kind === 'unknown' && <p className="delivery-empty">{fire.reason}</p>}
     </div>
   );

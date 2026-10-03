@@ -93,8 +93,8 @@ export interface LoopHealth {
 }
 
 export type HygieneFiring =
-  | { kind: 'never-fired' }
-  | { kind: 'missed'; nextRunAt: string }
+  | { kind: 'never-fired'; historyUncertain: boolean }
+  | { kind: 'missed'; nextRunAt: string; historyUncertain: boolean }
   | { kind: 'succeeded' | 'failed'; observedAt: string; status: string }
   | { kind: 'running'; observedAt: string }
   | { kind: 'unknown'; reason: string };
@@ -148,7 +148,7 @@ function parseReceipt(value: unknown): { observedAt: string; status: string } {
   return { observedAt: value.observedAt, status: value.status };
 }
 
-/** Mirrors core scripts/codex-automation-status.mjs at b062d96. Private IDs stop here. */
+/** Mirrors core scripts/lib/codex-automation.mjs @ 2026-10-02 (5abd7d6). Private IDs stop here. */
 export function parseCodexHygiene(raw: unknown): HygieneStatus {
   if (!isRecord(raw) || raw.id !== 'selfco-vault-hygiene' || raw.scheduler !== 'codex') {
     throw new Error('invalid Codex automation identity');
@@ -173,23 +173,22 @@ export function parseCodexHygiene(raw: unknown): HygieneStatus {
     throw new Error('invalid Codex warning');
   }
   const nextRunAt = raw.schedule.nextRunAt;
+  const historyUncertain = raw.warning !== undefined;
   let firing: HygieneFiring;
   switch (raw.firing) {
     case 'never-fired':
       if (raw.receipt !== undefined || raw.output !== undefined) throw new Error('unexpected Codex run receipt');
-      firing = raw.warning === undefined ? { kind: 'never-fired' } : {
-        kind: 'unknown',
-        reason: 'No run history after the declared cadence; prior pauses and retention are unknown',
-      };
+      firing = { kind: 'never-fired', historyUncertain };
       break;
     case 'missed':
       if (!nextRunAt || raw.receipt !== undefined || raw.output !== undefined) throw new Error('invalid missed run');
-      firing = { kind: 'missed', nextRunAt };
+      firing = { kind: 'missed', nextRunAt, historyUncertain };
       break;
     case 'succeeded':
     case 'failed':
     case 'running': {
       if (raw.output !== 'unverified') throw new Error('invalid Codex output state');
+      if (historyUncertain) throw new Error('unexpected Codex history warning');
       const receipt = parseReceipt(raw.receipt);
       firing = raw.firing === 'running'
         ? { kind: 'running', observedAt: receipt.observedAt }
@@ -198,6 +197,7 @@ export function parseCodexHygiene(raw: unknown): HygieneStatus {
     }
     case 'unknown':
       if (raw.output !== 'unverified') throw new Error('invalid Codex output state');
+      if (historyUncertain) throw new Error('unexpected Codex history warning');
       parseReceipt(raw.receipt);
       firing = { kind: 'unknown', reason: 'Codex run status is unknown' };
       break;

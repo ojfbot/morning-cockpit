@@ -44,6 +44,16 @@ describe('hygiene CLI adapter', () => {
     expect(result.health.hygiene).toMatchObject({ status: 'down', lastError: 'Codex automation reader returned malformed data' });
   });
 
+  it.each([
+    ['non-zero exit', 'process.exit(2)'],
+    ['oversized output', 'process.stdout.write("x".repeat(70 * 1024))'],
+  ])('reports %s in status and health', async (_case, source) => {
+    reader(source);
+    const result = await snapshot();
+    expect(result.hygiene).toEqual({ kind: 'unavailable', reason: 'Codex automation reader failed or timed out' });
+    expect(result.health.hygiene).toMatchObject({ status: 'down', lastError: 'Codex automation reader failed or timed out' });
+  });
+
   it('keeps the event loop responsive while the reader runs', async () => {
     reader(`await new Promise(resolve => setTimeout(resolve, 500));
       process.stdout.write(JSON.stringify({id:'selfco-vault-hygiene',scheduler:'codex',

@@ -21,6 +21,8 @@ import {
 import { config } from '../config.js';
 
 const execFileAsync = promisify(execFile);
+// Core may run two sequential sqlite3 reads, each with its own 3-second limit.
+const HYGIENE_TIMEOUT_MS = 8_000;
 
 /**
  * Loop adapter (read-only) — assembles the self-improvement telemetry loop from three
@@ -108,7 +110,7 @@ async function readHygiene(): Promise<{ status: HygieneStatus; health: AdapterHe
   let stdout: string;
   try {
     ({ stdout } = await execFileAsync(process.execPath, [script], {
-      encoding: 'utf8', timeout: 4000, maxBuffer: 64 * 1024,
+      encoding: 'utf8', timeout: HYGIENE_TIMEOUT_MS, maxBuffer: 64 * 1024,
     }));
   } catch {
     health.status = 'down';

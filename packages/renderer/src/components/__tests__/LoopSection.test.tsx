@@ -8,7 +8,7 @@ const snapshot: LoopSnapshot = vi.hoisted(() => ({
   hygiene: {
     kind: 'configured', scheduler: 'Codex', scheduleRule: 'FREQ=DAILY;BYHOUR=9;BYMINUTE=0',
     nextRunAt: '2026-10-03T14:01:22.000Z',
-    firing: { kind: 'never-fired' },
+    firing: { kind: 'never-fired', historyUncertain: false },
     output: 'unverified',
   },
   capture: { total: 0, last7d: 0, stale: true },
@@ -44,7 +44,7 @@ describe('Selfco hygiene cockpit projection', () => {
     expect(screen.getByText('configured · Codex')).toBeInTheDocument();
     expect(screen.getByText('firing · no recorded run')).toBeInTheDocument();
     expect(screen.getByText('output · unverified')).toBeInTheDocument();
-    expect(screen.getByText(/Schedule FREQ=DAILY;BYHOUR=9;BYMINUTE=0/)).toBeInTheDocument();
+    expect(screen.getByText(/Raw schedule rule FREQ=DAILY;BYHOUR=9;BYMINUTE=0/)).toBeInTheDocument();
   });
 
   it.each([
@@ -65,8 +65,17 @@ describe('Selfco hygiene cockpit projection', () => {
 
   it('renders a missed occurrence only when the producer reports one', async () => {
     show({ kind: 'configured', scheduler: 'Codex', scheduleRule: 'FREQ=DAILY',
-      firing: { kind: 'missed', nextRunAt: '2026-10-02T14:01:22.000Z' }, output: 'unverified' });
+      firing: { kind: 'missed', nextRunAt: '2026-10-02T14:01:22.000Z', historyUncertain: false }, output: 'unverified' });
     expect(await screen.findByText(/firing · missed · due/)).toBeInTheDocument();
+  });
+
+  it('shows a recorded missed occurrence and the old-history caveat together', async () => {
+    show({ kind: 'configured', scheduler: 'Codex', scheduleRule: 'FREQ=DAILY',
+      firing: { kind: 'missed', nextRunAt: '2026-10-02T14:01:22.000Z', historyUncertain: true },
+      output: 'unverified' });
+    expect(await screen.findByText(/firing · missed · due/)).toBeInTheDocument();
+    expect(screen.getByText(/prior pauses and retention are unknown/)).toBeInTheDocument();
+    expect(screen.getByText('output · unverified')).toBeInTheDocument();
   });
 
   it('shows uncertainty and adapter failure', async () => {

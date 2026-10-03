@@ -269,6 +269,11 @@ a number down. A deviation logged is the plan telling us what it didn't know.
   or freshness contract. Used the operator-approved asynchronous, read-only CLI boundary
   with an unavailable state, and documented its runtime dependency in ADR-0001.
 
+- **#23 — A missed occurrence can also carry an old-history warning.** The consumer plan
+  treated the producer's `missed` and uncertainty states as exclusive. Core emits its
+  retained-schedule verdict and retention warning independently, so the published head
+  dropped the warning on a missed occurrence. Kept both facts in the read model and UI.
+
 ## Log
 
 - **2026-07-28** — Branched `feat/anthropic-watch-stage1` from `origin/main` (`cec5678`).

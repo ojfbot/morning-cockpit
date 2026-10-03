@@ -24,11 +24,13 @@ describe('Codex hygiene boundary', () => {
 
   it('distinguishes an uncertain empty history from a recorded overdue occurrence', () => {
     expect(parseCodexHygiene({ ...configured, firing: 'never-fired', warning: 'old empty history' }))
-      .toMatchObject({ firing: { kind: 'unknown' } });
+      .toMatchObject({ firing: { kind: 'never-fired', historyUncertain: true } });
+    expect(parseCodexHygiene({ ...configured, firing: 'missed', warning: 'old empty history' }))
+      .toMatchObject({ firing: { kind: 'missed', nextRunAt, historyUncertain: true } });
     expect(parseCodexHygiene({ ...configured, firing: 'missed' }))
-      .toMatchObject({ firing: { kind: 'missed', nextRunAt } });
+      .toMatchObject({ firing: { kind: 'missed', nextRunAt, historyUncertain: false } });
     expect(parseCodexHygiene({ ...configured, firing: 'never-fired' }))
-      .toMatchObject({ firing: { kind: 'never-fired' } });
+      .toMatchObject({ firing: { kind: 'never-fired', historyUncertain: false } });
   });
 
   it('preserves disabled and unavailable states', () => {
@@ -48,6 +50,7 @@ describe('Codex hygiene boundary', () => {
     ['unknown state', { ...configured, firing: 'invented' }],
     ['invented output verification', { ...configured, firing: 'succeeded', receipt, output: 'verified' }],
     ['malformed uncertainty warning', { ...configured, firing: 'never-fired', warning: 42 }],
+    ['warning with a run receipt', { ...configured, firing: 'succeeded', receipt, output: 'unverified', warning: 'old empty history' }],
     ['inconsistent disabled state', { ...configured, configured: 'disabled', firing: 'succeeded' }],
   ])('rejects %s', (_case, input) => {
     expect(() => parseCodexHygiene(input)).toThrow();
