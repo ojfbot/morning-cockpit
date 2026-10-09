@@ -7,6 +7,8 @@ a number down. A deviation logged is the plan telling us what it didn't know.
 
 ## Deviations
 
+- MC-UX-01 planning assumed the project single-write description fully matched current code; the committed app also exposes core-backed claim and internal cockpit writes. Inventoried existing behavior, preserved it, and gated any extension on an owner decision rather than treating the prose as proof of the runtime boundary.
+
 - MC-UX-01 capture assumed the imported files passed the repository whitespace check; four source lines contain trailing whitespace, including Markdown hard breaks. Preserved byte identity and checked whitespace only on authored capture and planning files.
 
 - MC-UX-01 capture assumed a clean application checkout; the primary checkout contains concurrent uncommitted PR Train work. Captured from committed HEAD in an isolated worktree and excluded the parallel changes.
