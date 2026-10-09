@@ -1,0 +1,318 @@
+{
+  "capture_format": "mc-ux-01-source-capture/1",
+  "status": "captured-exploration",
+  "source": "/Users/yuri/Desktop/design_handoff_mc_ux_01",
+  "source_author": "Claude Design, as attributed by the supplied bundle",
+  "operator_scope": "Capture and plan only, confirmed in this Codex chat",
+  "captured_at_utc": "2026-10-09T01:52:14Z",
+  "operator_date": "2026-10-08",
+  "operator_timezone": "America/Chicago",
+  "baseline_commit": "1b15bc95fbe7d4fdfa720e7acbae2ada5027871d",
+  "bundle_path": "research/design-handoff-mc-ux-01",
+  "file_count": 60,
+  "total_bytes": 1670171,
+  "inventory_sha256": "7fdbbe469615cd3a819e15ac7681dd2b8f2c31e9c173c3adc5a012b12437bea2",
+  "inventory_digest_encoding": "UTF-8 records in sorted path order: path + NUL + sha256 + NUL + decimal bytes + LF",
+  "files": [
+    {
+      "path": "PR-BODY.md",
+      "bytes": 1215,
+      "sha256": "4f3d2a3d93434076c4355cddbe6417f036a829432e7e6a3ba13d193aa4f8f971"
+    },
+    {
+      "path": "PR.md",
+      "bytes": 741,
+      "sha256": "f5056d35799db800e61b50db60f22434231a16f61c7c16c6aee7e83af80db08f"
+    },
+    {
+      "path": "README.md",
+      "bytes": 7993,
+      "sha256": "ec0e824d24af3a2d4aa788224274cb9dc49e1a3cb08cbead1926c418a8098157"
+    },
+    {
+      "path": "design/Adaptive Workspace.dc.html",
+      "bytes": 49912,
+      "sha256": "b0491c82fdd4f8f2d43a8d58896a1009f27551a6e813d97938d90badea75e304"
+    },
+    {
+      "path": "design/Current State.dc.html",
+      "bytes": 53537,
+      "sha256": "096a41ad6d41fdcaee81642c9852430d3d1972a211e84083d346ea505c3c70db"
+    },
+    {
+      "path": "design/Design System.dc.html",
+      "bytes": 13849,
+      "sha256": "1df40ace65e7be2e29294b4e92a8e87756a8d985a6aa4da7d540391ddc9a10ab"
+    },
+    {
+      "path": "design/Dossier.dc.html",
+      "bytes": 9011,
+      "sha256": "05ba1d4dfdb54dbc8070f70df92da4f4933b50ef96adc04f26b8ac767774651e"
+    },
+    {
+      "path": "design/Open Loops.dc.html",
+      "bytes": 28180,
+      "sha256": "28d7412fe736792f7c741245e241202da62a08ccb99a91a2edbd959a3b229cb9"
+    },
+    {
+      "path": "design/Reading Room.dc.html",
+      "bytes": 48727,
+      "sha256": "be8118851fe92b16135e63bfbcb94a10d449089d1a191293a8988c59e04d54cf"
+    },
+    {
+      "path": "design/Work Graph v2.dc.html",
+      "bytes": 64861,
+      "sha256": "7b6a9fd82deb48158fc22e3c4610edac3fb99724ba0e52c915d22d2c382a9b20"
+    },
+    {
+      "path": "design/Work Graph.dc.html",
+      "bytes": 26140,
+      "sha256": "448bf2a6129c6cf90f13f11bfa09ba7e208fded25c3dfb25973cc91a7cd7377f"
+    },
+    {
+      "path": "design/data/snapshot.js",
+      "bytes": 36982,
+      "sha256": "64075b67037074c5e85e3ce2302c58e8634e2c53c8397567859cf777f6a3c9e6"
+    },
+    {
+      "path": "design/ds/cockpit.css",
+      "bytes": 5589,
+      "sha256": "1ef2ad4be8d0913ca60a99933f950b4e1f5fb0123773585c377612d4f9b9c2bc"
+    },
+    {
+      "path": "design/ds/correspond.js",
+      "bytes": 12954,
+      "sha256": "0ae608a18126027441cd2ef4d4da6d37c5dc21d2c9b73870184224ad696b4003"
+    },
+    {
+      "path": "design/ds/refs.js",
+      "bytes": 28368,
+      "sha256": "0b10248dd4d2f925cae848b17e12198b231389cdf6f2e727ffed2de1eecb3de3"
+    },
+    {
+      "path": "design/github.md",
+      "bytes": 3781,
+      "sha256": "840d2ea8acb7da1625a6a4f567d9a2db6c6107f6c41474184ec6e1e20f172e71"
+    },
+    {
+      "path": "design/handoff/README.md",
+      "bytes": 4978,
+      "sha256": "a16d5ddbaa0b92a3dff1653a16d1f1481013a0da57e84f9c1a87672e332dff0e"
+    },
+    {
+      "path": "design/handoff/audit.md",
+      "bytes": 7087,
+      "sha256": "d7cde285cd8addc24e3f8533e19f6a56a726a682caea23896e975943242b8596"
+    },
+    {
+      "path": "design/handoff/concepts.md",
+      "bytes": 6605,
+      "sha256": "ceba383ce8d9484a992584c1225e2b776249733f6c5378ce6a76ee38d1ab21d9"
+    },
+    {
+      "path": "design/handoff/decisions.md",
+      "bytes": 7791,
+      "sha256": "4f6d29f5efdf8428560d8d58ecec9088791317c29f955e361d91186a6008913b"
+    },
+    {
+      "path": "design/handoff/evaluation.md",
+      "bytes": 4221,
+      "sha256": "8c077ad707e2915bddf532748f3cf3cf642027d5d9e765a7d0258de68a40ac17"
+    },
+    {
+      "path": "design/handoff/habit-model.md",
+      "bytes": 3910,
+      "sha256": "82dd83d4265140c484fd88a51a1b67a2edf51e7ad61367bff650ff10dea45e6f"
+    },
+    {
+      "path": "design/handoff/index.json",
+      "bytes": 4104,
+      "sha256": "605a23cab6c88d1155901cffdf461971908d3831a4d0b9f3b6b8237f245f103f"
+    },
+    {
+      "path": "design/handoff/information-model.md",
+      "bytes": 6038,
+      "sha256": "b3c10a3b153fed798afcb2134b964a41e3c2fd42cb757b476741a86d8d9bf1ba"
+    },
+    {
+      "path": "design/handoff/issues/ISSUE-001-asked-by-provenance.md",
+      "bytes": 4028,
+      "sha256": "e812bb22d45301ba763d66ac3f669cdf85777f6a2b97ca31ae01ab6aa135d011"
+    },
+    {
+      "path": "design/handoff/open-questions.md",
+      "bytes": 3962,
+      "sha256": "124fdf65187d3cb713a345dd05254a54c606f8fec61b5be977bfd8a13a69c943"
+    },
+    {
+      "path": "design/handoff/roadmap.md",
+      "bytes": 3831,
+      "sha256": "847e7419baac6dc97c6584c6d78c8a826e39b56f6e5e4f9691fdeab1f9e11b44"
+    },
+    {
+      "path": "design/handoff/session-recap.md",
+      "bytes": 3918,
+      "sha256": "1c965c19a33dec0278f6d6618a2a9a9d2d81d7d1dc975551fbce8401dffe4edd"
+    },
+    {
+      "path": "design/handoff/specs/C-work-graph.md",
+      "bytes": 2080,
+      "sha256": "9ee385a3ae6d2e0dfea99a4b67269ec7ef8a15ab7e0d1c653d9b364baaae13f8"
+    },
+    {
+      "path": "design/handoff/specs/D-adaptive-workspace.md",
+      "bytes": 3562,
+      "sha256": "25bb119c5de2d7362d22d465230d8d18a0dbbff0ddb32477f3ae5e4e5015759d"
+    },
+    {
+      "path": "design/handoff/specs/D2-reading-room.md",
+      "bytes": 3526,
+      "sha256": "cc83edf371a0c7eefacdf39eb8dab1cb0eb4617b3c853fb16467c53bf3da0b06"
+    },
+    {
+      "path": "design/handoff/specs/E-open-loops.md",
+      "bytes": 2134,
+      "sha256": "1047aa723d09df0d4a7a22d356c6d57f6ec7bd91d621eb1ab6d1e76668c663b6"
+    },
+    {
+      "path": "design/handoff/terminology.md",
+      "bytes": 3950,
+      "sha256": "8268a1da5d686ec6783748a72f232bd46154eb0777a7c0ab986de5c36fe6c70f"
+    },
+    {
+      "path": "design/support.js",
+      "bytes": 69150,
+      "sha256": "8fe7df74405f3c55f49b7249c74ea1397e65d07dea2b1bd3b4a489bec2e28cbe"
+    },
+    {
+      "path": "design/uploads/morning-cockpit-ux-discovery-and-experimental-redesign.md",
+      "bytes": 14158,
+      "sha256": "b12883e7b6a9c7246d7242bf65ae1a7a965f019a0316d355cee43639e044e22e"
+    },
+    {
+      "path": "screenshots/01-adaptive-corr.jpg",
+      "bytes": 45508,
+      "sha256": "93f69b658bf82161143baee27c587f037c3879e9b1d948c2e3ef0bff9e4ddf01"
+    },
+    {
+      "path": "screenshots/01-adaptive-dispatch.jpg",
+      "bytes": 45701,
+      "sha256": "e14a9a53a8663704587c6c209656c145c599b43a0ed1c46e8809374368f79d34"
+    },
+    {
+      "path": "screenshots/01-adaptive-dispatched.jpg",
+      "bytes": 43008,
+      "sha256": "85badf087f9c5cfcdaf127bbb2fce04299da4d8be1c3db5545555136ca766ac6"
+    },
+    {
+      "path": "screenshots/01-adaptive-v3.jpg",
+      "bytes": 47543,
+      "sha256": "d8d5d8a6496844260e541a6474f1f90f170e6ca07c6a675ad52c1787f7a29138"
+    },
+    {
+      "path": "screenshots/01-loops-card.jpg",
+      "bytes": 43150,
+      "sha256": "da42d27320a08f00df9e775b63ed22a127b95606c8b42df70c08c8fdf459c5db"
+    },
+    {
+      "path": "screenshots/02-adaptive-corr.jpg",
+      "bytes": 47494,
+      "sha256": "c02120b4f581c66813e2f48f227d2f977942653e59363884c1fc9620b24eb0d4"
+    },
+    {
+      "path": "screenshots/02-adaptive-dispatch.jpg",
+      "bytes": 47662,
+      "sha256": "ba61ace27c02748c6158109c2a038054072930f1e3b675df5f0a6210c395bb1d"
+    },
+    {
+      "path": "screenshots/02-adaptive-dispatched.jpg",
+      "bytes": 43008,
+      "sha256": "b3511a2c7e67ea8e4f950f658c4a508ddccf7fb75c2eaba56ca653485bec7138"
+    },
+    {
+      "path": "screenshots/02-adaptive-v3.jpg",
+      "bytes": 43092,
+      "sha256": "fd73db5cc7cfd2109ee8eb3af7312c1a4a66cfe9bc3b4529a3b006b4ef15a7a0"
+    },
+    {
+      "path": "screenshots/02-loops-card.jpg",
+      "bytes": 42484,
+      "sha256": "6319f23640abafabe72354d7d1fea8c3599eada56d6bc7185c6e56a21d57085e"
+    },
+    {
+      "path": "screenshots/03-adaptive-dispatched.jpg",
+      "bytes": 43008,
+      "sha256": "7b95e835b9316807ebec10b0908f7830935e566f2630fa59c135564a4cefe1f1"
+    },
+    {
+      "path": "screenshots/03-adaptive-v3.jpg",
+      "bytes": 43008,
+      "sha256": "7ab1d9ec63a1ff7b7c7fc1adf6b87769e98446ac86e7ba013c4c94eb7dcd4ac0"
+    },
+    {
+      "path": "screenshots/04-adaptive-dispatched.jpg",
+      "bytes": 43008,
+      "sha256": "6fc7c4b6c278765bde370a65ecd7226ef6767f84d524f991d5a6cceadc94fba4"
+    },
+    {
+      "path": "screenshots/debug.jpg",
+      "bytes": 41461,
+      "sha256": "08f0cec78a6be114ac175f24ae721f31ef77fb3f921e1435cae4df5bd2a436ff"
+    },
+    {
+      "path": "screenshots/loops-expand.jpg",
+      "bytes": 45781,
+      "sha256": "6bf567887973d9692127d2bd04dcd93d06d8e1818a5ff54ac46d5a5f9cea170a"
+    },
+    {
+      "path": "screenshots/loops-rail.jpg",
+      "bytes": 42691,
+      "sha256": "12af7263b85cf7cfc88717020245ac99bf2d35a68cfb19377c3d23bd8806293f"
+    },
+    {
+      "path": "screenshots/reading-room-community.jpg",
+      "bytes": 50146,
+      "sha256": "c9dc30e48cccda8cc77f612d770fa22073a7e44cbfb08b294c585ae8b7f729c7"
+    },
+    {
+      "path": "screenshots/reading-room-papers.jpg",
+      "bytes": 48218,
+      "sha256": "55b59ca029d892d6df71d2d03941fdfa03488cf1aefc59e875c668502c66b2a5"
+    },
+    {
+      "path": "screenshots/screen-adaptive-workspace.jpg",
+      "bytes": 43147,
+      "sha256": "31e71280893d6c304137545b12f40a803ac0546803297c10fd61828b00770beb"
+    },
+    {
+      "path": "screenshots/screen-current-state.jpg",
+      "bytes": 41275,
+      "sha256": "480008657612c559c8910998c6c7d0fcb9f0281337a43d9351fc8389e7d4610f"
+    },
+    {
+      "path": "screenshots/screen-design-system.jpg",
+      "bytes": 40304,
+      "sha256": "1c9d585f7fc9d463bf73a7e23c1fcd11fa33596581dd3a4809bb44248746cff3"
+    },
+    {
+      "path": "screenshots/screen-open-loops.jpg",
+      "bytes": 46654,
+      "sha256": "3f8cb255ecb751cce54486b70127631d3a6933db40310716343fa042a17c5beb"
+    },
+    {
+      "path": "screenshots/screen-reading-room.jpg",
+      "bytes": 48263,
+      "sha256": "b59ed38879295fed4f8db1c1ecbff8c3ed803ed1b04b29da54fa131c233de2b3"
+    },
+    {
+      "path": "screenshots/screen-work-graph-v2.jpg",
+      "bytes": 47677,
+      "sha256": "2faa2d70c0f794dcde5d3a66236eda07b63c1bd297b9edc03c6e5bc76054b099"
+    },
+    {
+      "path": "screenshots/screen-work-graph.jpg",
+      "bytes": 46007,
+      "sha256": "47eda2e0a90399410bbf2d5144c74e6c5e135eddff3a74913676764df233e996"
+    }
+  ]
+}

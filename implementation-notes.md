@@ -7,6 +7,12 @@ a number down. A deviation logged is the plan telling us what it didn't know.
 
 ## Deviations
 
+- MC-UX-01 capture assumed the imported files passed the repository whitespace check; four source lines contain trailing whitespace, including Markdown hard breaks. Preserved byte identity and checked whitespace only on authored capture and planning files.
+
+- MC-UX-01 capture assumed a clean application checkout; the primary checkout contains concurrent uncommitted PR Train work. Captured from committed HEAD in an isolated worktree and excluded the parallel changes.
+- MC-UX-01 capture assumed the exported screen references were complete; the baseline CSS path is missing and the manifest and dossier omit later screens. Preserved all source bytes, recorded the gaps in `planning/mc-ux-01/CAPTURE.md`, and left preview repair to a reviewed revision.
+- MC-UX-01 planning assumed a standalone fleet-runner repository and an operative cockpit correspondence contract; the local fleet-runner directory contains only notes, implementation belongs to core, and the published pilot contract remains Proposed. Recorded pinned core dependencies and a registration proposal without writing sibling roadmaps or adopting the schema.
+
 - **#1 — launchd fires a deterministic Node script, not `claude -p`.**
   The plan (and the handoff before it) specified a LaunchAgent firing `claude -p`. Once the
   scorer was settled as Ollama-local, an agentic headless run buys nothing: it adds cost,

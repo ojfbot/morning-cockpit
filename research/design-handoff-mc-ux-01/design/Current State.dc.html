@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="packages/renderer/src/styles/tokens.css">
+<style>
+*{box-sizing:border-box;} html,body{margin:0;height:100%;max-width:100%;overflow-x:hidden;}
+body{background:var(--gt-bg);color:var(--gt-text-primary);font-family:var(--gt-font-sans);font-weight:500;-webkit-font-smoothing:antialiased;}
+a{color:var(--ink);text-decoration:none;} a:hover{text-decoration:underline;text-decoration-color:var(--red);}
+:focus-visible{outline:2px solid var(--red);outline-offset:2px;}
+</style>
+</helmet>
+<div data-screen-label="Current state — morning-cockpit@main renderer" style="min-height:100%;display:flex;flex-direction:column;">
+  <div style="font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink);background:var(--paper-2);border-bottom:2px solid var(--ink);padding:6px var(--pad-main);display:flex;gap:16px;flex-wrap:wrap;">
+    <span>Recreation · packages/renderer @ main · App.tsx → Masthead · Briefing · Fleet · CriticalPath · Delivery · Beads · Reading · Research · Loop · ChatSidebar · HealthBar</span>
+    <span style="margin-left:auto;color:var(--ink-2);">Data: repo files + 2026-08-08 audit · live feeds summarised</span>
+  </div>
+  <header style="padding:clamp(16px,3vw,28px) var(--pad-main) 0;border-bottom:3px solid var(--ink);background:var(--paper);">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding-bottom:8px;border-bottom:1px solid var(--rule);font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);">
+      <span>LOCAL EDITION · No. {{ totalItems }}</span>
+      <span style="text-align:center;">{{ dateLine }}</span>
+      <span style="display:flex;align-items:center;gap:12px;justify-content:flex-end;">
+        <span>{{ timeLine }}</span>
+        <button onClick="{{ toggleDensity }}" style="display:inline-flex;align-items:center;font-family:var(--mono);font-size:10px;letter-spacing:.1em;padding:3px 8px;color:var(--ink-2);background:transparent;border:1px solid var(--rule-strong);border-radius:0;cursor:pointer;" style-hover="border-color:var(--red);color:var(--red);">{{ densityLabel }}</button>
+        <button onClick="{{ toggleTheme }}" style="display:inline-flex;align-items:center;font-family:var(--mono);font-size:10px;letter-spacing:.1em;padding:3px 8px;color:var(--ink-2);background:transparent;border:1px solid var(--rule-strong);border-radius:0;cursor:pointer;" style-hover="border-color:var(--red);color:var(--red);">{{ themeLabel }}</button>
+      </span>
+    </div>
+    <h1 style="margin:clamp(14px,2.4vw,26px) 0 0;font-family:var(--sans);font-weight:800;font-size:clamp(48px,9.5vw,142px);letter-spacing:-.045em;line-height:.82;text-transform:uppercase;color:var(--ink);">Morning<br>Cockpit</h1>
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:32px;padding:clamp(14px,2vw,22px) 0 clamp(16px,2.4vw,26px);flex-wrap:wrap;">
+      <p style="margin:0;max-width:30ch;flex:1 1 360px;font-weight:700;font-size:clamp(19px,2.4vw,30px);line-height:1.06;letter-spacing:-.015em;color:var(--ink);">Quiet night. <span style="color:var(--red);">{{ pickupWord }} briefs</span> want a decision, and <span style="color:var(--red);">zero tasks</span> are going stale while you sleep.</p>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;font-family:var(--mono);font-size:11px;letter-spacing:.04em;color:var(--ink-3);white-space:nowrap;">
+        <span>{{ totalItems }} BEADS SCANNED</span>
+        <span>{{ agentsLive }} LIVE · {{ agentsIdle }} IDLE<span style="color:var(--red);"> · {{ agentsStalled }} STALLED</span> AGENTS · 0 OVERNIGHT EVENTS</span>
+      </div>
+    </div>
+  </header>
+
+  <div style="flex:1;display:flex;align-items:stretch;min-height:0;">
+    <main style="flex:1;min-width:0;display:flex;flex-direction:column;gap:var(--gap-section);padding:var(--gap-section) var(--pad-main);">
+
+      <!-- 00 Briefing -->
+      <section id="briefing" data-screen-label="00 Briefing" style="display:flex;flex-direction:column;">
+        <header style="display:flex;align-items:flex-end;justify-content:space-between;gap:24px;padding-bottom:12px;margin-bottom:24px;border-bottom:3px solid var(--ink);">
+          <div style="min-width:0;"><span style="display:block;font-family:var(--mono);font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--red);margin-bottom:8px;">00 — BRIEFING</span><h2 style="margin:0;font-weight:800;font-size:clamp(34px,5vw,58px);letter-spacing:-.035em;line-height:.9;">The First Move</h2></div>
+          <span style="font-family:var(--mono);font-size:11px;line-height:1.5;text-align:right;color:var(--ink-3);">deterministic · ↻<br>scoped to morning-cockpit · every thread ends in a handoff artifact</span>
+        </header>
+        <div style="border:1px solid var(--rule);background:var(--paper-2);">
+          <div style="display:grid;grid-template-columns:300px 1fr;">
+            <nav style="display:flex;flex-direction:column;border-right:1px solid var(--rule);">
+              <div style="font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);padding:12px 16px;border-bottom:1px solid var(--rule);">Seeded threads — {{ threadCount }}</div>
+              <sc-for list="{{ threads }}" as="t" hint-placeholder-count="4">
+                <button onClick="{{ t.go }}" style="{{ t.st }}">
+                  <span style="{{ t.tagSt }}">{{ t.tagLabel }}</span>
+                  <span style="font-size:14px;font-weight:700;line-height:1.25;color:var(--ink);">{{ t.title }}</span>
+                  <span style="font-family:var(--mono);font-size:10px;color:var(--ink-3);">{{ t.whyNow }}</span>
+                </button>
+              </sc-for>
+            </nav>
+            <div style="padding:16px 24px;min-width:0;">
+              <header style="display:flex;align-items:center;gap:8px;padding-bottom:12px;border-bottom:1px solid var(--rule);">
+                <span style="width:8px;height:8px;border-radius:50%;background:var(--green);flex:none;"></span>
+                <span style="font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink);">Chief of Staff</span>
+                <span style="margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--ink-3);">briefing · {{ active.id }}</span>
+              </header>
+              <span style="display:block;font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);margin:16px 0 8px;">Catch-up</span>
+              <p style="margin:0;padding-left:12px;border-left:2px solid var(--ink);font-size:14px;line-height:1.6;color:var(--ink-2);">{{ active.catchUp }}</p>
+              <span style="display:block;font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--red);margin:16px 0 8px;">Decision</span>
+              <p style="margin:0 0 16px;font-size:clamp(17px,1.8vw,21px);font-weight:700;line-height:1.3;color:var(--ink);">{{ active.question }}</p>
+              <div style="display:flex;flex-direction:column;gap:8px;">
+                <sc-for list="{{ branches }}" as="b" hint-placeholder-count="2">
+                  <button onClick="{{ b.go }}" style="{{ b.st }}">
+                    <span style="font-size:14px;font-weight:600;color:var(--ink);">{{ b.label }}</span>
+                    <sc-if value="{{ b.recommended }}" hint-placeholder-val="{{ false }}"><span style="margin-left:auto;font-family:var(--mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--red);border:1px solid var(--red);padding:1px 6px;">Recommended</span></sc-if>
+                  </button>
+                </sc-for>
+              </div>
+              <sc-if value="{{ showArtifact }}" hint-placeholder-val="{{ true }}">
+                <div style="margin-top:12px;border:1px solid var(--red);background:var(--card);padding:var(--pad-card);display:flex;flex-direction:column;gap:8px;">
+                  <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;"><span style="font-family:var(--mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--red);">Handoff Artifact · Draft</span><span style="margin-left:auto;font-family:var(--mono);font-size:9px;color:var(--ink-3);">morning-cockpit/.handoff/</span></div>
+                  <h4 style="margin:4px 0;font-size:15.5px;font-weight:700;line-height:1.3;">Pick up: {{ active.title }}</h4>
+                  <div style="display:flex;flex-direction:column;gap:2px;"><span style="font-family:var(--mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);">Align</span><p style="margin:0;font-size:13px;line-height:1.5;color:var(--ink-2);">{{ active.align }}</p></div>
+                  <div style="display:flex;flex-direction:column;gap:2px;"><span style="font-family:var(--mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);">Delivery task</span><p style="margin:0;font-size:13px;line-height:1.5;color:var(--ink-2);">{{ active.task }}</p></div>
+                  <div style="display:flex;flex-direction:column;gap:2px;"><span style="font-family:var(--mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);">Acceptance criteria</span>
+                    <ul style="margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:3px;"><sc-for list="{{ active.criteria }}" as="c" hint-placeholder-count="2"><li style="position:relative;padding-left:16px;font-size:13px;line-height:1.45;color:var(--ink-2);"><span style="position:absolute;left:0;color:var(--ink-3);">☐</span>{{ c }}</li></sc-for></ul></div>
+                  <p style="margin:4px 0 0;font-family:var(--mono);font-size:10px;color:var(--ink-3);">On delivery → closes {{ active.id }}</p>
+                  <div style="display:flex;align-items:center;gap:12px;margin-top:4px;"><button style="font-family:var(--mono);font-size:11px;color:var(--card);background:var(--red);border:none;padding:6px 12px;cursor:pointer;" title="Write the brief into the target repo (simulated here)">Approve &amp; emit →</button><span style="font-family:var(--mono);font-size:9px;color:var(--amber);">simulated — no write in this recreation</span></div>
+                </div>
+              </sc-if>
+              <sc-if value="{{ showDefer }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top:12px;border-left:2px solid var(--amber);padding:8px 16px;"><p style="margin:0 0 8px;font-size:13px;line-height:1.55;color:var(--ink-2);">Snoozes the item 7 days and logs the deferral on the bead.</p><div style="display:flex;align-items:center;gap:12px;"><button disabled style="font-family:var(--mono);font-size:11px;color:var(--ink-2);background:var(--paper-2);border:1px solid var(--rule-strong);padding:5px 11px;opacity:.55;">Snooze 7 days</button><span style="font-family:var(--mono);font-size:9px;color:var(--amber);">bead-snooze verb not built (§6)</span></div></div>
+              </sc-if>
+            </div>
+          </div>
+          <div style="border-top:1px solid var(--rule);">
+            <div style="font-family:var(--mono);font-size:10px;color:var(--ink-3);padding:8px 16px 0;">▸ context · this thread · grounded on today's snapshot</div>
+            <div style="display:flex;align-items:flex-end;gap:8px;padding:8px 16px 12px;"><textarea disabled rows="1" placeholder="Re-draft, go deeper, or change the framing…" style="flex:1;resize:none;font-family:var(--sans);font-size:13px;line-height:1.5;color:var(--ink);background:var(--card);border:1px solid var(--rule);padding:8px 12px;"></textarea><button disabled style="font-family:var(--mono);font-size:11px;color:var(--card);background:var(--red);border:none;padding:7px 14px;opacity:.5;">Send</button></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 01 Fleet -->
+      <section data-screen-label="01 Fleet" style="display:flex;flex-direction:column;">
+        <header style="display:flex;align-items:flex-end;justify-content:space-between;gap:24px;padding-bottom:12px;margin-bottom:24px;border-bottom:3px solid var(--ink);">
+          <div><span style="display:block;font-family:var(--mono);font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--red);margin-bottom:8px;">01 — FLEET</span><h2 style="margin:0;font-weight:800;font-size:clamp(34px,5vw,58px);letter-spacing:-.035em;line-height:.9;">Fleet</h2></div>
+          <span style="font-family:var(--mono);font-size:11px;line-height:1.5;text-align:right;color:var(--ink-3);">{{ repoCount }} repositories · {{ openBeads }} open beads<br>{{ fleetLive }} live · {{ fleetStale }} stale · {{ fleetDark }} dark</span>
+        </header>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(212px,1fr));gap:12px;">
+          <sc-for list="{{ repos }}" as="r" hint-placeholder-count="12">
+            <div role="button" tabindex="0" onClick="{{ r.pick }}" style="{{ r.st }}">
+              <div style="display:flex;align-items:center;gap:8px;"><span style="{{ r.dotSt }}"></span><span style="font-size:14px;font-weight:700;color:var(--ink);">{{ r.name }}</span><span style="margin-left:auto;font-family:var(--mono);font-size:9px;letter-spacing:.06em;color:var(--ink-3);border:1px solid var(--rule);padding:0 5px;">{{ r.phase }}</span></div>
+              <div style="font-size:12px;line-height:1.4;color:var(--ink-2);flex:1;">{{ r.roleLine }}</div>
+              <div style="display:flex;align-items:baseline;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--ink-3);border-top:1px solid var(--rule);padding-top:8px;"><span style="color:var(--red);">{{ r.openCount }} open</span><span>{{ r.last }}</span></div>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+
+      <!-- 02 Critical Path -->
+      <section data-screen-label="02 Critical Path" style="display:flex;flex-direction:column;">
+        <header style="display:flex;align-items:flex-end;justify-content:space-between;gap:24px;padding-bottom:12px;margin-bottom:24px;border-bottom:3px solid var(--ink);">
+          <div><span style="display:block;font-family:var(--mono);font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--red);margin-bottom:8px;">02 — CRITICAL PATH</span><h2 style="margin:0;font-weight:800;font-size:clamp(34px,5vw,58px);letter-spacing:-.035em;line-height:.9;">Critical Path</h2></div>
+          <span style="font-family:var(--mono);font-size:11px;line-height:1.5;text-align:right;color:var(--ink-3);">what blocks what<br>core is the chokepoint</span>
+        </header>
+        <p style="margin:0 0 24px;max-width:60ch;font-size:clamp(16px,1.8vw,20px);font-weight:700;line-height:1.3;">Three blockers stand between you and the coordination layer. The chokepoint is <span style="color:var(--red);">the core keep/discard metric</span> — three downstream beads wait on it.</p>
+        <div style="border-top:2px solid var(--ink);">
+          <sc-for list="{{ chains }}" as="c" hint-placeholder-count="3">
+            <div style="{{ c.rowSt }}">
+              <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:8px;">
+                <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;"><span style="{{ c.sevSt }}">{{ c.severity }}</span><span style="font-size:15px;font-weight:700;">{{ c.title }}</span><span style="font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);border:1px solid var(--rule);padding:1px 5px;" title="Hand-authored (seeded) — not derived from live repo deps">editorial</span></div>
+                <div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px;"><span style="font-family:var(--mono);font-size:9px;letter-spacing:.06em;color:var(--ink-3);">{{ c.relation }}</span><sc-for list="{{ c.blocks }}" as="b" hint-placeholder-count="3"><span style="font-family:var(--mono);font-size:10px;color:var(--ink-2);border:1px solid var(--rule);padding:1px 7px;">{{ b }}</span></sc-for></div>
+              </div>
+              <span style="flex:none;width:120px;text-align:right;font-family:var(--mono);font-size:11px;color:var(--ink-3);">{{ c.impact }}</span>
+              <button style="{{ c.ctaSt }}">{{ c.cta }}</button>
+            </div>
+          </sc-for>
+        </div>
+        <p style="margin:16px 0 0;font-family:var(--mono);font-size:10px;color:var(--ink-3);">Chains hand-read from coordination-design.md — wire live repo deps + bead refs to make this auto-update.</p>
+      </section>
+
+      <!-- 03 Delivery -->
+      <section data-screen-label="03 Delivery" style="display:flex;flex-direction:column;">
+        <header style="display:flex;align-items:flex-end;justify-content:space-between;gap:24px;padding-bottom:12px;margin-bottom:24px;border-bottom:3px solid var(--ink);">
+          <div><span style="display:block;font-family:var(--mono);font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--red);margin-bottom:8px;">03 — DELIVERY</span><h2 style="margin:0;font-weight:800;font-size:clamp(34px,5vw,58px);letter-spacing:-.035em;line-height:.9;">Delivery</h2></div>
+          <span style="font-family:var(--mono);font-size:11px;line-height:1.5;text-align:right;color:var(--ink-3);">northstar → roadmap → queue<br>movement recorded at merge</span>
+        </header>
+        <div style="margin-bottom:32px;">
+          <div style="display:flex;align-items:baseline;justify-content:space-between;border-bottom:2px solid var(--ink);padding-bottom:8px;margin-bottom:8px;"><span style="font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;">l1-morning-cockpit · morning-cockpit</span><span style="font-family:var(--mono);font-size:10px;color:var(--ink-3);">L1 northstar · property gaps</span></div>
+          <sc-for list="{{ props }}" as="p" hint-placeholder-count="3">
+            <div style="display:flex;align-items:center;gap:16px;padding:8px 0;border-bottom:1px solid var(--rule);" title="{{ p.tip }}"><span style="flex:none;width:24px;font-family:var(--mono);font-size:12px;color:var(--red);">{{ p.id }}</span><span style="flex:1;min-width:0;font-size:14px;font-weight:700;">{{ p.name }}</span><span style="flex:none;width:180px;height:8px;background:var(--paper-2);border:1px solid var(--rule-strong);"><span style="{{ p.fillSt }}"></span></span><span style="flex:none;width:42px;text-align:right;font-family:var(--mono);font-size:12px;color:var(--ink-2);">{{ p.pct }}</span></div>
+          </sc-for>
+        </div>
+        <div style="margin-bottom:32px;">
+          <div style="display:flex;align-items:baseline;justify-content:space-between;border-bottom:2px solid var(--ink);padding-bottom:8px;margin-bottom:8px;"><span style="font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;">rm-l1-morning-cockpit</span><span style="font-family:var(--mono);font-size:10px;color:var(--ink-3);">{{ sliceCount }} slices · active</span></div>
+          <sc-for list="{{ phases }}" as="ph" hint-placeholder-count="3">
+            <div style="margin-top:12px;">
+              <div style="display:flex;align-items:baseline;gap:8px;padding-bottom:2px;border-bottom:1px solid var(--rule-strong);"><span style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--red);">{{ ph.id }}</span><span style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-2);">{{ ph.name }}</span></div>
+              <sc-for list="{{ ph.slices }}" as="s" hint-placeholder-count="3">
+                <div style="display:flex;align-items:center;gap:16px;padding:12px 0;border-bottom:1px solid var(--rule);"><span style="flex:none;width:24px;font-family:var(--mono);font-size:13px;color:var(--ink-3);">{{ s.id }}</span><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;"><span style="font-size:15px;font-weight:700;">{{ s.title }}</span><span style="font-family:var(--mono);font-size:11px;color:var(--ink-3);overflow-wrap:anywhere;">{{ s.meta }}</span></div><span style="flex:none;font-family:var(--mono);font-size:10px;color:var(--ink-2);border:1px solid var(--rule-strong);padding:1px 6px;">{{ s.autonomy }}</span><span style="{{ s.chipSt }}">{{ s.status }}</span></div>
+              </sc-for>
+            </div>
+          </sc-for>
+        </div>
+        <div style="margin-bottom:32px;">
+          <div style="display:flex;align-items:baseline;justify-content:space-between;border-bottom:2px solid var(--ink);padding-bottom:8px;margin-bottom:8px;"><span style="font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;">Movement</span><span style="font-family:var(--mono);font-size:10px;color:var(--ink-3);">status.jsonl · recorded at merge</span></div>
+          <sc-for list="{{ movements }}" as="m" hint-placeholder-count="2">
+            <div style="display:flex;align-items:baseline;gap:16px;padding:8px 0;border-bottom:1px solid var(--rule);font-family:var(--mono);font-size:11px;"><span style="flex:none;width:84px;color:var(--ink-3);">{{ m.date }}</span><span style="flex:none;color:var(--red);">{{ m.ref }}</span><span style="flex:none;font-weight:700;">{{ m.delta }}</span><span style="flex:1;min-width:0;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ m.evidence }}</span><span style="flex:none;color:var(--ink-3);">{{ m.actor }}</span></div>
+          </sc-for>
+        </div>
+      </section>
+
+      <!-- 04 Beads -->
+      <section data-screen-label="04 Beads" style="display:flex;flex-direction:column;">
+        <header style="display:flex;align-items:flex-end;justify-content:space-between;gap:24px;padding-bottom:12px;margin-bottom:24px;border-bottom:3px solid var(--ink);">
+          <div><span style="display:block;font-family:var(--mono);font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--red);margin-bottom:8px;">04 — WORK</span><h2 style="margin:0;font-weight:800;font-size:clamp(34px,5vw,58px);letter-spacing:-.035em;line-height:.9;">Beads</h2></div>
+          <span style="font-family:var(--mono);font-size:11px;line-height:1.5;text-align:right;color:var(--ink-3);">across all projects<br>overnight · pickup · available</span>
+        </header>
+        <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--gap-lane);align-items:start;">
+          <sc-for list="{{ lanes }}" as="l" hint-placeholder-count="3">
+            <section style="display:flex;flex-direction:column;gap:var(--gap-lane);min-width:0;">
+              <header style="display:flex;align-items:baseline;gap:8px;padding-bottom:8px;border-bottom:2px solid var(--red);"><span style="font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:.02em;">{{ l.lane }}</span><span style="font-family:var(--mono);font-size:12px;color:var(--red);">{{ l.count }}</span></header>
+              <div style="font-family:var(--mono);font-size:10px;letter-spacing:.02em;color:var(--ink-3);margin-top:-8px;">{{ l.sub }}</div>
+              <div style="display:flex;flex-direction:column;gap:12px;">
+                <sc-if value="{{ l.empty }}" hint-placeholder-val="{{ false }}"><div style="font-family:var(--mono);font-size:12px;color:var(--ink-3);padding:24px;border:1px dashed var(--rule);text-align:center;">{{ l.emptyText }}</div></sc-if>
+                <sc-for list="{{ l.items }}" as="i" hint-placeholder-count="3">
+                  <div style="{{ i.st }}" style-hover="transform:translateY(-2px);box-shadow:var(--gt-shadow-md);">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><span style="width:7px;height:7px;border-radius:50%;flex:none;background:var(--red);"></span><span style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-2);">brief</span><span style="font-family:var(--mono);font-size:9px;color:var(--ink-3);margin-left:auto;">{{ i.repo }}</span></div>
+                    <div style="font-size:14px;font-weight:700;line-height:1.3;">{{ i.title }}</div>
+                    <div style="margin-top:12px;display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:10px;color:var(--ink-3);"><span>{{ i.actor }}</span><span>{{ i.age }}</span><span style="{{ i.staleSt }}">{{ i.staleLabel }}</span></div>
+                    <sc-if value="{{ i.hasChain }}" hint-placeholder-val="{{ false }}"><div style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--rule);display:flex;align-items:baseline;gap:8px;min-width:0;"><span style="font-family:var(--mono);font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--green);white-space:nowrap;">decided → in flight</span><span style="font-family:var(--mono);font-size:10px;color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ i.chainTitle }}</span></div></sc-if>
+                  </div>
+                </sc-for>
+              </div>
+              <section style="margin-top:8px;padding:var(--pad-card);background:var(--card);border:1px solid var(--rule);border-top:2px solid var(--ink);">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--red);">Summary</span><span style="font-family:var(--mono);font-size:9px;padding:1px 5px;color:var(--ink-3);">auto</span><button style="margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--card);background:var(--red);border:none;padding:3px 9px;cursor:pointer;" title="Re-synthesize with the local model (no model in this recreation)">✨ Synthesize</button></div>
+                <p style="margin:0 0 12px;font-size:16px;font-weight:700;line-height:1.25;letter-spacing:-.01em;">{{ l.headline }}</p>
+                <ul style="margin:0 0 12px;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px;"><sc-for list="{{ l.bullets }}" as="b" hint-placeholder-count="2"><li style="position:relative;padding-left:16px;font-size:12px;line-height:1.5;color:var(--ink-2);"><span style="position:absolute;left:0;top:.5em;width:6px;height:6px;background:var(--ink-3);"></span>{{ b }}</li></sc-for></ul>
+                <p style="margin:0;padding-top:12px;border-top:1px solid var(--rule);font-size:13px;line-height:1.4;font-weight:700;color:var(--red);">→ {{ l.action }}</p>
+              </section>
+            </section>
+          </sc-for>
+        </div>
+      </section>
+
+      <!-- 05 Reading -->
+      <section data-screen-label="05 Reading" style="display:flex;flex-direction:column;">
+        <header style="display:flex;align-items:flex-end;justify-content:space-between;gap:24px;padding-bottom:12px;margin-bottom:24px;border-bottom:3px solid var(--ink);">
+          <div><span style="display:block;font-family:var(--mono);font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--red);margin-bottom:8px;">05 — INTEL</span><h2 style="margin:0;font-weight:800;font-size:clamp(34px,5vw,58px);letter-spacing:-.035em;line-height:.9;">Reading</h2></div>
+          <span style="font-family:var(--mono);font-size:11px;line-height:1.5;text-align:right;color:var(--ink-3);">curated feeds<br>9 new since 48h</span>
+        </header>
+        <section style="padding:var(--pad-card);background:var(--card);border:1px solid var(--rule);border-top:2px solid var(--ink);">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--red);">Digest</span><span style="font-family:var(--mono);font-size:9px;color:var(--green);">✨ ollama (qwen2.5:7b)</span><button style="margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--card);background:var(--red);border:none;padding:3px 9px;cursor:pointer;">✨ Synthesize</button></div>
+          <p style="margin:0 0 12px;font-size:16px;font-weight:700;line-height:1.25;">Nine new posts across four sources; two bear on the fleet.</p>
+          <p style="margin:0;font-family:var(--mono);font-size:10px;color:var(--amber);">Live RSS is not reachable from this recreation — sources.yaml feeds summarised, not reproduced.</p>
+        </section>
+        <div style="margin-top:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;align-items:start;">
+          <sc-for list="{{ readingSources }}" as="s" hint-placeholder-count="3">
+            <div style="background:var(--card);border:1px solid var(--rule);border-top:2px solid var(--ink);padding:var(--pad-card);">
+              <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:8px;"><span style="font-size:13px;font-weight:700;">{{ s.title }}</span><span style="font-family:var(--mono);font-size:9px;color:var(--ink-3);border:1px solid var(--rule);padding:0 4px;">{{ s.tier }}</span></div>
+              <sc-for list="{{ s.items }}" as="i" hint-placeholder-count="2"><div style="display:flex;align-items:baseline;gap:8px;padding:5px 0;color:var(--ink-2);border-top:1px solid var(--rule);"><span style="font-size:12px;line-height:1.4;flex:0 1 auto;">{{ i.t }}</span><span style="flex:1 1 auto;align-self:flex-end;margin-bottom:3px;border-bottom:1px dotted var(--rule-strong);min-width:16px;"></span><span style="font-family:var(--mono);font-size:9px;color:var(--ink-3);flex:none;">{{ i.age }}</span></div></sc-for>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+
+      <!-- 06 Research -->
+      <section data-screen-label="06 Research" style="display:flex;flex-direction:column;">
+        <header style="display:flex;align-items:flex-end;justify-content:space-between;gap:24px;padding-bottom:12px;margin-bottom:24px;border-bottom:3px solid var(--ink);">
+          <div><span style="display:block;font-family:var(--mono);font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--red);margin-bottom:8px;">06 — SIGNAL</span><h2 style="margin:0;font-weight:800;font-size:clamp(34px,5vw,58px);letter-spacing:-.035em;line-height:.9;">Research</h2></div>
+          <span style="font-family:var(--mono);font-size:11px;line-height:1.5;text-align:right;color:var(--ink-3);">HF Daily Papers — top 3<br>explained for you</span>
+        </header>
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:16px;padding-bottom:12px;border-bottom:1px dashed var(--rule);">
+          <span style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3);">reading as</span>
+          <sc-for list="{{ profileChips }}" as="c" hint-placeholder-count="6"><span style="{{ c.st }}" title="{{ c.full }}">{{ c.t }}</span></sc-for>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:16px;">
+          <sc-for list="{{ papers }}" as="p" hint-placeholder-count="2">
+            <article style="background:var(--paper);border:1px solid var(--rule);border-left:3px solid var(--red);padding:16px;">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;"><span style="font-size:15px;font-weight:700;line-height:1.35;">{{ p.title }}</span><div style="display:flex;gap:8px;font-family:var(--mono);font-size:10px;flex:none;"><span style="color:var(--red);">▲ {{ p.up }}</span><span style="color:var(--ink-3);">PDF</span><span style="color:var(--ink-3);">HF</span></div></div>
+              <p style="margin:4px 0 12px;font-size:11px;color:var(--ink-3);">{{ p.authors }}</p>
+              <section style="padding:var(--pad-card);background:var(--card);border:1px solid var(--rule);border-top:2px solid var(--ink);">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--red);">Explainer</span><span style="font-family:var(--mono);font-size:9px;color:var(--ink-3);">auto</span></div>
+                <p style="margin:0;font-size:16px;font-weight:700;line-height:1.25;">{{ p.title }}</p>
+                <p style="margin:12px 0 0;font-family:var(--mono);font-size:10px;color:var(--amber);">Explainer needs the local model + reader profile — not reproduced here.</p>
+              </section>
+              <div style="margin-top:12px;"><button style="font-family:var(--mono);font-size:10px;color:var(--ink-2);background:var(--paper-2);border:1px solid var(--rule);padding:4px 10px;cursor:pointer;">⌖ Deep dive (Sonnet, full PDF)</button></div>
+            </article>
+          </sc-for>
+        </div>
+      </section>
+
+      <!-- 07 Loop -->
+      <section data-screen-label="07 Loop" style="display:flex;flex-direction:column;">
+        <header style="display:flex;align-items:flex-end;justify-content:space-between;gap:24px;padding-bottom:12px;margin-bottom:24px;border-bottom:3px solid var(--ink);">
+          <div><span style="display:block;font-family:var(--mono);font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--red);margin-bottom:8px;">07 — LOOP</span><h2 style="margin:0;font-weight:800;font-size:clamp(34px,5vw,58px);letter-spacing:-.035em;line-height:.9;">Loop</h2></div>
+          <span style="font-family:var(--mono);font-size:11px;line-height:1.5;text-align:right;color:var(--ink-3);">shadow-mode skill dispositions<br>capture → funnel → odometer</span>
+        </header>
+        <div style="margin-bottom:32px;">
+          <div style="display:flex;align-items:baseline;justify-content:space-between;border-bottom:2px solid var(--ink);padding-bottom:8px;margin-bottom:8px;"><span style="font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;">Selfco vault hygiene</span><span style="font-family:var(--mono);font-size:10px;color:var(--ink-3);">Codex heartbeat · unavailable</span></div>
+          <p style="margin:12px 0;font-family:var(--mono);font-size:11px;color:var(--ink-3);">COCKPIT_CORE_ROOT not configured — hygiene status unavailable.</p>
+        </div>
+        <div style="margin-bottom:32px;">
+          <div style="display:flex;align-items:baseline;justify-content:space-between;border-bottom:2px solid var(--ink);padding-bottom:8px;margin-bottom:8px;"><span style="font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;">Capture</span><span style="font-family:var(--mono);font-size:10px;color:var(--ink-3);">skill-dispositions.jsonl · shadow mode</span></div>
+          <div style="display:flex;align-items:baseline;flex-wrap:wrap;gap:24px;padding:12px 0;border-bottom:1px solid var(--rule);font-family:var(--mono);font-size:11px;color:var(--ink-2);"><span><span style="font-size:15px;font-weight:700;color:var(--ink);">{{ loopTotal }}</span> events all-time</span><span><span style="font-size:15px;font-weight:700;color:var(--ink);">{{ loop7d }}</span> last 7d</span><span>newest {{ loopNewest }} · 1d ago</span></div>
+        </div>
+        <sc-for list="{{ funnels }}" as="f" hint-placeholder-count="3">
+          <div style="margin-bottom:32px;">
+            <div style="display:flex;align-items:baseline;justify-content:space-between;border-bottom:2px solid var(--ink);padding-bottom:8px;margin-bottom:8px;"><span style="font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;">{{ f.label }}</span><span style="font-family:var(--mono);font-size:10px;color:var(--ink-3);">{{ f.src }}</span></div>
+            <sc-for list="{{ f.rows }}" as="r" hint-placeholder-count="5">
+              <div style="display:flex;align-items:center;gap:16px;padding:8px 0;border-bottom:1px solid var(--rule);"><span style="flex:none;width:120px;font-size:13px;font-weight:700;">{{ r.label }}</span><span style="flex:1;min-width:0;height:8px;background:var(--paper-2);border:1px solid var(--rule-strong);"><span style="{{ r.fillSt }}"></span></span><span style="flex:none;width:42px;text-align:right;font-family:var(--mono);font-size:12px;font-weight:700;">{{ r.n }}</span><span style="flex:none;width:64px;text-align:right;font-family:var(--mono);font-size:10px;color:var(--ink-3);">{{ r.w }} / 14d</span></div>
+            </sc-for>
+          </div>
+        </sc-for>
+        <div style="margin-bottom:32px;">
+          <div style="display:flex;align-items:baseline;justify-content:space-between;border-bottom:2px solid var(--ink);padding-bottom:8px;margin-bottom:8px;"><span style="font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;">Top suggested skills <span style="margin-left:12px;font-size:10px;font-weight:700;color:var(--amber);border:1px solid var(--amber);padding:1px 6px;letter-spacing:0;">rates unverified</span></span><span style="font-family:var(--mono);font-size:10px;color:var(--ink-3);">suggestions · engaged · followed (count)</span></div>
+          <sc-for list="{{ skills }}" as="s" hint-placeholder-count="3"><div style="display:flex;align-items:baseline;gap:16px;padding:8px 0;border-bottom:1px solid var(--rule);font-family:var(--mono);font-size:11px;"><span style="flex:1;min-width:0;">{{ s.skill }}</span><span style="flex:none;width:42px;text-align:right;color:var(--ink-2);">{{ s.total }}</span><span style="flex:none;width:42px;text-align:right;color:var(--ink-2);">{{ s.engaged }}</span><span style="flex:none;width:42px;text-align:right;color:var(--ink-3);">{{ s.followed }}</span></div></sc-for>
+        </div>
+        <div>
+          <div style="display:flex;align-items:baseline;justify-content:space-between;border-bottom:2px solid var(--ink);padding-bottom:8px;margin-bottom:8px;"><span style="font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;">Downstream</span><span style="font-family:var(--mono);font-size:10px;color:var(--ink-3);">odometer · weekly audit</span></div>
+          <div style="display:flex;align-items:baseline;flex-wrap:wrap;gap:24px;padding:12px 0;border-bottom:1px solid var(--rule);font-family:var(--mono);font-size:11px;color:var(--ink-2);"><span><span style="font-size:15px;font-weight:700;color:var(--ink);">2</span> movements</span><span>last 2026-07-04 · 96d ago</span><span>audit 2026-07-28 · 72d ago</span></div>
+        </div>
+      </section>
+    </main>
+
+    <aside style="flex:none;width:48px;border-left:1px solid var(--rule);background:var(--paper-2);position:sticky;top:0;align-self:flex-start;height:100vh;display:flex;justify-content:center;align-items:flex-start;">
+      <button title="Open cockpit chat" style="writing-mode:vertical-rl;padding:16px 0;margin-top:16px;font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--ink-2);background:transparent;border:none;cursor:pointer;" style-hover="color:var(--red);">▸ Ask the Chief of Staff</button>
+    </aside>
+  </div>
+
+  <footer style="display:flex;gap:24px;padding:12px var(--pad-main);border-top:3px solid var(--ink);background:var(--paper-2);font-family:var(--mono);font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-2);flex-wrap:wrap;">
+    <sc-for list="{{ health }}" as="h" hint-placeholder-count="4"><span style="display:flex;align-items:center;gap:6px;"><span style="{{ h.dotSt }}"></span>{{ h.text }}</span></sc-for>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { data: null, activeId: '', chosen: 'ship', theme: 'light', density: 'comfortable' };
+  componentDidMount() {
+    import('./data/snapshot.js').then((d) => this.setState({ data: d }));
+  }
+  renderVals() {
+    const d = this.state.data;
+    const mono = "font-family:var(--mono);";
+    const now = new Date();
+    const dateLine = [now.toLocaleDateString([], { weekday: 'long' }), now.getDate(), now.toLocaleDateString([], { month: 'long' }), now.getFullYear()].join(' ');
+    const timeLine = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    document.documentElement.setAttribute('data-theme', this.state.theme);
+    document.documentElement.setAttribute('data-density', this.state.density);
+    if (!d) return { dateLine, timeLine, threads: [], repos: [], chains: [], props: [], phases: [], movements: [], lanes: [], readingSources: [], profileChips: [], papers: [], funnels: [], skills: [], health: [], branches: [], active: {}, showArtifact: true, showDefer: false, densityLabel: 'DENSE', themeLabel: 'DARK' };
+    const WORDS = ['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve'];
+    const openBriefs = d.BRIEFS.filter((b) => b.open && !b.decidedInFlight);
+    const totalItems = d.REPOS.reduce((n, r) => n + r.openCount, 0);
+    // Briefing threads — the deterministic fallback seeds from decision/stale briefs in the scoped repo.
+    const seeds = openBriefs.filter((b) => b.tag !== 'quickwin').slice(0, 4);
+    const activeId = this.state.activeId || seeds[0].id;
+    const TAG = { decision: 'Decision needed', stale: 'Going stale', quickwin: 'Quick win' };
+    const tagSt = { decision: 'color:var(--red);background:color-mix(in srgb,var(--red) 12%,transparent);', stale: 'color:var(--amber);background:color-mix(in srgb,var(--amber) 14%,transparent);', quickwin: 'color:var(--green);background:color-mix(in srgb,var(--green) 14%,transparent);' };
+    const threads = seeds.map((b) => ({
+      id: b.id, title: b.title, whyNow: `${b.staleDays} days stale · to ${b.to}`, tagLabel: TAG[b.tag],
+      tagSt: `${mono}font-size:9px;letter-spacing:.06em;text-transform:uppercase;padding:1px 5px;${tagSt[b.tag]}`,
+      st: `display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;padding:12px 16px;background:${b.id === activeId ? 'var(--card)' : 'transparent'};border:none;border-bottom:1px solid var(--rule);border-left:3px solid ${b.id === activeId ? 'var(--red)' : 'transparent'};cursor:pointer;`,
+      go: () => this.setState({ activeId: b.id, chosen: 'ship' }),
+    }));
+    const a = seeds.find((b) => b.id === activeId) || seeds[0];
+    const active = { id: a.id, title: a.title, catchUp: `${a.title} has been live since ${a.created} with no report responding to it (${a.staleDays} days). It was written by ${a.actor} for ${a.to}. Nothing downstream has moved.`, question: `Pick up “${a.title.slice(0, 60)}${a.title.length > 60 ? '…' : ''}” now, or defer it another week?`, align: 'Close the loop on a live brief that has gone quiet — either deliver it or record why it closes.', task: `Investigate and resolve in ${a.repo}; either complete it or close it with a recorded rationale.`, criteria: ['Item investigated, a clear decision recorded (complete or close)', 'If completed: change verified; if closed: one-line rationale on the bead'] };
+    const branches = [{ key: 'ship', label: 'Pick it up now', recommended: true }, { key: 'defer', label: 'Defer 7 days', recommended: false }].map((b) => ({
+      ...b, st: `display:flex;align-items:center;gap:12px;text-align:left;padding:12px 16px;background:var(--card);border:1px solid ${this.state.chosen === b.key ? 'var(--ink)' : 'var(--rule)'};border-left:${this.state.chosen === b.key ? '3px solid var(--red)' : '1px solid var(--rule)'};cursor:pointer;`, go: () => this.setState({ chosen: b.key }),
+    }));
+    // Fleet
+    const ago = (days) => days === 0 ? 'now' : days < 1 ? 'now' : `${days}d ago`;
+    const repos = d.REPOS.map((r) => ({
+      name: r.name, phase: r.phase, openCount: r.openCount, roleLine: (r.here ? '★ ' : '') + r.role, last: r.here ? 'now' : r.liveness === 'dark' && r.lastDays > 60 ? 'no activity' : ago(r.lastDays),
+      dotSt: `width:7px;height:7px;border-radius:50%;flex:none;background:${r.liveness === 'live' ? 'var(--green)' : r.liveness === 'stale' ? 'var(--amber)' : 'var(--rule-strong)'};`,
+      st: `display:flex;flex-direction:column;gap:8px;background:${r.here ? 'color-mix(in srgb,var(--red) 6%,var(--card))' : 'var(--card)'};border:1px solid ${r.here ? 'var(--red)' : 'var(--rule)'};border-top:2px solid ${r.here ? 'var(--red)' : 'var(--ink-3)'};padding:var(--pad-card);cursor:pointer;`,
+      pick: () => {},
+    }));
+    const fleetLive = d.REPOS.filter((r) => r.liveness === 'live').length, fleetStale = d.REPOS.filter((r) => r.liveness === 'stale').length, fleetDark = d.REPOS.filter((r) => r.liveness === 'dark').length;
+    // Critical path
+    const sevBg = { high: 'var(--red)', blocked: 'var(--amber)', decision: 'var(--ink)' };
+    const chains = d.CRITICAL.chains.map((c) => ({ ...c, rowSt: `display:flex;align-items:center;gap:16px;padding:12px 16px;border-bottom:1px solid var(--rule);border-left:3px solid ${sevBg[c.severity]};`, sevSt: `${mono}font-size:9px;letter-spacing:.08em;text-transform:uppercase;padding:1px 6px;color:var(--card);background:${sevBg[c.severity]};`, ctaSt: c.briefId ? `flex:none;${mono}font-size:11px;color:var(--card);background:var(--red);border:none;padding:6px 12px;cursor:pointer;` : `flex:none;${mono}font-size:11px;color:var(--ink-2);background:transparent;border:1px solid var(--rule-strong);padding:6px 12px;cursor:default;` }));
+    // Delivery
+    const props = d.DELIVERY.northstar.properties.map((p) => ({ id: p.id, name: p.name, pct: `${p.current}%`, tip: `${p.id} target — ${p.target}`, fillSt: `display:block;height:100%;background:var(--red);width:${p.current}%;` }));
+    const chipColors = { ready: 'color:var(--ink-2);background:color-mix(in srgb,var(--ink-2) 14%,transparent);', queued: 'color:var(--ink-3);background:color-mix(in srgb,var(--ink-3) 10%,transparent);', claimed: 'color:var(--red);background:color-mix(in srgb,var(--red) 14%,transparent);', merged: 'color:var(--card);background:var(--green);' };
+    const phases = d.DELIVERY.roadmap.phases.map((ph) => ({ ...ph, slices: ph.slices.map((s) => ({ ...s, meta: [s.advances, s.from != null ? `${s.from}→${s.to}%` : null, s.repo, s.beadId].filter(Boolean).join(' · ') || 'rm-l1-morning-cockpit', chipSt: `flex:none;width:76px;text-align:center;${mono}font-size:11px;padding:2px 8px;${chipColors[s.status]}` })) }));
+    const sliceCount = d.DELIVERY.roadmap.phases.reduce((n, p) => n + p.slices.length, 0);
+    const movements = d.DELIVERY.movements.map((m) => ({ date: m.date, ref: `ns:${m.ns}#${m.prop}`, delta: `${m.from}→${m.to}%`, evidence: m.evidence, actor: m.actor }));
+    // Lanes
+    const stale = (days) => days > 30 ? { staleLabel: `rotten ${days}d`, staleSt: `margin-left:auto;${mono}font-size:9px;padding:1px 5px;color:var(--red);background:color-mix(in srgb,var(--red) 16%,transparent);` } : days >= 7 ? { staleLabel: `aging ${days}d`, staleSt: `margin-left:auto;${mono}font-size:9px;padding:1px 5px;color:var(--amber);background:color-mix(in srgb,var(--amber) 16%,transparent);` } : { staleLabel: '', staleSt: 'display:none;' };
+    const pickupItems = [...openBriefs].sort((x, y) => y.staleDays - x.staleDays).map((b) => ({ title: b.title, repo: b.repo, actor: b.actor, age: `${b.staleDays}d ago`, ...stale(b.staleDays), hasChain: !!b.closes, chainTitle: b.closes ? (d.BRIEFS.find((x) => x.id === b.closes) || {}).title : '', st: 'display:block;background:var(--card);border:1px solid var(--rule);border-left:3px solid var(--red);padding:var(--pad-card);transition:transform 140ms,box-shadow 140ms;' }));
+    const lanes = [
+      { lane: 'overnight', count: 0, sub: 'ran or running since last evening', empty: true, emptyText: 'No fresh overnight activity.', items: [], headline: 'No overnight activity was recorded.', bullets: ['No agent events since last evening.', 'Automated processes may not be running — verify scheduled tasks.'], action: 'Conduct a routine check on automated processes.' },
+      { lane: 'pickup', count: pickupItems.length, sub: 'your queue — oldest first, rotten on top', empty: false, emptyText: '', items: pickupItems, headline: `${pickupItems.length} briefs await a human decision; the oldest is ${pickupItems[0].age.replace(' ago', '')} old.`, bullets: ['All items are live briefs with no report responding.', 'One decided item is folded under its successor (S8).'], action: 'Pick the oldest brief and decide: deliver or close.' },
+      { lane: 'available', count: 0, sub: 'unclaimed — pickable, stale floats up', empty: true, emptyText: 'Queue is empty (no real unassigned pool exists yet — see ADR-0002).', items: [], headline: 'No unclaimed work is available.', bullets: ['The Available lane is synthesized — there is no real queue yet.', 'Better tracking across repositories such as repo-frontend, repo-backend and repo-infrastructure would help.'], action: 'Establish a consistent task-tracking approach across repositories.' },
+    ];
+    const readingSources = [
+      { title: 'Anthropic Engineering', tier: 'T1', items: [{ t: '(feed items need the live RSS adapter)', age: '—' }] },
+      { title: 'Simon Willison', tier: 'T1', items: [{ t: '(feed items need the live RSS adapter)', age: '—' }] },
+      { title: 'Hugging Face Blog', tier: 'T2', items: [{ t: '(feed items need the live RSS adapter)', age: '—' }] },
+    ];
+    const chip = (t, cls) => ({ t: t.length > 34 ? t.slice(0, 33) + '…' : t, full: t, st: `display:inline-flex;align-items:center;font-size:10px;line-height:1.3;padding:2px 7px;border-radius:999px;border:1px ${cls === 'learning' ? 'dashed' : 'solid'} ${cls === 'recent' ? 'var(--red)' : 'var(--rule)'};color:${cls === 'recent' ? 'var(--red)' : cls === 'domain' ? 'var(--ink)' : 'var(--ink-2)'};background:${cls === 'recent' ? 'color-mix(in srgb,var(--red) 8%,transparent)' : 'var(--paper)'};max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;` });
+    const profileChips = [chip('Senior software engineering — TypeScript, distributed systems', 'strength'), chip('ojfbot fleet architecture (beads, convoys, Frame, Dolt)', 'strength'), chip('Evaluation harnesses', 'learning'), chip('Cinematography', 'learning'), chip('LLM Tooling', 'recent'), chip('Multi-agent orchestration', 'domain'), chip('RAG', 'domain')];
+    const papers = [{ title: '(paper 1 — HF Daily Papers adapter)', up: '—', authors: 'live adapter required' }, { title: '(paper 2 — HF Daily Papers adapter)', up: '—', authors: 'live adapter required' }, { title: '(paper 3 — HF Daily Papers adapter)', up: '—', authors: 'live adapter required' }];
+    // Loop
+    const ROWS = [['ignored', 'ignored'], ['engaged_no_act', 'engaged, no act'], ['followed', 'followed'], ['capture_miss', 'capture miss'], ['acted', 'acted']];
+    const META = { installed: ['Funnel · installed', 'installed-skill suggestions · post-fix era'], uninstalled: ['Funnel · uninstalled', 'uninstalled-skill suggestions · post-fix era'], legacy: ['Funnel · legacy', 'pre-fix rows (blind predicate) — archived to .bak at the 2026-07-17 rebuild, never blended'] };
+    const funnels = d.LOOP.populations.map((p) => { const max = Math.max(1, ...Object.values(p.rows)); return { label: META[p.population][0], src: META[p.population][1], rows: ROWS.map(([k, label]) => ({ label, n: p.rows[k], w: Math.round(p.rows[k] * 0.4), fillSt: `display:block;height:100%;background:${p.rows[k] === 0 ? 'transparent' : 'var(--red)'};width:${(p.rows[k] / max) * 100}%;` })) }; });
+    const health = [
+      { text: 'dolt-bead: up — ' + totalItems + ' beads scanned · 3 live · 2 idle · 1 stalled · 0 zombie · 0 dark agents · 0 overnight events', s: 'up' },
+      { text: 'handoff-bead: up — 3 repos with .handoff · 1 decided-in-flight folded', s: 'up' },
+      { text: 'rss: degraded — 2 sources unreachable', s: 'degraded' },
+      { text: 'papers: up', s: 'up' },
+      { text: 'loop: up — rates suppressed', s: 'up' },
+      { text: 'hygiene: disabled — COCKPIT_CORE_ROOT unset', s: 'disabled' },
+    ].map((h) => ({ text: h.text, dotSt: `width:7px;height:7px;border-radius:50%;background:${{ up: 'var(--green)', down: 'var(--red)', degraded: 'var(--amber)', disabled: 'var(--ink-3)' }[h.s]};` }));
+    return {
+      dateLine, timeLine, totalItems, pickupWord: WORDS[pickupItems.length] ? WORDS[pickupItems.length][0].toUpperCase() + WORDS[pickupItems.length].slice(1) : String(pickupItems.length),
+      agentsLive: d.AGENTS.filter((x) => x.state === 'live').length, agentsIdle: d.AGENTS.filter((x) => x.state === 'idle').length, agentsStalled: d.AGENTS.filter((x) => x.state === 'stalled').length,
+      densityLabel: this.state.density === 'compact' ? 'COZY' : 'DENSE', themeLabel: this.state.theme === 'dark' ? 'LIGHT' : 'DARK',
+      toggleDensity: () => this.setState((s) => ({ density: s.density === 'compact' ? 'comfortable' : 'compact' })),
+      toggleTheme: () => this.setState((s) => ({ theme: s.theme === 'dark' ? 'light' : 'dark' })),
+      threadCount: threads.length, threads, active, branches, showArtifact: this.state.chosen === 'ship', showDefer: this.state.chosen === 'defer',
+      repos, repoCount: d.REPOS.length, openBeads: totalItems, fleetLive, fleetStale, fleetDark,
+      chains, props, phases, sliceCount, movements, lanes, readingSources, profileChips, papers,
+      loopTotal: d.LOOP.capture.total, loop7d: d.LOOP.capture.last7d, loopNewest: d.LOOP.capture.newest, funnels, skills: d.LOOP.skills, health,
+    };
+  }
+}
+</script>
+</body>
+</html>
