@@ -90,6 +90,24 @@ describe('handoff REST evidence contract', () => {
     expect(result.evidence.unresolvedRelations[0]?.affectedSourceRecordKeys).toHaveLength(3);
   });
 
+  it('does not hide an otherwise valid predecessor behind a successor with another unresolved ref', async () => {
+    const root = await rootWith([
+      { repo: 'alpha', file: 'target.md', body: brief('target', 'Target') },
+      {
+        repo: 'alpha',
+        file: 'successor.md',
+        body: brief('successor', 'Successor', ['closes:target', 'closes:not-observed'], '2026-10-10T10:00:00Z'),
+      },
+    ]);
+    const result = await collect(root);
+
+    expect(result.items.map((item) => item.nativeId)).toEqual(['target']);
+    expect(result.evidence.standaloneUnansweredBriefs.records.map((entry) => entry.sourceRecord.nativeId)).toEqual(['target']);
+    expect(result.evidence.unresolvedRelations).toEqual([
+      expect.objectContaining({ reason: 'target-not-observed', targetNativeId: 'not-observed' }),
+    ]);
+  });
+
   it('distinguishes an unavailable root from a readable complete-empty root', async () => {
     const emptyRoot = await rootWith([]);
     const empty = await collect(emptyRoot);
