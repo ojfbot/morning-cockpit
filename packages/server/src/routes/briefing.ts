@@ -2,7 +2,7 @@ import { Router } from 'express';
 import type { BriefingArtifact, BriefingSnapshot } from '@cockpit/shared';
 import { buildSnapshot } from './../aggregate.js';
 import { emitArtifact } from '../handoff-emit.js';
-import { briefingFrames, generateBriefing } from '../briefing-generate.js';
+import { briefingFrames, doltClaimableThreadIds, generateBriefing } from '../briefing-generate.js';
 import { sseEnd, sseInit, sseSend } from '../sse.js';
 
 /**
@@ -32,12 +32,20 @@ briefingRouter.get('/api/briefing', async (req, res) => {
     const cacheKey = repo ?? '__global__';
     const hit = cache.get(cacheKey);
     if (!force && hit?.key === key) {
-      res.json({ ...hit.snapshot, cached: true });
+      res.json({
+        ...hit.snapshot,
+        cached: true,
+        doltClaimableThreadIds: doltClaimableThreadIds(snapshot, hit.snapshot),
+      });
       return;
     }
     const briefing = await generateBriefing(snapshot, snapshot.generatedAt, repo);
     cache.set(cacheKey, { key, snapshot: briefing });
-    res.json({ ...briefing, cached: false });
+    res.json({
+      ...briefing,
+      cached: false,
+      doltClaimableThreadIds: doltClaimableThreadIds(snapshot, briefing),
+    });
   } catch (err) {
     res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
   }
@@ -59,7 +67,10 @@ briefingRouter.get('/api/briefing/stream', async (req, res) => {
     // Fresh cached briefing → send it instantly, done (still a single frame, instant).
     const hit = cache.get(cacheKey);
     if (!force && hit?.key === key) {
-      sseSend(res, 'briefing', hit.snapshot);
+      sseSend(res, 'briefing', {
+        ...hit.snapshot,
+        doltClaimableThreadIds: doltClaimableThreadIds(snapshot, hit.snapshot),
+      });
       sseEnd(res);
       return;
     }
@@ -67,7 +78,10 @@ briefingRouter.get('/api/briefing/stream', async (req, res) => {
     // Cold: stream the deterministic floor first, then the LLM upgrade; cache the best (last) frame.
     let last: BriefingSnapshot | undefined;
     for await (const frame of briefingFrames(snapshot, snapshot.generatedAt, repo)) {
-      sseSend(res, 'briefing', frame);
+      sseSend(res, 'briefing', {
+        ...frame,
+        doltClaimableThreadIds: doltClaimableThreadIds(snapshot, frame),
+      });
       last = frame;
     }
     if (last) cache.set(cacheKey, { key, snapshot: last });

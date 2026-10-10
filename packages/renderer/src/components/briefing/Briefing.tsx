@@ -33,6 +33,7 @@ export function Briefing({
   setUi: (fn: (s: CockpitUiState) => CockpitUiState) => void;
 }) {
   const [threads, setThreads] = useState<BriefingThread[]>([]);
+  const [doltClaimableThreadIds, setDoltClaimableThreadIds] = useState<string[]>([]);
   const [source, setSource] = useState<'llm' | 'deterministic' | 'loading'>('loading');
   const repo = ui.selectedRepo;
 
@@ -42,6 +43,7 @@ export function Briefing({
       try {
         for await (const b of streamBriefing(repo, force)) {
           setThreads(b.threads);
+          setDoltClaimableThreadIds(b.doltClaimableThreadIds ?? []);
           setSource(b.source);
         }
       } catch {
@@ -57,11 +59,13 @@ export function Briefing({
   useEffect(() => {
     const ctrl = new AbortController();
     setThreads([]);
+    setDoltClaimableThreadIds([]);
     setSource('loading');
     void (async () => {
       try {
         for await (const b of streamBriefing(repo, false, ctrl.signal)) {
           setThreads(b.threads);
+          setDoltClaimableThreadIds(b.doltClaimableThreadIds ?? []);
           setSource(b.source);
         }
       } catch {
@@ -205,7 +209,7 @@ export function Briefing({
               })}
             </div>
 
-            {chosen && <BranchReveal branch={chosen} approved={approvedKey === chosen.key} onApprove={() => approveBranch(chosen.key)} onUndo={undoBranch} />}
+            {chosen && <BranchReveal branch={chosen} approved={approvedKey === chosen.key} onApprove={() => approveBranch(chosen.key)} onUndo={undoBranch} doltClaimable={doltClaimableThreadIds.includes(active.id)} />}
           </div>
         </div>
         </div>
@@ -230,11 +234,13 @@ function BranchReveal({
   approved,
   onApprove,
   onUndo,
+  doltClaimable,
 }: {
   branch: BriefingBranch;
   approved: boolean;
   onApprove: () => void;
   onUndo: () => void;
+  doltClaimable: boolean;
 }) {
   const intent = intentFor(branch);
 
@@ -246,6 +252,7 @@ function BranchReveal({
         onApprove={onApprove}
         onUndo={onUndo}
         emittable={intent.built}
+        doltClaimable={doltClaimable}
       />
     );
   }
