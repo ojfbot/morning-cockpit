@@ -37,7 +37,7 @@ export function Lane({
         {items.length === 0 ? (
           <div className="lane-empty">{EMPTY[lane]}</div>
         ) : (
-          items.map((item) => <WorkItemCard key={item.id} item={item} onClaimed={onClaimed} />)
+          items.map((item) => <WorkItemCard key={item.sourceRecordKey ?? item.id} item={item} onClaimed={onClaimed} />)
         )}
       </div>
       {summary && <LaneSummaryPanel lane={lane} items={items} deterministic={summary} />}

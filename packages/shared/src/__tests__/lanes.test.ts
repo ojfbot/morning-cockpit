@@ -145,9 +145,17 @@ describe('finalizeItems', () => {
     expect(out!.status).toBe('open');
   });
 
-  it('dedupes by nativeId keeping the higher-priority lane', () => {
-    const overnight = mk({ id: 'a:x', nativeId: 'x', lane: 'overnight' });
-    const available = mk({ id: 'b:x', nativeId: 'x', lane: 'available' });
+  it('preserves distinct source objects that share a native id', () => {
+    const alpha = mk({ id: 'handoff-bead:alpha:x', nativeId: 'x', source: 'handoff-bead', repo: 'alpha' });
+    const beta = mk({ id: 'handoff-bead:beta:x', nativeId: 'x', source: 'handoff-bead', repo: 'beta' });
+    const dolt = mk({ id: 'dolt-bead:alpha:x', nativeId: 'x', source: 'dolt-bead', repo: 'alpha' });
+
+    expect(finalizeItems([alpha, beta, dolt], ctx)).toHaveLength(3);
+  });
+
+  it('dedupes repeated observations of one source object, keeping the higher-priority lane', () => {
+    const overnight = mk({ id: 'dolt-bead:alpha:x', nativeId: 'x', repo: 'alpha', lane: 'overnight' });
+    const available = mk({ id: 'dolt-bead:alpha:x', nativeId: 'x', repo: 'alpha', lane: 'available' });
     const out = finalizeItems([available, overnight], ctx);
     expect(out).toHaveLength(1);
     expect(out[0]!.lane).toBe('overnight');

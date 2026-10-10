@@ -12,6 +12,7 @@ import { FleetSection } from './components/FleetSection.js';
 import { CriticalPathSection } from './components/CriticalPathSection.js';
 import { DeliverySection } from './components/DeliverySection.js';
 import { LoopSection } from './components/LoopSection.js';
+import { EvidenceView } from './components/EvidenceView.js';
 import { ChatSidebar } from './components/chat/ChatSidebar.js';
 import { applyRootAttributes, loadState, saveState, type CockpitUiState } from './cockpitState.js';
 
@@ -87,6 +88,10 @@ export function App() {
               </span>
             }
           >
+            <EvidenceView
+              evidence={snapshot?.evidence}
+              onFocusRepository={(selectedRepo) => setUi((state) => ({ ...state, selectedRepo }))}
+            />
             <div className="lanes">
               <Lane lane="overnight" items={snapshot?.lanes.overnight ?? []} summary={snapshot?.summaries.overnight} />
               <Lane lane="pickup" items={snapshot?.lanes.pickup ?? []} summary={snapshot?.summaries.pickup} />

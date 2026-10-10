@@ -1,10 +1,3 @@
-# implementation-notes — Anthropic watch (Stage 1)
-
-Working notes for the `@cockpit/watch` build. The `## Deviations` section is always on.
-
-**Deviation count is a discovery rate, not a defect rate.** Nothing here is suppressed to keep
-a number down. A deviation logged is the plan telling us what it didn't know.
-
 ## Deviations
 
 - **#1 — launchd fires a deterministic Node script, not `claude -p`.**
@@ -302,3 +295,4 @@ a number down. A deviation logged is the plan telling us what it didn't know.
   repeated). Full-text fetch is therefore forced, not a design preference. Confirmed the
   article is server-rendered plain HTML (~28k chars, no `__NEXT_DATA__`), so no headless
   browser is needed.
+- The plan assumed the managed worktree retained a sibling `core` checkout; it did not, so the full suite's SDL drift gate could not resolve its evidence input. Verification uses the documented `CORE_REPO=/Users/yuri/ojfbot/core` override and leaves core read-only.

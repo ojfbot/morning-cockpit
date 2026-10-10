@@ -181,7 +181,7 @@ describe('handoff adapter', () => {
 
     const { items, health } = await fetchHandoff(ctx);
 
-    expect(health.status).toBe('up');
+    expect(health.status).toBe('degraded');
     const brief = items.find((i) => i.nativeId === '20260607-0900-brief-do-the-thing');
     expect(brief).toBeDefined();
     expect(brief!.lane).toBe('pickup');
@@ -222,15 +222,18 @@ describe('handoff adapter — decided-in-flight (S8)', () => {
     expect(health.note).toContain('3 decided-in-flight folded');
   });
 
-  it('a dangling closes: ref derives nothing — the brief surfaces normally, no crash, no phantom', async () => {
+  it('a target-not-observed closes ref stays inspectable outside normal lanes', async () => {
     const { fetchHandoff } = await import('../adapters/handoff.js');
-    const { items, health } = await fetchHandoff(await ctxAt('2026-06-07T10:00:00Z'));
+    const { items, health, evidence } = await fetchHandoff(await ctxAt('2026-06-07T10:00:00Z'));
 
-    expect(health.status).toBe('up');
+    expect(health.status).toBe('degraded');
     const dangler = items.find((i) => i.nativeId === '20260701-0900-brief-dangler');
-    expect(dangler).toBeDefined();
-    expect(dangler!.lane).toBe('pickup');
-    expect(dangler!.chain).toBeUndefined();
+    expect(dangler).toBeUndefined();
+    expect(evidence.unresolvedRelations).toContainEqual(expect.objectContaining({
+      reason: 'target-not-observed',
+      relation: 'closes',
+      targetNativeId: 'does-not-exist-anywhere',
+    }));
   });
 
   it('folds a transitive chain under the newest brief, nearest link first', async () => {

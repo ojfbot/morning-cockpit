@@ -113,12 +113,12 @@ export function classifyLane(input: LaneInput, ctx: LaneContext): WorkItemLane |
 
 /**
  * Finalize a batch: drop unlaneable items, mark stale ones in the available lane,
- * compute staleDays, then dedupe by nativeId (keeping the highest-priority lane).
+ * compute staleDays, then dedupe by stable source record (keeping the highest-priority lane).
  */
 const LANE_PRIORITY: Record<WorkItemLane, number> = { overnight: 0, pickup: 1, available: 2 };
 
 export function finalizeItems(items: WorkItem[], ctx: LaneContext): WorkItem[] {
-  const byNative = new Map<string, WorkItem>();
+  const byRecord = new Map<string, WorkItem>();
 
   for (const item of items) {
     const staleDays = computeStaleDays(item.createdAt ?? item.activityAt, ctx.now);
@@ -133,13 +133,14 @@ export function finalizeItems(items: WorkItem[], ctx: LaneContext): WorkItem[] {
       finalized.status = 'stale';
     }
 
-    const existing = byNative.get(finalized.nativeId);
+    const key = finalized.sourceRecordKey ?? finalized.id;
+    const existing = byRecord.get(key);
     if (!existing || LANE_PRIORITY[finalized.lane] < LANE_PRIORITY[existing.lane]) {
-      byNative.set(finalized.nativeId, finalized);
+      byRecord.set(key, finalized);
     }
   }
 
-  return [...byNative.values()];
+  return [...byRecord.values()];
 }
 
 /** Split a finalized list into the three lanes. Overnight sorts by recency; the two

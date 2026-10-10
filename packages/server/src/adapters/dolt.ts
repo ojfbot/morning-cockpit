@@ -5,6 +5,7 @@ import {
   deriveAgentLiveness,
   DEFAULT_LIVENESS_WINDOWS,
   parseJsonColumn,
+  sourceRecordKey,
   type AdapterHealth,
   type AgentLiveness,
   type ConvoySlot,
@@ -154,6 +155,8 @@ export async function fetchDolt(ctx: LaneContext): Promise<{ items: WorkItem[]; 
         ctx.now.toISOString();
 
       const kind = row.type as WorkItemKind;
+      const repo = labels['app'] ?? labels['repo'] ?? beadPrefix(row.id);
+      const sourceRecord = { source: 'dolt-bead' as const, repository: repo, nativeId: row.id, sourcePath: null };
       const input: LaneInput = {
         source: 'dolt-bead',
         kind,
@@ -189,12 +192,14 @@ export async function fetchDolt(ctx: LaneContext): Promise<{ items: WorkItem[]; 
       items.push({
         id: `dolt-bead:${row.id}`,
         nativeId: row.id,
+        sourceRecord,
+        sourceRecordKey: sourceRecordKey(sourceRecord),
         source: 'dolt-bead',
         kind,
         status,
         lane,
         title: row.title,
-        repo: labels['app'] ?? labels['repo'] ?? beadPrefix(row.id),
+        repo,
         actor: row.actor,
         createdAt: toIso(row.created_at),
         updatedAt: toIso(row.updated_at),
@@ -245,15 +250,19 @@ export async function fetchDolt(ctx: LaneContext): Promise<{ items: WorkItem[]; 
 
       const labels = parseJsonColumn<Record<string, string>>(row.labels, {});
       const activityAt = derived.get(row.id)?.lastEventAt ?? toIso(row.updated_at) ?? ctx.now.toISOString();
+      const repo = labels['app'] ?? labels['repo'] ?? beadPrefix(row.id);
+      const sourceRecord = { source: 'dolt-bead' as const, repository: repo, nativeId: row.id, sourcePath: null };
       items.push({
         id: `dolt-bead:${row.id}`,
         nativeId: row.id,
+        sourceRecord,
+        sourceRecordKey: sourceRecordKey(sourceRecord),
         source: 'dolt-bead',
         kind: 'agent',
         status: 'running',
         lane: 'overnight', // a live agent IS current activity — decoupled from the overnight-window heuristic
         title: row.title,
-        repo: labels['app'] ?? labels['repo'] ?? beadPrefix(row.id),
+        repo,
         actor: row.actor,
         createdAt: toIso(row.created_at),
         updatedAt: toIso(row.updated_at),
