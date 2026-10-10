@@ -88,7 +88,7 @@ function EvidenceDialog({
           <div><dt>Type (authored)</dt><dd>{valueOrDash(record.literal.type)}</dd></div>
           <div><dt>Status (authored)</dt><dd>{valueOrDash(record.literal.status)}</dd></div>
           <div><dt>Actor (authored)</dt><dd>{valueOrDash(record.literal.actor)}</dd></div>
-          <div><dt>Recipient (authored)</dt><dd>{valueOrDash(record.literal.to)}</dd></div>
+          <div><dt>Recipient (authored)</dt><dd>{record.literal.to?.trim() ? record.literal.to : 'Unknown'}</dd></div>
           <div><dt>responding_to (authored)</dt><dd><code>{valueOrDash(record.literal.respondingTo)}</code></dd></div>
           <div><dt>refs (authored)</dt><dd>{record.literal.refs.length ? record.literal.refs.join(', ') : '—'}</dd></div>
           <div><dt>Created (authored)</dt><dd>{valueOrDash(record.literal.authoredCreatedAt)}</dd></div>

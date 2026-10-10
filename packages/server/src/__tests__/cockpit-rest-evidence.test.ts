@@ -11,7 +11,24 @@ import type { CockpitSnapshot } from '@cockpit/shared';
 vi.mock('mysql2/promise', () => ({
   default: {
     createPool: () => ({
-      query: vi.fn().mockResolvedValue([[], []]),
+      query: vi.fn(async (sql: string) => {
+        if (sql.includes('FROM beads')) {
+          return [[{
+            id: 'rest-fixture',
+            type: 'task',
+            status: 'created',
+            title: 'REST fixture Dolt task',
+            labels: JSON.stringify({ repo: 'dolt-alpha' }),
+            actor: 'dolt-actor',
+            hook: null,
+            refs: '[]',
+            created_at: '2026-10-10T08:00:00Z',
+            updated_at: '2026-10-10T08:00:00Z',
+            closed_at: null,
+          }], []];
+        }
+        return [[], []];
+      }),
       end: vi.fn().mockResolvedValue(undefined),
     }),
   },
@@ -71,6 +88,11 @@ describe('GET /api/cockpit evidence integration', () => {
       title: 'REST fixture brief',
       sourceRecord: { repository: 'alpha', nativeId: 'rest-fixture', sourcePath: '.handoff/brief.md' },
     });
+    const collidingItems = Object.values(snapshot.lanes)
+      .flat()
+      .filter((item) => item.nativeId === 'rest-fixture');
+    expect(collidingItems).toHaveLength(2);
+    expect(new Set(collidingItems.map((item) => item.sourceRecordKey)).size).toBe(2);
     expect(JSON.stringify(snapshot.evidence)).not.toContain('private fixture body');
     expect(after).toBe(before);
   });

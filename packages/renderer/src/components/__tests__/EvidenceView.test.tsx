@@ -119,4 +119,16 @@ describe('EvidenceView', () => {
     expect(screen.getByRole('button', { name: /alpha brief/i })).toBeInTheDocument();
     expect(screen.getByText('No records in this filter.')).toBeInTheDocument();
   });
+
+  it('labels an absent authored recipient as Unknown', async () => {
+    const user = userEvent.setup();
+    const alpha = record('alpha', 'alpha-key');
+    alpha.literal.to = null;
+    render(<EvidenceView evidence={evidence([alpha])} onFocusRepository={() => {}} />);
+
+    await user.click(screen.getByRole('button', { name: /inspect evidence/i }));
+    await user.click(screen.getByRole('button', { name: /alpha brief/i }));
+
+    expect(screen.getByRole('dialog')).toHaveTextContent('Recipient (authored)Unknown');
+  });
 });
