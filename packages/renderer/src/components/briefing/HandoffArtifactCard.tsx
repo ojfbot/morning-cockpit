@@ -48,7 +48,7 @@ export function HandoffArtifactCard({
               const claim = await claimTask(artifact.closes);
               if (!claim.claimed) {
                 claimNote = claim.reason === 'lost'
-                  ? `claim of ${artifact.closes} lost — another actor holds the queue item`
+                  ? `claim of ${artifact.closes} lost — the item is no longer claimable`
                   : `claim of ${artifact.closes} was not accepted${claim.error ? `: ${claim.error}` : ''}`;
               }
             } catch (e) {
