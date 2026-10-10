@@ -1,5 +1,7 @@
 # CLAUDE.md — morning-cockpit
 
+Captured `research/design-handoff-*` trees are byte-frozen source evidence. Put known-defect corrections in authored planning or a new capture; run `python3 planning/mc-ux-01/verify-capture.py` after changes. Never repair the captured prototype in place.
+
 A standalone, **local-first** read-model dashboard. It unifies "beads" (work-items) from
 across every ojfbot project into three morning lanes: **Overnight** (what ran while you
 slept), **Daily pickup** (human-in-the-loop priorities), and **Available** (unclaimed,

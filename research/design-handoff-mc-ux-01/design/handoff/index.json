@@ -1,0 +1,153 @@
+{
+  "handoff": "MC-UX-01",
+  "date": "2026-10-08",
+  "brief": "uploads/morning-cockpit-ux-discovery-and-experimental-redesign.md",
+  "repo": "ojfbot/morning-cockpit",
+  "path_base": "..",
+  "design_system": {
+    "file": "ds/cockpit.css",
+    "derived_from": [
+      "morning-cockpit/packages/renderer/src/styles/tokens.css",
+      "morning-cockpit/research/fleet-navigator/",
+      "morning-cockpit/research/design-handoff-cockpit-v2/",
+      "lego-village-pipeline/docs/design/H-01-R1/dt/tokens.css"
+    ],
+    "ignored": [
+      "Industry (bound DS)"
+    ]
+  },
+  "data": {
+    "file": "data/snapshot.js",
+    "origins": [
+      "repo",
+      "audit",
+      "derived",
+      "simulated"
+    ],
+    "live_sources_unreachable": [
+      "dolt",
+      "rss",
+      "hf-papers",
+      "ollama"
+    ]
+  },
+  "deliverables": {
+    "A_audit": "audit.md",
+    "B_information_model": "information-model.md",
+    "B_terminology": "terminology.md",
+    "C_concepts": "concepts.md",
+    "D_prototypes": [
+      "../Work Graph.dc.html",
+      "../Adaptive Workspace.dc.html",
+      "../Open Loops.dc.html",
+      "../Reading Room.dc.html"
+    ],
+    "D_baseline": "../Current State.dc.html",
+    "E_habit_model": "habit-model.md",
+    "F_evaluation": "evaluation.md",
+    "G_roadmap": "roadmap.md"
+  },
+  "sheets": [
+    {
+      "id": "BASE",
+      "title": "Current State",
+      "file": "../Current State.dc.html",
+      "spec": null,
+      "status": "built",
+      "fidelity": "recreation",
+      "decisions": [
+        "2026-10-08 recreate full page"
+      ]
+    },
+    {
+      "id": "C",
+      "title": "Work Graph",
+      "file": "../Work Graph.dc.html",
+      "spec": "specs/C-work-graph.md",
+      "status": "built",
+      "fidelity": "interactive prototype",
+      "decisions": [
+        "2026-08-03 vault keeps canon",
+        "2026-08-08 registry join",
+        "2026-10-08 graph scope"
+      ]
+    },
+    {
+      "id": "D",
+      "title": "Adaptive Workspace",
+      "file": "../Adaptive Workspace.dc.html",
+      "spec": "specs/D-adaptive-workspace.md",
+      "status": "built",
+      "fidelity": "interactive prototype",
+      "decisions": [
+        "2026-10-08 adaptive trigger",
+        "2026-10-08 overnight lane both"
+      ]
+    },
+    {
+      "id": "E",
+      "title": "Open Loops",
+      "file": "../Open Loops.dc.html",
+      "spec": "specs/E-open-loops.md",
+      "status": "built",
+      "fidelity": "interactive prototype",
+      "decisions": [
+        "2026-10-08 overnight lane both",
+        "2026-10-08 Leo hypothesis"
+      ]
+    },
+    {
+      "id": "D2",
+      "title": "Reading Room",
+      "file": "../Reading Room.dc.html",
+      "spec": "specs/D2-reading-room.md",
+      "status": "built",
+      "fidelity": "interactive prototype",
+      "parent": "D",
+      "decisions": [
+        "2026-10-09 add Reading Room",
+        "2026-10-09 wiring status + origin",
+        "2026-10-09 fifth room READ",
+        "2026-10-09 course + textbooks later",
+        "2026-10-09 channel aggregator"
+      ]
+    },
+    {
+      "id": "DOC",
+      "title": "Dossier",
+      "file": "../Dossier.dc.html",
+      "spec": null,
+      "status": "built",
+      "fidelity": "reading page"
+    },
+    {
+      "id": "DS",
+      "title": "Design System",
+      "file": "../Design System.dc.html",
+      "spec": null,
+      "status": "built",
+      "fidelity": "reference"
+    }
+  ],
+  "simulated": [
+    "Leo replies (all prototypes)",
+    "Approve & emit / Approve & write report (no write)",
+    "Not today deferral (localStorage only)",
+    "session notes (localStorage only)",
+    "I'VE LOOKED timestamp (localStorage only)",
+    "reading / papers contents",
+    "Reading Room list, sitting timer, kept sources, takeaway (localStorage mc.proto.reading.v1)"
+  ],
+  "issues": [
+    {
+      "id": "ISSUE-001",
+      "title": "Asked-by provenance: harness › named process",
+      "file": "issues/ISSUE-001-asked-by-provenance.md",
+      "status": "prototyped",
+      "upstream": "fleet-runner"
+    }
+  ],
+  "open_questions": "open-questions.md",
+  "decisions": "decisions.md",
+  "updated": "2026-10-09"
+}

@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="ds/cockpit.css">
+<script src="ds/refs.js"></script>
+</helmet>
+<div data-screen-label="C · Work Graph v2" style="height:100vh;display:grid;grid-template-rows:auto 1fr;background:var(--paper);color:var(--ink);overflow:hidden;font-family:var(--sans);">
+  <header style="display:flex;align-items:center;gap:16px;padding:10px var(--s5);border-bottom:3px solid var(--ink);flex-wrap:wrap;">
+    <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;">
+      <span style="font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--ink-3);">CONCEPT C · v2</span>
+      <span style="font-weight:800;font-size:22px;letter-spacing:-.02em;text-transform:uppercase;">Work Graph</span>
+      <nav aria-label="where you are" style="display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;letter-spacing:.1em;">
+        <sc-for list="{{ crumbs }}" as="c" hint-placeholder-count="1"><button onClick="{{ c.go }}" style="{{ c.st }}">{{ c.t }}</button><span style="{{ c.sepSt }}">›</span></sc-for>
+      </nav>
+      <button onClick="{{ up }}" style="{{ upSt }}">↑ UP · ESC</button>
+    </div>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <input value="{{ q }}" onChange="{{ onQ }}" placeholder="find… a repo, a cluster, ‘waiting’, ‘unregistered’, ‘live’" style="background:var(--card);border:1px solid var(--rule-strong);color:var(--ink);font-family:var(--mono);font-size:11px;padding:6px 10px;width:300px;"></input>
+      <sc-for list="{{ chips }}" as="c" hint-placeholder-count="5"><button onClick="{{ c.go }}" style="{{ c.st }}">{{ c.t }}</button></sc-for>
+      <span style="font-family:var(--mono);font-size:10px;color:var(--ink-3);">{{ matchLine }}</span>
+    </div>
+  </header>
+  <div style="display:grid;grid-template-columns:minmax(0,1fr) 372px;min-height:0;">
+    <div style="position:relative;overflow:hidden;background:var(--paper);min-width:0;">
+      <sc-if value="{{ showMap }}" hint-placeholder-val="{{ true }}">
+        <div style="position:absolute;left:16px;top:12px;right:150px;z-index:3;display:flex;gap:4px 16px;font-family:var(--mono);font-size:10px;letter-spacing:.06em;color:var(--ink-3);flex-wrap:wrap;">
+          <span><span style="display:inline-block;width:10px;height:10px;border:1px solid var(--rule-strong);vertical-align:-1px;margin-right:5px;background:var(--card);"></span>registered — a line runs up to the venture goal</span>
+          <span><span style="display:inline-block;width:10px;height:10px;border:1px dashed var(--ink-3);vertical-align:-1px;margin-right:5px;"></span>unregistered — no line; invisible to delivery</span>
+          <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--decision);vertical-align:-1px;margin-right:5px;"></span>waiting on you</span>
+          <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--live);vertical-align:-1px;margin-right:5px;"></span>an agent is working here</span>
+          <span>{{ levelHint }}</span>
+        </div>
+        <div style="position:absolute;right:16px;top:12px;z-index:3;display:flex;gap:6px;">
+          <button onClick="{{ zoomIn }}" style="cursor:pointer;border:1px solid var(--rule-strong);background:var(--card);color:var(--ink-2);padding:4px 10px;font-family:var(--mono);font-size:11px;">+</button>
+          <button onClick="{{ zoomOut }}" style="cursor:pointer;border:1px solid var(--rule-strong);background:var(--card);color:var(--ink-2);padding:4px 10px;font-family:var(--mono);font-size:11px;">−</button>
+          <button onClick="{{ resetView }}" style="cursor:pointer;border:1px solid var(--rule-strong);background:var(--card);color:var(--ink-2);padding:4px 10px;font-family:var(--mono);font-size:11px;letter-spacing:.06em;">RESET</button>
+        </div>
+        <svg viewBox="{{ viewBox }}" onMouseDown="{{ dragStart }}" onMouseMove="{{ dragMove }}" onMouseUp="{{ dragEnd }}" onMouseLeave="{{ dragEnd }}" style="{{ svgSt }}">
+          <sc-for list="{{ cells }}" as="k" hint-placeholder-count="9">
+            <g style="{{ k.gSt }}">
+              <rect x="{{ k.x }}" y="{{ k.y }}" width="{{ k.w }}" height="{{ k.h }}" style="fill:none;stroke:var(--rule);stroke-width:1;"></rect>
+              <rect x="{{ k.x }}" y="{{ k.y }}" width="{{ k.w }}" height="3" style="{{ k.tabSt }}"></rect>
+              <g onClick="{{ k.go }}" role="button" tabindex="0" aria-label="{{ k.aria }}" style="cursor:pointer;">
+                <rect x="{{ k.x }}" y="{{ k.y }}" width="{{ k.w }}" height="30" style="fill:transparent;"></rect>
+                <text x="{{ k.lx }}" y="{{ k.ly }}" style="{{ k.labelSt }}">{{ k.label }}</text>
+                <text x="{{ k.rx }}" y="{{ k.ly }}" style="font-family:var(--mono);font-size:9px;fill:var(--ink-3);text-anchor:end;">{{ k.sub }}</text>
+              </g>
+              <sc-for list="{{ k.segs }}" as="s" hint-placeholder-count="0"><rect x="{{ s.x }}" y="{{ s.y }}" width="{{ s.w }}" height="4" style="{{ s.st }}"></rect></sc-for>
+            </g>
+          </sc-for>
+          <sc-for list="{{ ladder }}" as="l" hint-placeholder-count="0"><path d="{{ l.d }}" style="{{ l.st }}"></path></sc-for>
+          <sc-for list="{{ edges }}" as="e" hint-placeholder-count="0">
+            <g onClick="{{ e.go }}" style="cursor:pointer;">
+              <path d="{{ e.d }}" style="fill:none;stroke:var(--ink-3);stroke-width:1;"></path>
+              <rect x="{{ e.bx }}" y="{{ e.by }}" width="{{ e.bw }}" height="14" style="fill:var(--paper);stroke:var(--rule);"></rect>
+              <text x="{{ e.lx }}" y="{{ e.ly }}" style="font-family:var(--mono);font-size:8.5px;fill:var(--ink-2);text-anchor:middle;">{{ e.label }}</text>
+            </g>
+          </sc-for>
+          <sc-for list="{{ nodes }}" as="n" hint-placeholder-count="20">
+            <g onClick="{{ n.pick }}" tabindex="0" role="button" aria-label="{{ n.aria }}" style="{{ n.gSt }}">
+              <rect x="{{ n.x }}" y="{{ n.y }}" width="{{ n.w }}" height="{{ n.h }}" style="{{ n.bgSt }}"></rect>
+              <rect x="{{ n.x }}" y="{{ n.y }}" width="3" height="{{ n.h }}" style="{{ n.tabSt }}"></rect>
+              <text x="{{ n.tx }}" y="{{ n.ty }}" style="{{ n.nameSt }}">{{ n.name }}</text>
+              <text x="{{ n.tx }}" y="{{ n.sy }}" style="font-family:var(--mono);font-size:8.5px;fill:var(--ink-3);">{{ n.sub }}</text>
+              <sc-if value="{{ n.big }}" hint-placeholder-val="{{ false }}">
+                <text x="{{ n.px }}" y="{{ n.ty }}" style="font-family:var(--mono);font-size:9px;fill:var(--ink-3);text-anchor:end;letter-spacing:.06em;">{{ n.phase }}</text>
+                <text x="{{ n.tx }}" y="{{ n.ry }}" style="font-family:var(--sans);font-size:10.5px;fill:var(--ink-2);">{{ n.role }}</text>
+                <text x="{{ n.tx }}" y="{{ n.my }}" style="font-family:var(--mono);font-size:8.5px;fill:var(--ink-2);letter-spacing:.04em;">{{ n.marks }}</text>
+                <sc-for list="{{ n.stubs }}" as="s" hint-placeholder-count="0"><text x="{{ s.x }}" y="{{ s.y }}" onClick="{{ s.go }}" style="font-family:var(--mono);font-size:8.5px;fill:var(--ev-asserted);cursor:pointer;text-decoration:underline;">{{ s.t }}</text></sc-for>
+              </sc-if>
+              <sc-if value="{{ n.waiting }}" hint-placeholder-val="{{ false }}"><circle cx="{{ n.wx }}" cy="{{ n.wy }}" r="7" style="fill:var(--decision);"></circle><text x="{{ n.wx }}" y="{{ n.wty }}" style="font-family:var(--mono);font-size:8px;font-weight:700;fill:var(--card);text-anchor:middle;">{{ n.waitingN }}</text></sc-if>
+              <sc-if value="{{ n.agent }}" hint-placeholder-val="{{ false }}"><circle cx="{{ n.ax }}" cy="{{ n.ay }}" r="4.5" style="fill:var(--live);stroke:var(--paper);stroke-width:1.5;"></circle></sc-if>
+            </g>
+          </sc-for>
+          <g style="{{ apex.gSt }}">
+            <rect x="{{ apex.x }}" y="{{ apex.y }}" width="220" height="44" style="fill:var(--paper-2);stroke:var(--ink);stroke-width:2;"></rect>
+            <text x="{{ apex.tx }}" y="{{ apex.ty }}" style="font-family:var(--sans);font-weight:800;font-size:12px;fill:var(--ink);text-anchor:middle;letter-spacing:.04em;">L2 · OJFBOT VENTURE</text>
+            <text x="{{ apex.tx }}" y="{{ apex.sy }}" style="font-family:var(--mono);font-size:8.5px;fill:var(--ink-2);text-anchor:middle;">{{ apex.sub }}</text>
+          </g>
+        </svg>
+        <div style="position:absolute;left:16px;bottom:12px;z-index:3;font-family:var(--mono);font-size:10px;color:var(--ink-3);display:flex;gap:14px;flex-wrap:wrap;">
+          <span>{{ statLine }}</span>
+          <span style="color:var(--ev-asserted);">● CLUSTERS OF UNREGISTERED REPOS · REPO-TO-REPO LINKS = HAND-READ</span>
+          <span style="color:var(--ev-derived);">● WAITING / AGENT / SLICES = DERIVED FROM .handoff + bead_events + roadmap</span>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ showRepo }}" hint-placeholder-val="{{ false }}">
+        <div style="height:100%;overflow-y:auto;padding:20px var(--s5) 40px;">
+          <div style="display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap;border-bottom:1px solid var(--rule-strong);padding-bottom:14px;">
+            <span style="{{ rp.hueSt }}"></span>
+            <div style="flex:1;min-width:240px;">
+              <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;"><h1 style="margin:0;font-size:28px;font-weight:800;letter-spacing:-.02em;">{{ rp.name }}</h1><span style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--ink-3);">{{ rp.phase }}</span><span style="{{ rp.regSt }}">{{ rp.regWord }}</span><span style="font-family:var(--mono);font-size:10px;color:var(--ink-3);">{{ rp.liveWord }}</span></div>
+              <p style="margin:4px 0 8px;font-size:14px;line-height:1.5;color:var(--ink-2);max-width:70ch;text-wrap:pretty;">{{ rp.role }}</p>
+              <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-family:var(--mono);font-size:10px;color:var(--ink-3);">{{ rp.clusterChip }}<span>·</span>{{ rp.ladder }}</div>
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+              <sc-for list="{{ rp.counts }}" as="c" hint-placeholder-count="3"><div style="min-width:76px;border:1px solid var(--rule);padding:6px 10px;background:var(--card);"><div style="{{ c.nSt }}">{{ c.n }}</div><div style="font-family:var(--mono);font-size:8.5px;letter-spacing:.1em;color:var(--ink-3);">{{ c.l }}</div></div></sc-for>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:22px;margin-top:18px;">
+            <section style="min-width:0;">
+              <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:8px;"><h2 style="margin:0;font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;">Sessions here</h2><span style="{{ evDerived }}">DERIVED</span><span style="margin-left:auto;font-family:var(--mono);font-size:9.5px;color:var(--ink-3);">harness › process › session</span></div>
+              <p style="margin:0 0 8px;font-size:11.5px;color:var(--ink-3);line-height:1.45;">{{ rp.sessionsNote }}</p>
+              <sc-for list="{{ rp.sessions }}" as="s" hint-placeholder-count="2">
+                <button onClick="{{ s.go }}" style="{{ s.st }}">
+                  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">{{ s.chip }}<span style="{{ s.stateSt }}">{{ s.state }}</span><span style="margin-left:auto;font-family:var(--mono);font-size:9px;color:var(--ink-3);">{{ s.last }}</span></div>
+                  <div style="font-family:var(--mono);font-size:9.5px;color:var(--ink-3);margin-top:5px;letter-spacing:.04em;">{{ s.parent }}</div>
+                  <div style="font-size:12.5px;line-height:1.4;margin-top:4px;">{{ s.task }}</div>
+                  <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:5px;">{{ s.refChip }}</div>
+                </button>
+              </sc-for>
+              <sc-if value="{{ rp.hasNamed }}" hint-placeholder-val="{{ false }}">
+                <div style="font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;color:var(--ink-3);margin:12px 0 5px;">ALSO NAMED ON ITS BRIEFS</div>
+                <div style="display:flex;flex-wrap:wrap;gap:5px;">{{ rp.named }}</div>
+              </sc-if>
+            </section>
+
+            <section style="min-width:0;">
+              <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:8px;"><h2 style="margin:0;font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;">Track</h2><span style="{{ rp.trackEvSt }}">{{ rp.trackEv }}</span><span style="margin-left:auto;font-family:var(--mono);font-size:9.5px;color:var(--ink-3);">goal → plan → slices</span></div>
+              <p style="margin:0 0 8px;font-size:11.5px;color:var(--ink-3);line-height:1.45;">{{ rp.trackNote }}</p>
+              <sc-if value="{{ rp.hasProps }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;">{{ rp.nsChip }}<span style="font-family:var(--mono);font-size:9px;letter-spacing:.08em;color:var(--ink-3);">{{ rp.nsMeta }}</span></div>
+                <sc-for list="{{ rp.props }}" as="p" hint-placeholder-count="3">
+                  <button onClick="{{ p.go }}" style="{{ p.st }}">
+                    <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-family:var(--mono);font-size:10px;font-weight:700;">{{ p.id }}</span><span style="font-size:12.5px;flex:1;text-align:left;">{{ p.name }}</span><span style="font-family:var(--mono);font-size:10px;color:var(--ink-2);">{{ p.val }}</span></div>
+                    <div style="position:relative;height:6px;background:var(--rule);margin-top:5px;"><div style="{{ p.barSt }}"></div><div style="{{ p.propSt }}"></div></div>
+                  </button>
+                </sc-for>
+              </sc-if>
+              <sc-for list="{{ rp.phases }}" as="ph" hint-placeholder-count="0">
+                <div style="margin-top:12px;">
+                  <div style="display:flex;align-items:baseline;gap:8px;font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;color:var(--ink-3);border-bottom:1px solid var(--rule);padding-bottom:3px;margin-bottom:4px;"><span style="font-weight:700;color:var(--ink);">{{ ph.id }}</span><span>{{ ph.name }}</span><span style="margin-left:auto;">{{ ph.sum }}</span></div>
+                  <sc-for list="{{ ph.slices }}" as="sl" hint-placeholder-count="2">
+                    <button onClick="{{ sl.go }}" style="{{ sl.st }}"><span style="{{ sl.sq }}"></span><span style="font-family:var(--mono);font-size:10px;font-weight:700;min-width:26px;">{{ sl.id }}</span><span style="flex:1;font-size:12.5px;line-height:1.35;text-align:left;">{{ sl.title }}</span><span style="font-family:var(--mono);font-size:9px;color:var(--ink-3);white-space:nowrap;">{{ sl.meta }}</span></button>
+                  </sc-for>
+                </div>
+              </sc-for>
+              <sc-if value="{{ rp.hasSliceBars }}" hint-placeholder-val="{{ false }}">
+                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+                  <sc-for list="{{ rp.sliceBars }}" as="b" hint-placeholder-count="3"><div style="border:1px solid var(--rule);background:var(--card);padding:8px 10px;"><div style="font-size:22px;font-weight:800;letter-spacing:-.02em;">{{ b.n }}</div><div style="font-family:var(--mono);font-size:8.5px;letter-spacing:.1em;color:var(--ink-3);">{{ b.l }}</div></div></sc-for>
+                </div>
+              </sc-if>
+            </section>
+
+            <section style="min-width:0;">
+              <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:8px;"><h2 style="margin:0;font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;">Owned artifacts</h2><span style="margin-left:auto;font-family:var(--mono);font-size:9.5px;color:var(--ink-3);">{{ rp.artCount }}</span></div>
+              <p style="margin:0 0 8px;font-size:11.5px;color:var(--ink-3);line-height:1.45;">{{ rp.artNote }}</p>
+              <sc-for list="{{ rp.artGroups }}" as="g" hint-placeholder-count="2">
+                <div style="font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;color:var(--ink-3);margin:10px 0 4px;display:flex;gap:8px;align-items:baseline;"><span>{{ g.label }}</span><span style="{{ g.badgeSt }}">{{ g.badge }}</span></div>
+                <sc-for list="{{ g.items }}" as="a" hint-placeholder-count="2">
+                  <button onClick="{{ a.go }}" style="{{ a.st }}">
+                    <div style="font-size:12.5px;font-weight:700;line-height:1.35;text-align:left;">{{ a.title }}</div>
+                    <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-family:var(--mono);font-size:9.5px;color:var(--ink-3);margin-top:4px;"><span>{{ a.meta }}</span>{{ a.byChip }}<span style="{{ a.evSt }}">{{ a.ev }}</span></div>
+                  </button>
+                </sc-for>
+              </sc-for>
+            </section>
+          </div>
+
+          <section style="margin-top:22px;border-top:1px solid var(--rule-strong);padding-top:12px;">
+            <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:8px;"><h2 style="margin:0;font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;">Links to other repos</h2><span style="{{ evAsserted }}">HAND-READ</span><span style="font-family:var(--mono);font-size:9.5px;color:var(--ink-3);">click a repo to travel there</span></div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;">
+              <div><div style="font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;color:var(--ink-3);margin-bottom:5px;">THIS REPO USES</div><div style="display:flex;flex-direction:column;gap:5px;"><sc-for list="{{ rp.out }}" as="l" hint-placeholder-count="1"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--ink-2);"><span style="font-family:var(--mono);font-size:10px;">{{ l.rel }}</span><span>→</span>{{ l.chip }}</div></sc-for><span style="font-size:11.5px;color:var(--ink-3);">{{ rp.outNone }}</span></div></div>
+              <div><div style="font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;color:var(--ink-3);margin-bottom:5px;">USED BY</div><div style="display:flex;flex-direction:column;gap:5px;"><sc-for list="{{ rp.inn }}" as="l" hint-placeholder-count="1"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--ink-2);">{{ l.chip }}<span style="font-family:var(--mono);font-size:10px;">{{ l.rel }}</span><span>→ this</span></div></sc-for><span style="font-size:11.5px;color:var(--ink-3);">{{ rp.inNone }}</span></div></div>
+            </div>
+          </section>
+        </div>
+      </sc-if>
+    </div>
+
+    <aside style="border-left:1px solid var(--rule-strong);background:var(--paper-2);display:grid;grid-template-rows:minmax(60px,1fr) minmax(150px,40%);min-height:0;">
+      <div style="overflow-y:auto;padding:16px 18px;">
+        <div style="font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--ink-3);margin-bottom:10px;">{{ crumb }}</div>
+        <div style="display:flex;align-items:center;gap:8px;"><span style="{{ rail.hueSt }}"></span><h2 style="margin:0;font-size:17px;font-weight:800;flex:1;line-height:1.25;">{{ rail.title }}</h2><button onClick="{{ rail.clear }}" style="{{ rail.clearSt }}">CLEAR</button></div>
+        <div style="font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;color:var(--ink-3);margin:4px 0 8px;">{{ rail.kicker }}</div>
+        <p style="margin:0 0 10px;font-size:12.5px;line-height:1.5;color:var(--ink-2);text-wrap:pretty;">{{ rail.intro }}</p>
+        <sc-for list="{{ rail.rows }}" as="r" hint-placeholder-count="3">
+          <div style="padding:7px 0;border-bottom:1px solid var(--rule);">
+            <div style="font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;color:var(--ink-3);margin-bottom:3px;">{{ r.label }} <span style="{{ r.evSt }}">{{ r.ev }}</span></div>
+            <div style="font-size:12.5px;line-height:1.5;display:flex;flex-wrap:wrap;gap:4px;align-items:center;">{{ r.body }}</div>
+          </div>
+        </sc-for>
+        <sc-for list="{{ rail.hot }}" as="h" hint-placeholder-count="0">
+          <button onClick="{{ h.go }}" style="display:flex;width:100%;text-align:left;gap:10px;align-items:baseline;background:var(--card);border:1px solid var(--rule);border-left:3px solid var(--decision);padding:8px 10px;margin-top:6px;cursor:pointer;color:var(--ink);font-family:var(--sans);" style-hover="border-color:var(--ink);">
+            <span style="flex:1;display:flex;flex-wrap:wrap;gap:4px;align-items:center;">{{ h.body }}</span><span style="font-family:var(--mono);font-size:10px;color:var(--decision-ink);white-space:nowrap;">{{ h.right }}</span>
+          </button>
+        </sc-for>
+        <details style="margin-top:12px;"><summary style="cursor:pointer;font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--ink-3);">WHERE THIS CAME FROM</summary><p style="margin:6px 0 0;font-family:var(--mono);font-size:10px;color:var(--ink-2);word-break:break-all;padding:6px 8px;background:var(--paper);border:1px solid var(--rule);">{{ rail.source }}</p></details>
+      </div>
+      <div style="border-top:2px solid var(--rule-strong);display:flex;flex-direction:column;min-height:0;background:var(--paper-2);">
+        <div style="display:flex;align-items:center;gap:8px;padding:10px 18px 6px;"><span style="width:7px;height:7px;border-radius:50%;background:var(--live);"></span><span style="font-family:var(--mono);font-size:10px;letter-spacing:.12em;">ASK LEO</span><span style="margin-left:auto;font-family:var(--mono);font-size:9px;color:var(--ink-3);">{{ leoScope }}</span><span style="{{ evSim }}">SIMULATED</span></div>
+        <div style="flex:1;min-height:0;overflow-y:auto;padding:0 18px;font-size:12.5px;line-height:1.5;">
+          <sc-for list="{{ log }}" as="m" hint-placeholder-count="2"><div style="{{ m.st }}">{{ m.t }}</div></sc-for>
+        </div>
+        <div style="display:flex;gap:5px;padding:8px 18px 4px;flex-wrap:wrap;">
+          <sc-for list="{{ tokens }}" as="t" hint-placeholder-count="4"><button onClick="{{ t.go }}" title="{{ t.tip }}" style="{{ t.st }}">{{ t.t }}</button></sc-for>
+        </div>
+        <div style="display:flex;gap:6px;padding:4px 18px 12px;"><input value="{{ ask }}" onChange="{{ onAsk }}" onKeyDown="{{ onAskKey }}" placeholder="ask, or type a verb — Leo answers, the surface moves" style="flex:1;min-width:0;background:var(--card);color:var(--ink);border:1px solid var(--rule-strong);padding:7px 9px;font-family:var(--mono);font-size:11px;"></input><button onClick="{{ send }}" style="cursor:pointer;border:1px solid var(--ink);background:var(--ink);color:var(--paper);font-family:var(--mono);font-size:11px;font-weight:700;padding:0 14px;">ASK</button></div>
+      </div>
+    </aside>
+  </div>
+  {{ refCard }}
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { data: null, q: '', level: { kind: 'fleet' }, focus: null, vb: null, drag: null, ask: '', log: [] };
+  componentDidMount() {
+    if (window.ckRefs) window.ckRefs.bind(this, React);
+    import('./data/snapshot.js').then((d) => { if (window.ckRefs) { window.ckRefs.setData(d); this.extendRefs(d); } this.setState({ data: d }); });
+    this._key = (e) => { if (e.key === 'Escape') { if (this.state.focus) this.setState({ focus: null }); else this.up(); } };
+    this._hash = () => { const l = this.parseHash(); if (JSON.stringify(l) !== JSON.stringify(this.state.level)) this.setState({ level: l, vb: null, focus: null }); };
+    window.addEventListener('keydown', this._key); window.addEventListener('hashchange', this._hash);
+    const l = this.parseHash(); if (l.kind !== 'fleet') this.setState({ level: l });
+  }
+  componentWillUnmount() { window.removeEventListener('keydown', this._key); window.removeEventListener('hashchange', this._hash); }
+  parseHash() { const h = decodeURIComponent((location.hash || '').slice(1)); const [k, ...r] = h.split('/'); const id = r.join('/'); if (k === 'cluster' && id) return { kind: 'cluster', id }; if (k === 'repo' && id) return { kind: 'repo', id }; return { kind: 'fleet' }; }
+  nav(level) { const h = level.kind === 'fleet' ? '' : `#${level.kind}/${encodeURIComponent(level.id)}`; try { history.replaceState(null, '', location.pathname + location.search + h); } catch (e) {} this.setState({ level, vb: null, focus: null, q: '' }); }
+  up() { const d = this.state.data, l = this.state.level; if (l.kind === 'repo' && d) { const r = d.REPOS.find((x) => x.name === l.id); this.nav(r ? { kind: 'cluster', id: r.cluster } : { kind: 'fleet' }); } else if (l.kind === 'cluster') this.nav({ kind: 'fleet' }); }
+  // Artifact chip + card page, registered on the shared ref layer so artifacts are navigable everywhere.
+  extendRefs(d) {
+    const CK = window.ckRefs, e = React.createElement; const find = (id) => d.ARTIFACTS.find((a) => a.id === id);
+    const KCOL = { adr: 'var(--ev-asserted)', northstar: 'var(--ev-derived)', roadmap: 'var(--ev-derived)', handoff: 'var(--ink-2)', memo: 'var(--ink-2)', schema: 'var(--ink-2)', registry: 'var(--ev-derived)', decision: 'var(--ev-asserted)', prototype: 'var(--ink-3)', file: 'var(--ink-3)' };
+    CK.extend({
+      chips: { artifact: (id) => { const a = find(id); if (!a) return CK.chips.ref(id); return CK.chipBase({ page: { kind: 'artifact', id }, title: a.title, tip: a.kind + ' · ' + (a.path || ''), style: { color: KCOL[a.kind] || 'var(--ink-2)', borderColor: KCOL[a.kind] || 'var(--rule-strong)' } }, [e('span', { key: 'k', style: { fontSize: 8, letterSpacing: '.08em', textTransform: 'uppercase', opacity: .8 } }, a.kind), e('span', { key: 't' }, a.title.length > 40 ? a.title.slice(0, 39) + '…' : a.title)]); } },
+      pages: { artifact: (id) => { const a = find(id); const cited = d.BRIEFS.filter((b) => (b.refs || []).includes(id)); const ag = d.AGENTS.filter((x) => x.taskRef === id);
+        return { title: a.title, hue: KCOL[a.kind], kicker: a.kind.toUpperCase() + (a.status ? ' · ' + a.status.toUpperCase() : ''), body: [
+          CK.row('OWNED BY', [CK.chips.repo(a.repo)]),
+          CK.row('PATH', a.path || '—', a.origin === 'repo' ? 'derived' : 'asserted'),
+          CK.row('WRITTEN', [a.date || 'date not read', a.by ? ' · by ' : '', a.by ? CK.chips.who(a.by) : null]),
+          CK.row('CITED BY', cited.length ? cited.map((b) => CK.chips.brief(b.id)) : 'No brief cites it.', 'derived'),
+          CK.row('WORKED ON BY', ag.length ? ag.map((x) => CK.chips.who(x.id)) : 'No session names it as its task.', 'derived')
+        ], source: a.repo + '/' + (a.path || a.id) + (a.origin === 'repo' ? ' · read in this project' : ' · written in this design project — not yet committed') }; } }
+    });
+  }
+  // ── layouts (world width 1460) ───────────────────────────────────────────
+  fleetLayout(d) {
+    const cols = [[], [], []]; d.CLUSTERS.forEach((c, i) => cols[i % 3].push({ ...c, repos: d.REPOS.filter((r) => r.cluster === c.id) }));
+    const colX = [60, 520, 980], ys = [120, 120, 120], boxes = [];
+    cols.forEach((col, ci) => col.forEach((k) => { const rows = Math.ceil(k.repos.length / 2); k.x = colX[ci]; k.y = ys[ci]; k.w = 406; k.h = 44 + rows * 48 + 6; ys[ci] += k.h + 36; k.repos.forEach((r, i) => { r._x = k.x + 10 + (i % 2) * 196; r._y = k.y + 40 + Math.floor(i / 2) * 48; r._w = 186; r._h = 40; }); boxes.push(k); }));
+    return { boxes, height: Math.max(...ys) + 20 };
+  }
+  clusterLayout(d, c) {
+    const repos = d.REPOS.filter((r) => r.cluster === c.id); const cols = repos.length <= 4 ? 2 : 3, w = 330, h = 112, gx = 60, gy = 64; const tw = cols * w + (cols - 1) * gx, x0 = (1460 - tw) / 2, y0 = 170;
+    repos.forEach((r, i) => { r._x = x0 + (i % cols) * (w + gx); r._y = y0 + Math.floor(i / cols) * (h + gy); r._w = w; r._h = h; });
+    const rows = Math.ceil(repos.length / cols); const box = { ...c, repos, x: x0 - 28, y: y0 - 46, w: tw + 56, h: rows * (h + gy) - gy + 76 };
+    return { boxes: [box], height: box.y + box.h + 40 };
+  }
+  match(r, q) { if (!q) return true; q = q.toLowerCase(); if (q === 'unregistered' || q === 'gaps') return !r.registered; if (q === 'waiting') return r._waiting > 0; if (q === 'live') return r.liveness === 'live'; return r.name.toLowerCase().includes(q) || r.cluster.includes(q) || r.role.toLowerCase().includes(q); }
+  say(role, t) { this.setState((s) => ({ log: [...s.log, { role, t }] })); }
+  run(text) {
+    const d = this.state.data; if (!d) return; const [verb, ...rest] = text.trim().split(/\s+/); const arg = rest.join(' '); const l = this.state.level; const cur = l.kind === 'repo' ? d.REPOS.find((x) => x.name === l.id) : null;
+    this.say('u', text);
+    const findRepo = (n) => d.REPOS.find((x) => x.name.toLowerCase() === (n || '').toLowerCase());
+    if (verb === '/open') { const r = findRepo(arg); if (r) { this.nav({ kind: 'repo', id: r.name }); this.say('a', `Opened ${r.name} — sessions, track and artifacts in one surface. Selection follows on every surface (ADR-0012).`); } else this.say('a', `No repo called “${arg}” in the fleet.`); }
+    else if (verb === '/cluster') { const c = d.CLUSTERS.find((x) => x.id === arg.toLowerCase() || x.label.toLowerCase().startsWith(arg.toLowerCase())); if (c) { this.nav({ kind: 'cluster', id: c.id }); this.say('a', `Zoomed to ${c.label}. Lines up to the venture goal exist only for registered repos; the rest hang in the gap.`); } else this.say('a', `No cluster called “${arg}”.`); }
+    else if (verb === '/up') { this.up(); this.say('a', 'Up one level.'); }
+    else if (verb === '/gap') { if (l.kind === 'repo') this.up(); this.setState({ q: 'unregistered' }); this.say('a', `${d.REPOS.filter((r) => !r.registered).length} repos have no goal on record. Dimmed everything else — they’re invisible to delivery until registered (TD-007).`); }
+    else if (verb === '/waiting') { if (l.kind === 'repo') this.up(); this.setState({ q: 'waiting' }); this.say('a', 'Showing only repos with briefs waiting on you.'); }
+    else if (verb === '/track') { const r = findRepo(arg) || cur; if (r) { this.nav({ kind: 'repo', id: r.name }); this.say('a', r.name === 'morning-cockpit' ? `${r.name}: l1 goal with three properties; S8 proposes P2 50→56 at merge. The track column shows it.` : r.registered ? `${r.name}: registered, but only the navigator’s slice counts were read for it — properties not in this snapshot.` : `${r.name} has no northstar, so there is no track to show. Register it first.`); } else this.say('a', 'Name a repo: /track core.'); }
+    else if (verb === '/sessions') { const r = findRepo(arg) || cur; if (r) { this.nav({ kind: 'repo', id: r.name }); const n = d.AGENTS.filter((a) => a.repo === r.name).length; this.say('a', n ? `${n} session${n > 1 ? 's' : ''} in bead_events for ${r.name}. Parent shown as harness › process; most beads carry only the harness string (Q15).` : `No session has touched ${r.name} in bead_events.`); } else this.say('a', 'Name a repo: /sessions core.'); }
+    else if (verb === '/explain') { const r = findRepo(arg) || cur; this.say('a', r ? `${r.name}: ${r.role}. ${r.registered ? 'Registered — it ladders to l2-ojfbot.' : 'Unregistered — its cluster is a judgment call, not registry fact.'} [authored prose + registry; no model call]` : 'Pick or name a repo to explain.'); }
+    else if (verb === '/draft-handoff') { this.say('a', 'Starting the gated brief flow — nothing is written until you approve (ADR-0005). In this prototype that path is simulated.'); }
+    else { this.say('a', cur ? `[simulated reply] About ${cur.name}: read its waiting briefs first, then the track — S-a/S-b/S-c are ready and gated on you.` : '[simulated reply] Ask about a repo, or try /waiting to see what needs you.'); }
+    this.setState({ ask: '' });
+  }
+  renderVals() {
+    const d = this.state.data, mono = 'font-family:var(--mono);', e = React.createElement;
+    const pill = (c) => `font-size:8px;letter-spacing:.08em;padding:0 4px;border:1px solid ${c};color:${c};${mono}vertical-align:1px;`;
+    const EV = { derived: 'var(--ev-derived)', asserted: 'var(--ev-asserted)', simulated: 'var(--ev-simulated)', repo: 'var(--ev-derived)' };
+    const evAuthored = pill(EV.asserted), evDerived = pill(EV.derived), evAsserted = pill(EV.asserted), evSim = pill(EV.simulated);
+    const CK = window.ckRefs; const chip = (k, id, o) => (CK && d ? CK.chip(k, id, o) : null);
+    const L = this.state.level; const q = this.state.q, anyQ = !!q;
+    const base = { refCard: CK ? CK.card() : null, q, onQ: (ev) => this.setState({ q: ev.target.value }), ask: this.state.ask, onAsk: (ev) => this.setState({ ask: ev.target.value }), onAskKey: (ev) => { if (ev.key === 'Enter' && this.state.ask.trim()) this.run(this.state.ask); }, send: () => this.state.ask.trim() && this.run(this.state.ask), evAuthored, evDerived, evAsserted, evSim, up: () => this.up(), upSt: `cursor:pointer;border:1px solid var(--rule-strong);background:none;color:var(--ink-2);${mono}font-size:9.5px;letter-spacing:.08em;padding:3px 8px;visibility:${L.kind === 'fleet' ? 'hidden' : 'visible'};` };
+    const empty = { cells: [], ladder: [], edges: [], nodes: [], chips: [], crumbs: [], log: [], tokens: [], apex: {}, rp: { sessions: [], props: [], phases: [], sliceBars: [], artGroups: [], out: [], inn: [], counts: [] }, rail: { rows: [], hot: [] }, showMap: true, showRepo: false, viewBox: '0 0 1460 900', svgSt: 'display:block;width:100%;height:100%;' };
+    if (!d) return { ...base, ...empty };
+    d.REPOS.forEach((r) => { const w = d.BRIEFS.filter((b) => b.repo === r.name && b.open && !b.decidedInFlight); r._waiting = w.length; r._oldest = Math.max(0, ...w.map((b) => b.staleDays)); r._agents = d.AGENTS.filter((a) => a.repo === r.name && a.state === 'live'); r._all = d.AGENTS.filter((a) => a.repo === r.name); });
+    const hue = (id) => (d.CLUSTERS.find((c) => c.id === id) || {}).hue || 'var(--ink-3)';
+    const liveWord = (r) => r.liveness === 'live' ? 'active now' : r.liveness === 'stale' ? `quiet ${r.lastDays}d` : `silent ${r.lastDays}d`;
+    const slicesWord = (r) => r.slices ? `${r.slices.merged} merged · ${r.slices.ready} ready · ${r.slices.queued} queued` : r.registered ? 'registered · no roadmap yet' : 'no goal on record';
+    const harnessMark = (id) => { const w = d.WHO.actors[id]; const h = w && d.WHO.harnesses[w.harness]; return h ? h.mark : '??'; };
+    const cl = L.kind === 'cluster' ? d.CLUSTERS.find((c) => c.id === L.id) : L.kind === 'repo' ? d.CLUSTERS.find((c) => c.id === (d.REPOS.find((r) => r.name === L.id) || {}).cluster) : null;
+    const rpR = L.kind === 'repo' ? d.REPOS.find((r) => r.name === L.id) : null;
+    const go = (lv) => () => { if (this._moved) return; this.nav(lv); };
+    // crumbs
+    const crumbSt = (on) => `cursor:pointer;border:none;background:${on ? 'var(--ink)' : 'none'};color:${on ? 'var(--paper)' : 'var(--ink-2)'};${mono}font-size:10px;letter-spacing:.1em;padding:3px 7px;text-decoration:${on ? 'none' : 'underline'};`;
+    const crumbs = [{ t: 'FLEET', go: () => this.nav({ kind: 'fleet' }), st: crumbSt(L.kind === 'fleet'), sepSt: `color:var(--ink-3);${cl ? '' : 'display:none;'}` }];
+    if (cl) crumbs.push({ t: cl.label.toUpperCase(), go: () => this.nav({ kind: 'cluster', id: cl.id }), st: crumbSt(L.kind === 'cluster'), sepSt: `color:var(--ink-3);${rpR ? '' : 'display:none;'}` });
+    if (rpR) crumbs.push({ t: rpR.name.toUpperCase(), go: () => {}, st: crumbSt(true), sepSt: 'display:none;' });
+    // ── map (fleet + cluster) ──
+    const showMap = L.kind !== 'repo'; let cells = [], ladder = [], edges = [], nodes = [], apex = {}, vb = this.state.vb, height = 900;
+    const apexX = 620, apexY = 36;
+    if (showMap) {
+      const lay = L.kind === 'fleet' ? this.fleetLayout(d) : this.clusterLayout(d, cl); height = lay.height;
+      cells = lay.boxes.map((k) => { const anyMatch = !anyQ || k.repos.some((r) => this.match(r, q)); const reg = k.repos.filter((r) => r.registered).length; const segW = (k.w - 20) / k.repos.length;
+        return { x: k.x, y: k.y, w: k.w, h: k.h, gSt: `opacity:${anyMatch ? 1 : .15};transition:opacity 240ms;`, tabSt: `fill:${k.hue};`, lx: k.x + 10, ly: k.y + 19, rx: k.x + k.w - 10, labelSt: `${mono}font-size:${L.kind === 'fleet' ? 10 : 12}px;font-weight:700;letter-spacing:.08em;fill:${k.hue};`, label: k.label.toUpperCase() + (L.kind === 'fleet' ? '' : ' — CLUSTER VIEW'), sub: `${reg}/${k.repos.length} registered · ${k.repos.reduce((n, r) => n + r._waiting, 0)} waiting · ${k.repos.reduce((n, r) => n + r._agents.length, 0)} live`, aria: `${k.label} cluster, open`, go: L.kind === 'fleet' ? go({ kind: 'cluster', id: k.id }) : () => {},
+          segs: k.repos.map((r, i) => ({ x: k.x + 10 + i * segW, y: k.y + 27, w: Math.max(2, segW - 2), st: r.registered ? `fill:${k.hue};` : `fill:none;stroke:var(--ink-3);stroke-dasharray:2 2;` })) }; });
+      const bez = (x1, y1, x2, y2) => `M${x1},${y1} C${x1},${y1 - 50} ${x2},${y2 + 70} ${x2},${y2}`;
+      if (L.kind === 'fleet') ladder = lay.boxes.map((k) => ({ d: bez(k.x + k.w / 2, k.y, apexX + 110, apexY + 44), st: `fill:none;stroke:var(--rule-strong);stroke-width:${k.repos.some((r) => r.registered) ? 1 : 0};` }));
+      else { const rs = lay.boxes[0].repos; ladder = rs.filter((r) => r.registered).map((r) => ({ d: bez(r._x + r._w / 2, r._y, apexX + 110, apexY + 44), st: 'fill:none;stroke:var(--rule-strong);stroke-width:1;' }));
+        const inC = (n) => rs.find((r) => r.name === n);
+        edges = d.LINKS.filter((l) => inC(l.from) && inC(l.to)).map((l) => { const a = inC(l.from), b = inC(l.to); const x1 = a._x + a._w / 2, y1 = a._y + a._h / 2, x2 = b._x + b._w / 2, y2 = b._y + b._h / 2; const mx = (x1 + x2) / 2, my = (y1 + y2) / 2; const bw = l.rel.length * 5.6 + 14; return { d: `M${x1},${y1} L${x2},${y2}`, bx: mx - bw / 2, by: my - 7, bw, lx: mx, ly: my + 3.5, label: `${l.from} ${l.rel} ${l.to}`.length > 0 ? l.rel : '', go: () => this.setState({ focus: { kind: 'link', from: l.from, to: l.to } }) }; }); }
+      nodes = (L.kind === 'fleet' ? d.REPOS : lay.boxes[0].repos).map((r) => { const m = this.match(r, q); const big = L.kind === 'cluster'; const stubs = big ? d.LINKS.filter((l) => (l.from === r.name && !lay.boxes[0].repos.find((x) => x.name === l.to)) || (l.to === r.name && !lay.boxes[0].repos.find((x) => x.name === l.from))).slice(0, 2) : [];
+        let sx = r._x + 12; const stubEls = stubs.map((l) => { const other = l.from === r.name ? l.to : l.from; const t = l.from === r.name ? `→ ${other} · ${l.rel}` : `← ${other} · ${l.rel}`; const el = { t, x: sx, y: r._y + r._h - 10, go: (ev) => { ev.stopPropagation(); if (!this._moved) this.nav({ kind: 'repo', id: other }); } }; sx += t.length * 5.4 + 16; return el; });
+        return { name: r.name, x: r._x, y: r._y, w: r._w, h: r._h, big, tx: r._x + 12, ty: r._y + (big ? 20 : 17), sy: r._y + (big ? 56 : 31), ry: r._y + 38, my: r._y + 76, px: r._x + r._w - 24, phase: r.phase, role: r.role.length > 52 ? r.role.slice(0, 51) + '…' : r.role,
+          marks: r._all.length ? r._all.map((a) => `${harnessMark(a.id)} ${a.id}${a.state === 'live' ? ' ●' : ''}`).join('   ') : 'no session in bead_events', stubs: stubEls,
+          wx: r._x + r._w - 8, wy: r._y + 8, wty: r._y + 11, ax: r._x + r._w - 8, ay: r._y + r._h - 8, waiting: r._waiting > 0, waitingN: r._waiting, agent: r._agents.length > 0,
+          sub: big ? `${liveWord(r)} · ${slicesWord(r)}` : slicesWord(r), aria: `${r.name}, ${r.registered ? 'registered' : 'unregistered'}, ${r._waiting} briefs waiting — open`,
+          gSt: `cursor:pointer;opacity:${!anyQ || m ? 1 : .14};transition:opacity 240ms;`, bgSt: `fill:var(--card);stroke:${anyQ && m ? 'var(--ink-2)' : r.registered ? 'var(--rule-strong)' : 'var(--ink-3)'};stroke-width:1;${r.registered ? '' : 'stroke-dasharray:4 3;'}`, tabSt: `fill:${hue(r.cluster)};`, nameSt: `font-family:var(--sans);font-weight:700;font-size:${big ? 14 : 12}px;fill:${r.registered ? 'var(--ink)' : 'var(--ink-2)'};`, pick: go({ kind: 'repo', id: r.name }) }; });
+      const regN = (L.kind === 'fleet' ? d.REPOS : lay.boxes[0].repos).filter((r) => r.registered).length;
+      apex = { x: apexX, y: apexY, tx: apexX + 110, ty: apexY + 19, sy: apexY + 33, gSt: '', sub: `${regN} registered goal${regN === 1 ? '' : 's'} answer to this one` };
+      vb = vb || [0, 0, 1460, Math.max(900, height)];
+    }
+    // ── repo surface ──
+    let rp = empty.rp;
+    const F = this.state.focus; const isF = (k, id) => F && F.kind === k && F.id === id;
+    const rowBtn = (on, left) => `display:block;width:100%;text-align:left;background:var(--card);border:1px solid ${on ? 'var(--selection)' : 'var(--rule)'};border-left:3px solid ${left || (on ? 'var(--selection)' : 'var(--rule)')};padding:8px 10px;margin-bottom:6px;cursor:pointer;color:var(--ink);font-family:var(--sans);`;
+    if (rpR) { const r = rpR; const sessions = r._all.map((a) => { const w = d.WHO.actors[a.id], h = w && d.WHO.harnesses[w.harness]; const sc = { live: 'var(--live)', idle: 'var(--ink-3)', stalled: 'var(--warn)' }[a.state];
+        return { chip: chip('who', a.id), state: { live: 'WORKING', idle: 'RESTING', stalled: 'STUCK' }[a.state], stateSt: `${mono}font-size:9px;letter-spacing:.08em;color:${sc};`, last: a.lastEvent.replace('T', ' ').slice(5, 16) + 'Z', parent: `${h ? h.label : 'unknown harness'} › ${w && w.name ? w.name : 'no process name'} › ${w && w.session ? w.session : 'no session id'}`, task: a.task, refChip: a.taskRef ? (d.ARTIFACTS.find((x) => x.id === a.taskRef) ? chip('artifact', a.taskRef) : chip('ref', a.taskRef)) : null, go: () => this.setState({ focus: { kind: 'session', id: a.id } }), st: rowBtn(isF('session', a.id), sc) }; });
+      const briefActors = [...new Set(d.BRIEFS.filter((b) => b.repo === r.name).flatMap((b) => [b.actor, b.to]))].filter((id) => !r._all.find((a) => a.id === id));
+      const arts = d.ARTIFACTS.filter((a) => a.repo === r.name); const briefs = d.BRIEFS.filter((b) => b.repo === r.name);
+      const KL = { brief: 'BRIEFS', northstar: 'GOAL', roadmap: 'PLAN', adr: 'DECISIONS (ADR)', decision: 'DECISIONS', handoff: 'HANDOFFS', memo: 'CORRESPONDENCE', schema: 'SCHEMAS', registry: 'REGISTRY', prototype: 'PROTOTYPES', file: 'FILES' };
+      const order = ['brief', 'northstar', 'roadmap', 'adr', 'decision', 'handoff', 'memo', 'schema', 'registry', 'prototype', 'file'];
+      const groups = []; const wN = r._waiting;
+      if (briefs.length) groups.push({ label: 'BRIEFS', badge: wN ? `${wN} WAITING ON YOU` : 'none waiting', badgeSt: wN ? `color:var(--decision-ink);font-weight:700;` : 'color:var(--ink-3);', items: briefs.map((b) => ({ title: b.title, meta: `${b.created} · ${b.staleDays}d · ${b.decidedInFlight ? 'decided, in flight' : b.open ? 'open' : 'closed'}`, byChip: chip('who', b.actor), ev: 'REPO', evSt: pill(EV.repo), go: () => this.setState({ focus: { kind: 'brief', id: b.id } }), st: rowBtn(isF('brief', b.id), b.decidedInFlight ? 'var(--live)' : b.open ? 'var(--decision)' : 'var(--rule)') })) });
+      order.slice(1).forEach((k) => { const items = arts.filter((a) => a.kind === k); if (items.length) groups.push({ label: KL[k], badge: `${items.length}`, badgeSt: 'color:var(--ink-3);', items: items.map((a) => ({ title: a.title, meta: `${a.date || 'date not read'}${a.status ? ' · ' + a.status : ''}`, byChip: a.by ? chip('who', a.by) : null, ev: a.origin === 'repo' ? 'REPO' : 'NOT YET IN REPO', evSt: pill(EV[a.origin]), go: () => this.setState({ focus: { kind: 'artifact', id: a.id } }), st: rowBtn(isF('artifact', a.id), a.kind === 'adr' && /decision/.test(a.status || '') ? 'var(--decision)' : null) })) }); });
+      const DL = r.name === 'morning-cockpit' ? d.DELIVERY : null; const STc = { merged: 'var(--ink)', claimed: 'var(--warn)', ready: 'var(--progress)', queued: 'var(--rule-strong)' };
+      const props = DL ? DL.northstar.properties.map((p) => { const s8 = DL.roadmap.phases.flatMap((ph) => ph.slices).find((s) => s.advances === p.id && s.to && s.status !== 'merged'); return { id: p.id, name: p.name, val: `${p.current}${s8 ? ` → ${s8.to} proposed by ${s8.id}` : ''}`, barSt: `position:absolute;left:0;top:0;height:6px;width:${p.current}%;background:var(--progress);`, propSt: s8 ? `position:absolute;left:${p.current}%;top:-1px;height:6px;width:${s8.to - p.current}%;border:1px dashed var(--live);box-sizing:border-box;` : 'display:none;', go: () => this.setState({ focus: { kind: 'prop', id: p.id } }), st: rowBtn(isF('prop', p.id)) }; }) : [];
+      const phases = DL ? DL.roadmap.phases.map((ph) => ({ id: ph.id, name: ph.name.toUpperCase(), sum: `${ph.slices.filter((s) => s.status === 'merged').length}/${ph.slices.length} merged`, slices: ph.slices.map((s) => ({ id: s.id, title: s.title, meta: `${s.status}${s.autonomy === 'gated' ? ' · gated' : ''}${s.advances ? ' · ' + s.advances : ''}`, sq: `width:10px;height:10px;flex:none;background:${s.status === 'merged' || s.status === 'claimed' ? STc[s.status] : 'transparent'};border:1px ${s.status === 'queued' ? 'dashed' : 'solid'} ${STc[s.status]};`, go: () => this.setState({ focus: { kind: 'slice', id: s.id } }), st: `display:flex;align-items:center;gap:8px;width:100%;background:${isF('slice', s.id) ? 'var(--card)' : 'transparent'};border:1px solid ${isF('slice', s.id) ? 'var(--selection)' : 'transparent'};padding:4px 6px;cursor:pointer;color:var(--ink);font-family:var(--sans);` })) })) : [];
+      const outL = d.LINKS.filter((l) => l.from === r.name), inL = d.LINKS.filter((l) => l.to === r.name);
+      rp = { name: r.name, hueSt: `width:12px;height:12px;margin-top:10px;background:${hue(r.cluster)};flex:none;`, phase: r.phase, regWord: r.registered ? 'GOAL ON RECORD' : 'NO GOAL ON RECORD', regSt: `${mono}font-size:9.5px;letter-spacing:.1em;padding:1px 6px;border:1px ${r.registered ? 'solid' : 'dashed'} ${r.registered ? 'var(--rule-strong)' : 'var(--ink-3)'};color:${r.registered ? 'var(--ink-2)' : 'var(--ink-2)'};`, liveWord: liveWord(r) + ' · ' + r.openCount + ' open', role: r.role, clusterChip: chip('cluster', r.cluster),
+        ladder: r.registered ? [e('span', { key: 'a', style: { fontFamily: 'var(--mono)', fontSize: 10 } }, `l1-${r.name} →`), chip('ref', 'ns:l2-ojfbot'), e('span', { key: 'b', style: { fontFamily: 'var(--mono)', fontSize: 10 } }, '→ l3-shared')] : [e('span', { key: 'a', style: { fontFamily: 'var(--mono)', fontSize: 10 } }, 'no northstar — cluster membership is a judgment call')],
+        counts: [{ n: r._waiting, l: 'WAITING ON YOU', nSt: `font-size:22px;font-weight:800;letter-spacing:-.02em;color:${r._waiting ? 'var(--decision-ink)' : 'var(--ink-3)'};` }, { n: r._agents.length, l: 'WORKING NOW', nSt: `font-size:22px;font-weight:800;letter-spacing:-.02em;color:${r._agents.length ? 'var(--live)' : 'var(--ink-3)'};` }, { n: arts.length + briefs.length, l: 'ARTIFACTS READ', nSt: 'font-size:22px;font-weight:800;letter-spacing:-.02em;' }],
+        sessions, sessionsNote: sessions.length ? 'Each row is a process that has touched this repo, parented to the tool that runs it. Most beads record only the harness — the blanks are real (Q15).' : 'No session has touched this repo in bead_events. If something is running here, it is not writing beads.', hasNamed: briefActors.length > 0, named: briefActors.map((id) => chip('who', id)),
+        trackEv: DL ? 'DERIVED' : r.registered ? 'PARTIAL' : 'NONE', trackEvSt: pill(DL ? EV.derived : r.registered ? EV.asserted : EV.simulated), trackNote: DL ? 'Goal properties with how far each has come, then the plan’s phases and slices. A dashed segment is a proposal, not a recorded movement.' : r.registered ? 'Registered, but this snapshot only carries the navigator’s slice counts for it — properties and phases were not read. Point an agent at .claude/northstar.md to fill this in.' : 'No northstar on record, so there is no track. Delivery cannot measure this repo until it is registered.',
+        hasProps: !!DL, nsChip: DL ? chip('artifact', 'ns:' + DL.northstar.slug) : null, nsMeta: DL ? `${DL.northstar.tier}${DL.northstar.firstCut ? ' · FIRST CUT' : ''} · ROADMAP ${DL.roadmap.status.toUpperCase()}` : '', props, phases,
+        hasSliceBars: !DL && !!r.slices, sliceBars: r.slices ? [{ n: r.slices.merged, l: 'MERGED' }, { n: r.slices.ready, l: 'READY' }, { n: r.slices.queued, l: 'QUEUED' }] : [],
+        artCount: `${briefs.length + arts.length} read in this project`, artNote: (briefs.length + arts.length) ? 'Only what this project actually read. Repos whose files were never opened show nothing here — that is an inventory gap, not an empty repo.' : 'Nothing from this repo was read in this project. The list will fill when an agent walks its .handoff/, decisions/ and .claude/ folders.', artGroups: groups,
+        out: outL.map((l) => ({ rel: l.rel, chip: chip('repo', l.to) })), inn: inL.map((l) => ({ rel: l.rel, chip: chip('repo', l.from) })), outNone: outL.length ? '' : 'nothing hand-read', inNone: inL.length ? '' : 'nothing hand-read' };
+    }
+    // ── rail ──
+    const hotFor = (rs) => rs.filter((r) => r._waiting > 0).sort((a, b) => b._oldest - a._oldest).map((r) => ({ body: [chip('repo', r.name)], right: `oldest ${r._oldest}d`, go: () => this.nav({ kind: 'repo', id: r.name }) }));
+    const row = (label, body, ev) => ({ label, body, ev: ev ? ev.toUpperCase() : '', evSt: ev ? pill(EV[ev]) : 'display:none;' });
+    let rail = { title: '', kicker: '', intro: '', rows: [], hot: [], source: '', hueSt: 'display:none;', clearSt: 'display:none;', clear: () => this.setState({ focus: null }) };
+    const clearSt = `cursor:pointer;border:1px solid var(--rule-strong);background:none;color:var(--ink-2);${mono}font-size:9.5px;padding:2px 8px;`;
+    if (L.kind === 'fleet') rail = { ...rail, title: 'The whole fleet', kicker: `${d.REPOS.length} REPOS · ${d.CLUSTERS.length} CLUSTERS`, intro: 'Repos sit inside the cluster they serve. Click a cluster’s name to zoom in; click a repo to open its sessions, track and artifacts. Lines up to the venture goal exist only for registered repos.', rows: [row('THE GAP', [e('b', { key: 'n' }, `${d.REPOS.filter((r) => !r.registered).length} of ${d.REPOS.length}`), ' repos have no goal on record. ', e('button', { key: 'b', onClick: () => this.setState({ q: 'unregistered' }), style: { background: 'none', border: 'none', padding: 0, color: 'var(--ink)', textDecoration: 'underline', cursor: 'pointer', fontSize: 12.5, fontFamily: 'var(--sans)' } }, 'Show them')], 'derived'), row('WHAT NEEDS YOU, FLEET-WIDE', `${d.BRIEFS.filter((b) => b.open && !b.decidedInFlight).length} briefs, oldest first:`, 'derived')], hot: hotFor(d.REPOS), source: 'fleet-config.ts REPO_META · registry read 2026-08-08 · */.handoff/ · bead_events' };
+    else if (L.kind === 'cluster') { const rs = d.REPOS.filter((r) => r.cluster === cl.id); const live = rs.flatMap((r) => r._agents); rail = { ...rail, hueSt: `width:10px;height:10px;background:${cl.hue};flex:none;`, title: cl.label, kicker: `CLUSTER · ${rs.filter((r) => r.registered).length}/${rs.length} REGISTERED`, intro: 'Repos in this cluster, with the hand-read links between them. Stubs under a card point at repos in other clusters — click one to travel.', rows: [row('WORKING NOW', live.length ? live.map((a) => chip('who', a.id)) : 'No agent is live in this cluster.', 'derived'), row('MEMBERSHIP', rs.some((r) => !r.registered) ? 'Registered repos: registry fact. Dashed ones were placed here by judgment.' : 'Every repo here is registered — membership is registry fact.', rs.some((r) => !r.registered) ? 'asserted' : 'derived'), row('WAITING ON YOU', `${rs.reduce((n, r) => n + r._waiting, 0)} briefs across the cluster`, 'derived')], hot: hotFor(rs), source: 'core/decisions/northstar/README.md (registry) · fleet-navigator data() 2026-08-08 · REPO_META role text (links)' }; }
+    else if (rpR) { const r = rpR; const src = `fleet-config.ts REPO_META · registry read 2026-08-08 · ${r.name}/.handoff/ · bead_events · .claude/roadmap.md`;
+      if (!F) rail = { ...rail, hueSt: `width:10px;height:10px;background:${hue(r.cluster)};flex:none;`, title: r.name, kicker: 'REPO · PICK ANYTHING ON THE SURFACE', intro: 'Click a session, a goal property, a slice, an artifact or a link to inspect it here. Chips open the shared card; ESC steps back up.', rows: [row('WAITING ON YOU', r._waiting ? d.BRIEFS.filter((b) => b.repo === r.name && b.open && !b.decidedInFlight).map((b) => chip('brief', b.id)) : 'Nothing here is waiting on a decision.', 'derived'), row('WHO’S HERE', r._agents.length ? r._agents.map((a) => chip('who', a.id)) : 'No agent is live here.', 'derived')], source: src };
+      else if (F.kind === 'session') { const a = d.AGENTS.find((x) => x.id === F.id); const w = d.WHO.actors[a.id], h = w && d.WHO.harnesses[w.harness]; rail = { ...rail, clearSt, hueSt: `width:10px;height:10px;background:${{ live: 'var(--live)', idle: 'var(--ink-3)', stalled: 'var(--warn)' }[a.state]};flex:none;`, title: (w && w.name) || a.id, kicker: `SESSION · ${(h ? h.label : '?').toUpperCase()} · ${a.type.toUpperCase()}`, intro: a.task, rows: [row('PARENT', [chip('who', a.id), ` — ${h ? h.label + ' (' + h.kind + ')' : 'unknown harness'}`], w ? (w.origin === 'repo' ? 'derived' : w.origin) : 'asserted'), row('PROCESS · SESSION · HOST', `${(w && w.name) || 'no name'} · ${(w && w.session) || 'no session id'} · ${(w && w.host) || 'no host'}`, w && w.origin === 'repo' ? 'derived' : 'asserted'), row('LAST EVENT', a.lastEvent.replace('T', ' ').slice(0, 16) + ' UTC', 'derived'), row('TASK REF', a.taskRef ? [d.ARTIFACTS.find((x) => x.id === a.taskRef) ? chip('artifact', a.taskRef) : chip('ref', a.taskRef)] : '—'), row('BRIEFS IT OWES / WROTE', (() => { const bs = d.BRIEFS.filter((b) => b.actor === a.id || b.to === a.id); return bs.length ? bs.slice(0, 5).map((b) => chip('brief', b.id)) : 'none'; })(), 'derived')], source: 'bead_events (Dolt) · deriveAgentLiveness (ADR-0008) · WHO table (MC-UX-01, proposed)' }; }
+      else if (F.kind === 'brief') { const b = d.BRIEFS.find((x) => x.id === F.id); const succ = d.BRIEFS.filter((x) => x.closes === b.id); rail = { ...rail, clearSt, hueSt: `width:10px;height:10px;background:${b.decidedInFlight ? 'var(--live)' : b.open ? 'var(--decision)' : 'var(--rule-strong)'};flex:none;`, title: b.title, kicker: `BRIEF · ${b.created} · ${b.staleDays} DAYS`, intro: b.decidedInFlight ? 'You decided this; delivery is under way.' : b.open ? 'Live and nothing answers it — waiting on you.' : 'Closed.', rows: [row('FROM → TO', [chip('who', b.actor), ' → ', chip('who', b.to)], 'derived'), succ.length ? row('DELIVERED BY', succ.map((s) => chip('brief', s.id)), 'derived') : null, b.closes ? row('CLOSES', [chip('brief', b.closes)], 'derived') : null, (b.refs || []).length ? row('CITES', b.refs.map((x) => d.ARTIFACTS.find((a) => a.id === x) ? chip('artifact', x) : chip('ref', x))) : null, row('HOW IT CLOSES', 'A report bead with responding_to: this id — or a one-line close-with-reason, which is also a report.')].filter(Boolean), source: `${b.repo}/.handoff/${b.id}.md · open-hook rule: adapters/handoff.ts` }; }
+      else if (F.kind === 'artifact') { const a = d.ARTIFACTS.find((x) => x.id === F.id); const cited = d.BRIEFS.filter((b) => (b.refs || []).includes(a.id)); const ag = d.AGENTS.filter((x) => x.taskRef === a.id); rail = { ...rail, clearSt, hueSt: `width:10px;height:10px;background:var(--ink-2);flex:none;`, title: a.title, kicker: `${a.kind.toUpperCase()}${a.status ? ' · ' + a.status.toUpperCase() : ''}`, intro: a.origin === 'repo' ? 'Read from the repo in this project.' : 'Written in this design project; not yet committed to the repo.', rows: [row('CHIP', [chip('artifact', a.id)]), row('PATH', a.path || '—', a.origin === 'repo' ? 'derived' : 'asserted'), row('WRITTEN', [a.date || 'date not read', a.by ? ' · ' : '', a.by ? chip('who', a.by) : null]), row('CITED BY', cited.length ? cited.map((b) => chip('brief', b.id)) : 'No brief cites it.', 'derived'), row('WORKED ON BY', ag.length ? ag.map((x) => chip('who', x.id)) : 'No session names it as its task.', 'derived')], source: `${a.repo}/${a.path || a.id}` }; }
+      else if (F.kind === 'slice') { const DL = d.DELIVERY; const ph = DL.roadmap.phases.find((p) => p.slices.find((s) => s.id === F.id)); const s = ph.slices.find((x) => x.id === F.id); const p = s.advances && DL.northstar.properties.find((x) => x.id === s.advances); const bead = s.beadId && d.BRIEFS.find((b) => b.id.startsWith(s.beadId)); rail = { ...rail, clearSt, hueSt: `width:10px;height:10px;background:${{ merged: 'var(--ink)', claimed: 'var(--warn)', ready: 'var(--progress)', queued: 'var(--rule-strong)' }[s.status]};flex:none;`, title: `${s.id} — ${s.title}`, kicker: `SLICE · ${ph.id} ${ph.name.toUpperCase()} · ${s.status.toUpperCase()}`, intro: s.status === 'merged' ? 'Done and recorded at merge.' : s.status === 'claimed' ? 'Someone has claimed it; delivery is under way.' : s.status === 'ready' ? (s.autonomy === 'gated' ? 'Ready to pick up — gated: a human approves before it runs.' : 'Ready to pick up.') : 'Queued behind earlier slices.', rows: [row('AUTONOMY', s.autonomy === 'gated' ? 'gated — needs your approval to start' : 'auto — may run without you', 'derived'), p ? row('ADVANCES', [`${p.id} ${p.name}`, s.from != null ? ` · ${s.from} → ${s.to} proposed at merge` : ''], 'asserted') : null, bead ? row('BEAD', [chip('brief', bead.id)], 'derived') : null, s.repo ? row('IN', [chip('repo', s.repo)]) : null, row('PLAN', [chip('artifact', 'rm:rm-l1-morning-cockpit')])].filter(Boolean), source: 'morning-cockpit/.claude/roadmap.md · status.jsonl (movements at merge)' }; }
+      else if (F.kind === 'prop') { const DL = d.DELIVERY; const p = DL.northstar.properties.find((x) => x.id === F.id); const sl = DL.roadmap.phases.flatMap((ph) => ph.slices).filter((s) => s.advances === p.id); const mv = DL.movements.filter((m) => m.prop === p.id); rail = { ...rail, clearSt, hueSt: 'width:10px;height:10px;background:var(--progress);flex:none;', title: `${p.id} — ${p.name}`, kicker: `GOAL PROPERTY · ${p.current} / 100 · FIRST CUT`, intro: p.target, rows: [row('CURRENT', `${p.current} — a human wrote this value; treat it as an opinion with a date.`, 'asserted'), row('SLICES THAT MOVE IT', sl.length ? sl.map((s) => e('button', { key: s.id, onClick: () => this.setState({ focus: { kind: 'slice', id: s.id } }), style: { cursor: 'pointer', border: '1px solid var(--rule-strong)', background: 'var(--card)', color: 'var(--ink)', fontFamily: 'var(--mono)', fontSize: 10, padding: '1px 6px' } }, `${s.id} · ${s.status}`)) : 'none yet', 'derived'), row('RECORDED MOVEMENTS', mv.length ? mv.map((m) => `${m.date}: ${m.from} → ${m.to} — ${m.evidence}`).join(' · ') : 'none recorded', 'derived'), row('GOAL', [chip('artifact', 'ns:l1-morning-cockpit')])], source: 'morning-cockpit/.claude/northstar.md · status.jsonl' }; }
+      else if (F.kind === 'link') { const l = d.LINKS.find((x) => x.from === F.from && x.to === F.to); rail = { ...rail, clearSt, hueSt: 'width:10px;height:10px;background:var(--ev-asserted);flex:none;', title: `${l.from} ${l.rel} ${l.to}`, kicker: 'REPO LINK · HAND-READ', intro: 'Read off the role text in REPO_META, not from a package manifest. Wire real dependency data to make these derived.', rows: [row('FROM', [chip('repo', l.from)]), row('TO', [chip('repo', l.to)]), row('RELATION', l.rel, 'asserted')], source: 'packages/server/src/fleet-config.ts REPO_META role strings' }; }
+    }
+    if (F && L.kind === 'cluster' && F.kind === 'link') { const l = d.LINKS.find((x) => x.from === F.from && x.to === F.to); rail = { ...rail, clearSt, hueSt: 'width:10px;height:10px;background:var(--ev-asserted);flex:none;', title: `${l.from} ${l.rel} ${l.to}`, kicker: 'REPO LINK · HAND-READ', intro: 'Read off the role text in REPO_META, not from a package manifest.', rows: [row('FROM', [chip('repo', l.from)]), row('TO', [chip('repo', l.to)]), row('RELATION', l.rel, 'asserted')], hot: [], source: 'packages/server/src/fleet-config.ts REPO_META role strings' }; }
+    // ── chrome ──
+    const chips = showMap ? [['waiting on you', 'waiting'], ['agents working', 'live'], ['the gap', 'unregistered'], ['clear', '']].map(([t, v]) => ({ t: t.toUpperCase(), go: () => this.setState({ q: v }), st: `cursor:pointer;border:1px solid ${q === v && v ? 'var(--ink)' : 'var(--rule-strong)'};background:${q === v && v ? 'var(--ink)' : 'var(--card)'};color:${q === v && v ? 'var(--paper)' : 'var(--ink-2)'};padding:5px 10px;${mono}font-size:10px;letter-spacing:.05em;` })) : [];
+    const scope = L.kind === 'fleet' ? 'all' : L.kind === 'cluster' ? d.REPOS.filter((r) => r.cluster === cl.id) : [rpR]; const pool = scope === 'all' ? d.REPOS : scope;
+    const matches = anyQ ? pool.filter((r) => this.match(r, q)).length : pool.length;
+    const tokens = [['/waiting', 'var(--decision-ink)', 'Filter the map to repos with briefs waiting on you'], ['/gap', 'var(--ev-asserted)', 'Show unregistered repos'], ['/open core', 'var(--live)', 'Open a repo surface — drives fleet selection'], ['/track', 'var(--ev-derived)', 'Jump to the selected repo’s goal → plan → slices'], ['/sessions', 'var(--ev-derived)', 'Who has touched this repo, parented to its harness'], ['/explain', 'var(--ink-2)', 'Plain-words explainer (authored prose, no model)'], ['/up', 'var(--ink-2)', 'One level up'], ['/draft-handoff', 'var(--decision-ink)', 'Start the gated brief flow']].map(([t, c, tip]) => ({ t, tip, go: () => this.run(t), st: `cursor:pointer;border:1px solid ${c};background:transparent;color:${c};padding:2px 7px;${mono}font-size:9.5px;` }));
+    const log = (this.state.log.length ? this.state.log : [{ role: 'a', t: rpR ? `Looking at ${rpR.name}. Ask about it, or /track and /sessions move the surface — verbs don’t go to the model.` : cl ? `Zoomed to ${cl.label}. /open ‹repo› opens a repo; /up goes back.` : 'Ask what needs you today, or pick a cluster. I answer in words; the verbs below move the surface.' }]).map((m) => ({ t: m.t, st: m.role === 'u' ? `${mono}font-size:11px;color:var(--ink-2);margin:8px 0 2px;` : `padding:6px 10px;background:var(--card);border-left:2px solid ${m.t.startsWith('[simulated') ? 'var(--ev-simulated)' : 'var(--live)'};margin-bottom:4px;` }));
+    const z = (f) => this.setState({ vb: [vb[0] + vb[2] * (1 - f) / 2, vb[1] + vb[3] * (1 - f) / 2, vb[2] * f, vb[3] * f] });
+    return { ...base, crumbs, chips, cells, ladder, edges, nodes, apex, rp, rail, tokens, log, showMap, showRepo: !!rpR,
+      levelHint: L.kind === 'fleet' ? '· click a cluster name to zoom · click a repo to open it' : '· click a repo to open it · ↑ UP for the fleet',
+      matchLine: anyQ ? `${matches} of ${pool.length} match` : '', statLine: `${pool.length} REPOS · ${pool.filter((r) => r.registered).length} REGISTERED · ${d.BRIEFS.filter((b) => b.open && !b.decidedInFlight && pool.find((r) => r.name === b.repo)).length} BRIEFS WAITING · ${pool.flatMap((r) => r._agents).length} AGENTS LIVE`,
+      crumb: L.kind === 'fleet' ? 'INSPECTOR · FLEET' : L.kind === 'cluster' ? `INSPECTOR · ${cl.label.toUpperCase()}` : `INSPECTOR · ${cl.label.toUpperCase()} › ${rpR.name.toUpperCase()}${F ? ' › ' + F.kind.toUpperCase() : ''}`, leoScope: rpR ? `thread: ${rpR.name}` : cl ? `thread: ${cl.id}` : 'thread: global',
+      viewBox: (vb || [0, 0, 1460, 900]).join(' '), svgSt: `display:block;width:100%;height:100%;cursor:${this.state.drag ? 'grabbing' : 'grab'};user-select:none;`,
+      zoomIn: () => z(0.8), zoomOut: () => z(1.25), resetView: () => this.setState({ vb: null }),
+      dragStart: (ev) => { this._moved = false; this.setState({ drag: { x: ev.clientX, y: ev.clientY, vb } }); },
+      dragMove: (ev) => { const g = this.state.drag; if (!g) return; if (Math.abs(ev.clientX - g.x) + Math.abs(ev.clientY - g.y) > 4) this._moved = true; const svg = ev.currentTarget; const k = g.vb[2] / svg.clientWidth; this.setState({ vb: [g.vb[0] - (ev.clientX - g.x) * k, g.vb[1] - (ev.clientY - g.y) * k, g.vb[2], g.vb[3]] }); },
+      dragEnd: () => this.state.drag && this.setState({ drag: null }) };
+  }
+}
+</script>
+</body>
+</html>

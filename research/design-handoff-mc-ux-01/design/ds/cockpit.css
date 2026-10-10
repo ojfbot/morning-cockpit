@@ -1,0 +1,89 @@
+/* Cockpit design system — derived 2026-10-08 from three sources:
+ *   1. morning-cockpit packages/renderer/src/styles/tokens.css (OJF Editorial, ADR-0007): paper/ink/one signal
+ *      colour, Helvetica Neue 800 display + JetBrains Mono labels, 8px grid, zero radius, 3px ink rules.
+ *   2. research/fleet-navigator (vols 2–3) + design-handoff-cockpit-v2: cluster hues, dashed = unregistered,
+ *      dim-don't-remove filtering, selection ≠ red, red = "a human decision is needed" and nothing else.
+ *   3. lego-village-pipeline docs/design/H-01-R1/dt/tokens.css: a CONTRAST CONTRACT on every text token,
+ *      evidence axes (origin · method · verification) as visible tokens, plain-words-first copy.
+ * Not taken from (3): rust accent, slate ink, offset shadows, grid-paper ground (operator call 2026-10-08).
+ * Light is the default; dark follows the OS and can be pinned with [data-theme]. */
+
+:root {
+  /* Ground + ink (cockpit, unchanged) */
+  --paper: #f2efe7; --paper-2: #e8e4d8; --card: #fcfbf6;
+  --ink: #17140f; --ink-2: #574f44; --ink-3: #7d7466; /* ink-3 lifted from #938a7c to pass 4.5:1 on paper */
+  --rule: rgba(23,20,15,.16); --rule-strong: rgba(23,20,15,.62);
+  --hover: rgba(23,20,15,.04);
+
+  /* Signal roles — red has ONE job (v2 audit §S2-B) */
+  --decision: #e2231a;            /* a human decision is needed */
+  --decision-ink: #b81a12;        /* body-size text in the decision role (≥4.5:1 on paper) */
+  --live: #2f7d5b;                /* running / confirmed / written */
+  --warn: #a8730f;                /* stale / drifting / unverified */
+  --progress: #574f44;            /* quantity, bars, volume — never red */
+  --selection: #17140f;           /* selected = ink stroke, never red */
+
+  /* Evidence axes (Drafting Table DEC-023, folded onto cockpit ink). Text tokens; each ≥4.5:1 on --paper. */
+  --ev-derived: #2f6b86;          /* computed from files/events in this app */
+  --ev-asserted: #8a5a0b;         /* hand-written: frontmatter current:, editorial chains */
+  --ev-synth: #6b5a8e;            /* model-written (local or cloud) */
+  --ev-simulated: #7d7466;        /* prototype stub — not wired */
+
+  /* Cluster hues (navigator light palette + play-well added for lego-village-pipeline) */
+  --c-platform: #4a6fa5; --c-apps: #8c7ea5; --c-f1: #b3543f; --c-golf: #4f7d5b; --c-dive: #3f7d8c;
+  --c-story: #7d5f9e; --c-client: #a8730f; --c-vault: #6d5f8e; --c-corpus: #6b7a5a; --c-play: #c9821c;
+
+  /* Type */
+  --sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* 8px grid */
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px; --s7: 48px; --s8: 64px;
+  --pad-main: clamp(20px, 4vw, 52px);
+
+  /* Motion (Carbon math, cockpit look) */
+  --fast: 110ms; --moderate: 240ms; --slow: 400ms;
+  --ease-in: cubic-bezier(0, 0, 0.38, 0.9); --ease-expressive: cubic-bezier(0, 0, 0.3, 1);
+
+  --shadow-md: 0 4px 14px rgba(23,20,15,.10); --shadow-lg: 0 10px 30px rgba(23,20,15,.16);
+  color-scheme: light;
+}
+
+[data-theme="dark"], :root:not([data-theme="light"]):where(.os-dark) { }
+
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --paper: #100e08; --paper-2: #191510; --card: #1b1812;
+  --ink: #f3eee3; --ink-2: #a69d8e; --ink-3: #8c8273;
+  --rule: rgba(243,238,227,.16); --rule-strong: rgba(243,238,227,.5); --hover: rgba(243,238,227,.05);
+  --decision: #ff463a; --decision-ink: #ff6b60; --live: #52b083; --warn: #e0a53a; --progress: #a69d8e; --selection: #f3eee3;
+  --ev-derived: #6fb0cf; --ev-asserted: #d9a73e; --ev-synth: #b09fd0; --ev-simulated: #8c8273;
+  --c-platform: #7d9bc9; --c-apps: #a99bc9; --c-f1: #cf7f6b; --c-golf: #79a98a; --c-dive: #6fa9b8;
+  --c-story: #a98fc9; --c-client: #e0a53a; --c-vault: #9b8fb8; --c-corpus: #95a884; --c-play: #e0a053;
+  --shadow-md: 0 4px 14px rgba(0,0,0,.45); --shadow-lg: 0 10px 30px rgba(0,0,0,.55);
+  color-scheme: dark;
+} }
+[data-theme="dark"] {
+  --paper: #100e08; --paper-2: #191510; --card: #1b1812;
+  --ink: #f3eee3; --ink-2: #a69d8e; --ink-3: #8c8273;
+  --rule: rgba(243,238,227,.16); --rule-strong: rgba(243,238,227,.5); --hover: rgba(243,238,227,.05);
+  --decision: #ff463a; --decision-ink: #ff6b60; --live: #52b083; --warn: #e0a53a; --progress: #a69d8e; --selection: #f3eee3;
+  --ev-derived: #6fb0cf; --ev-asserted: #d9a73e; --ev-synth: #b09fd0; --ev-simulated: #8c8273;
+  --c-platform: #7d9bc9; --c-apps: #a99bc9; --c-f1: #cf7f6b; --c-golf: #79a98a; --c-dive: #6fa9b8;
+  --c-story: #a98fc9; --c-client: #e0a53a; --c-vault: #9b8fb8; --c-corpus: #95a884; --c-play: #e0a053;
+  --shadow-md: 0 4px 14px rgba(0,0,0,.45); --shadow-lg: 0 10px 30px rgba(0,0,0,.55);
+  color-scheme: dark;
+}
+
+/* Base */
+* { box-sizing: border-box; }
+html, body { margin: 0; max-width: 100%; overflow-x: hidden; }
+body { background: var(--paper); color: var(--ink); font-family: var(--sans); font-weight: 500; -webkit-font-smoothing: antialiased; }
+a { color: var(--ink); text-decoration-color: var(--rule-strong); }
+a:hover { color: var(--decision-ink); }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+::selection { background: var(--ink); color: var(--paper); }
+@keyframes ck-enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes ck-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
+@keyframes ck-fade { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }

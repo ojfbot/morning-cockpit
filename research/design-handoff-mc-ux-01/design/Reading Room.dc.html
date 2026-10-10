@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="ds/cockpit.css">
+<script src="ds/refs.js"></script>
+<script src="ds/correspond.js"></script>
+</helmet>
+<div data-screen-label="Reading Room" style="height:{{ rootH }};background:var(--paper);color:var(--ink);display:flex;flex-direction:column;overflow:hidden;">
+  <sc-if value="{{ standalone }}" hint-placeholder-val="{{ true }}">
+  <header style="flex:none;display:flex;align-items:center;gap:14px;padding:0 var(--s5);height:40px;border-bottom:1px solid var(--rule);font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--ink-3);white-space:nowrap;overflow:hidden;">
+    <span>MORNING COCKPIT</span><span style="color:var(--rule-strong);">·</span><span>READING ROOM</span><span style="color:var(--rule-strong);">·</span><span style="overflow:hidden;text-overflow:ellipsis;min-width:0;">{{ dateLine }}</span>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:14px;">
+      <a href="Adaptive%20Workspace.dc.html" style="color:var(--ink-2);text-decoration:none;border:1px solid var(--rule-strong);padding:3px 9px;white-space:nowrap;" title="The Reading Room is also a room in the Adaptive Workspace (READ)">OPEN AS A ROOM →</a>
+      <span style="color:var(--ink-2);">{{ clock }}</span>
+    </div>
+  </header>
+  <section style="flex:none;padding:14px var(--s5) 12px;border-bottom:3px solid var(--ink);display:flex;align-items:center;gap:28px;flex-wrap:wrap;">
+    <div style="font-weight:800;font-size:clamp(28px,3.4vw,44px);letter-spacing:-.04em;line-height:.9;text-transform:uppercase;white-space:nowrap;">Reading Room</div>
+    <p style="margin:0;flex:1 1 320px;min-width:0;font-weight:700;font-size:clamp(14px,1.4vw,18px);line-height:1.25;max-width:52ch;text-wrap:pretty;">{{ lede }}</p>
+  </section>
+  </sc-if>
+
+  <section data-screen-label="Sitting" style="flex:none;display:flex;align-items:center;gap:10px 14px;flex-wrap:wrap;padding:10px var(--s5);border-bottom:1px solid var(--rule);background:var(--paper-2);">
+    <span style="font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;color:var(--ink-3);white-space:nowrap;">THIS SITTING</span>
+    <div style="display:flex;flex-wrap:wrap;padding-left:1px;">
+      <sc-for list="{{ sessionBtns }}" as="s" hint-placeholder-count="3"><button onClick="{{ s.go }}" style="{{ s.st }}" title="{{ s.tip }}">{{ s.t }}</button></sc-for>
+    </div>
+    <sc-if value="{{ idle }}" hint-placeholder-val="{{ true }}">
+      <button onClick="{{ startSession }}" style="cursor:pointer;border:1px solid var(--ink);background:var(--ink);color:var(--paper);font-family:var(--mono);font-size:10px;font-weight:700;padding:5px 12px;white-space:nowrap;" title="Starts a timer on this device. The desk keeps your place; nothing is written.">Start {{ budget }} min →</button>
+      <span style="font-family:var(--mono);font-size:9.5px;color:var(--ink-3);">{{ sessionTip }}</span>
+    </sc-if>
+    <sc-if value="{{ running }}" hint-placeholder-val="{{ false }}">
+      <span style="font-family:var(--mono);font-size:13px;font-weight:700;color:var(--ink);min-width:52px;">{{ remaining }}</span>
+      <div style="flex:1 1 160px;max-width:320px;height:4px;background:var(--rule);"><div style="height:4px;background:var(--progress);width:{{ elapsedPct }}%;"></div></div>
+      <button onClick="{{ stopSession }}" style="cursor:pointer;border:1px solid var(--rule-strong);background:transparent;color:var(--ink-2);font-family:var(--mono);font-size:10px;padding:4px 10px;white-space:nowrap;">End early</button>
+    </sc-if>
+    <sc-if value="{{ over }}" hint-placeholder-val="{{ false }}">
+      <span style="font-size:13px;font-weight:700;color:var(--live);">Time’s up. The desk kept your place.</span>
+      <button onClick="{{ backToDesk }}" style="cursor:pointer;border:1px solid var(--ink);background:var(--ink);color:var(--paper);font-family:var(--mono);font-size:10px;font-weight:700;padding:5px 12px;white-space:nowrap;">Back to the desk →</button>
+      <button onClick="{{ extend }}" style="cursor:pointer;border:1px solid var(--rule-strong);background:transparent;color:var(--ink-2);font-family:var(--mono);font-size:10px;padding:4px 10px;white-space:nowrap;">5 more minutes</button>
+    </sc-if>
+    <div style="margin-left:auto;display:flex;gap:14px;align-items:baseline;font-family:var(--mono);font-size:9.5px;color:var(--ink-3);white-space:nowrap;">
+      <span><b style="font-family:var(--sans);font-size:15px;color:var(--ink);">{{ nOpen }}</b> on your list</span>
+      <span><b style="font-family:var(--sans);font-size:15px;color:var(--ink);">{{ nSrcWired }}/{{ nSrc }}</b> sources wired</span>
+      <span style="font-size:8.5px;letter-spacing:.08em;color:var(--ev-simulated);border:1px solid var(--ev-simulated);padding:1px 6px;">LOCAL ONLY</span>
+    </div>
+  </section>
+
+  <div style="flex:1;display:grid;grid-template-columns:210px minmax(0,1fr) {{ railW }};min-height:0;">
+    <nav style="border-right:1px solid var(--rule);padding:16px 0;overflow-y:auto;">
+      <div style="display:flex;align-items:baseline;font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;color:var(--ink-3);padding:0 16px 8px;"><span>CHANNELS</span><span style="margin-left:auto;letter-spacing:.04em;">keys 0–6</span></div>
+      <sc-for list="{{ nav }}" as="n" hint-placeholder-count="7">
+        <button onClick="{{ n.go }}" style="{{ n.st }}" title="{{ n.tip }}">
+          <span style="font-family:var(--mono);font-size:9.5px;color:var(--ink-3);width:10px;">{{ n.key }}</span>
+          <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;"><span style="font-size:13px;font-weight:600;">{{ n.label }}</span><span style="{{ n.subSt }}">{{ n.sub }}</span></span>
+          <span style="font-family:var(--mono);font-size:10px;color:var(--ink-3);">{{ n.n }}</span>
+        </button>
+      </sc-for>
+      <p style="margin:18px 16px 0;font-family:var(--mono);font-size:9.5px;line-height:1.5;color:var(--ink-3);">Nothing in this room is red. Reading never waits on a decision.</p>
+    </nav>
+
+    <main style="min-width:0;min-height:0;overflow-y:auto;padding:22px 28px 40px;">
+      <sc-if value="{{ isStack }}" hint-placeholder-val="{{ true }}">
+        <div data-screen-label="Today's stack">
+          <div style="display:flex;align-items:baseline;gap:4px 10px;border-bottom:2px solid var(--ink);padding-bottom:6px;margin-bottom:10px;flex-wrap:wrap;"><span style="font-weight:800;font-size:18px;letter-spacing:-.01em;white-space:nowrap;">Today’s stack</span><span style="font-family:var(--mono);font-size:10px;color:var(--ink-3);white-space:nowrap;">{{ sessionLabel }} · {{ budget }} min · {{ stackMin }} min fit</span><span style="margin-left:auto;font-family:var(--mono);font-size:9.5px;color:var(--ev-derived);min-width:0;">● built from your list · {{ stackRuleLine }}</span></div>
+          <sc-for list="{{ stack }}" as="i" hint-placeholder-count="0">
+            <div style="display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;background:var(--card);border:1px solid var(--rule);padding:10px 12px;margin-bottom:6px;">
+              <button onClick="{{ i.toggle }}" style="{{ i.boxSt }}" title="Mark done">{{ i.box }}</button>
+              <div style="min-width:0;"><div style="font-size:14px;font-weight:700;line-height:1.3;overflow-wrap:anywhere;">{{ i.title }}</div><div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-family:var(--mono);font-size:10px;color:var(--ink-3);margin-top:4px;"><span style="white-space:nowrap;">{{ i.mode }} · {{ i.shelf }} · {{ i.min }} min · added {{ i.age }}</span><sc-if value="{{ i.hasRepo }}" hint-placeholder-val="{{ false }}"><span>· with</span>{{ i.repoChip }}<span>in mind</span></sc-if></div></div>
+              <div style="display:flex;gap:6px;align-items:center;"><sc-if value="{{ i.hasUrl }}" hint-placeholder-val="{{ false }}"><a href="{{ i.url }}" target="_blank" rel="noopener" style="font-family:var(--mono);font-size:10px;color:var(--ink);border:1px solid var(--rule-strong);padding:4px 9px;text-decoration:none;white-space:nowrap;">Open ↗</a></sc-if><button onClick="{{ i.remove }}" style="cursor:pointer;border:none;background:transparent;color:var(--ink-3);font-family:var(--mono);font-size:10px;">remove</button></div>
+            </div>
+          </sc-for>
+          <sc-if value="{{ stackEmpty }}" hint-placeholder-val="{{ false }}">
+            <p style="margin:0;font-size:13px;line-height:1.55;color:var(--ink-2);padding:16px;border:1px dashed var(--rule);">{{ stackEmptyLine }}</p>
+          </sc-if>
+          <sc-if value="{{ hasOverflow }}" hint-placeholder-val="{{ false }}">
+            <div style="font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;color:var(--ink-3);margin:18px 0 6px;">ON YOUR LIST · DOESN’T FIT THIS SITTING</div>
+            <sc-for list="{{ overflow }}" as="i" hint-placeholder-count="0">
+              <div style="display:flex;gap:12px;align-items:baseline;padding:7px 0;border-bottom:1px solid var(--rule);"><span style="flex:1;min-width:0;font-size:13px;font-weight:600;overflow-wrap:anywhere;">{{ i.title }}</span><span style="font-family:var(--mono);font-size:10px;color:var(--ink-3);white-space:nowrap;">{{ i.shelf }} · {{ i.min }} min</span><button onClick="{{ i.remove }}" style="cursor:pointer;border:none;background:transparent;color:var(--ink-3);font-family:var(--mono);font-size:10px;">remove</button></div>
+            </sc-for>
+          </sc-if>
+          <div style="display:flex;align-items:baseline;gap:10px;font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;color:var(--ink-3);margin:24px 0 8px;flex-wrap:wrap;"><span>EVERY CHANNEL, ONE GLANCE</span><span style="margin-left:auto;letter-spacing:.04em;">click to switch context</span></div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;">
+            <sc-for list="{{ channelCards }}" as="c" hint-placeholder-count="6">
+              <button onClick="{{ c.go }}" style="text-align:left;cursor:pointer;background:var(--card);border:1px solid var(--rule);border-top:2px solid var(--ink);padding:12px 14px;display:flex;flex-direction:column;gap:6px;color:var(--ink);" style-hover="border-color:var(--ink);">
+                <span style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;"><span style="font-size:14px;font-weight:700;">{{ c.label }}</span><span style="font-family:var(--mono);font-size:9px;letter-spacing:.08em;color:var(--ink-3);white-space:nowrap;">{{ c.mode }}</span><span style="{{ c.statusSt }}">{{ c.status }}</span></span>
+                <span style="font-size:12px;line-height:1.45;color:var(--ink-2);">{{ c.line }}</span>
+                <span style="font-family:var(--mono);font-size:9.5px;color:var(--ink-3);">{{ c.counts }}</span>
+              </button>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isShelf }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="Channel">
+          <div style="font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--ink-3);">CHANNEL · {{ sKicker }}</div>
+          <h2 style="margin:6px 0 8px;font-size:30px;font-weight:800;letter-spacing:-.03em;line-height:1.1;text-wrap:balance;">{{ sTitle }}</h2>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:10px;"><span style="{{ sStatusSt }}">{{ sStatus }}</span><span style="font-family:var(--mono);font-size:9px;letter-spacing:.08em;padding:1px 6px;border:1px solid var(--rule-strong);color:var(--ink);white-space:nowrap;line-height:1.5;">{{ sMode }}</span><span style="{{ sOriginSt }}">{{ sOrigin }}</span></div>
+          <p style="margin:0 0 20px;font-size:14px;color:var(--ink-2);max-width:64ch;text-wrap:pretty;">{{ sWhat }}</p>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:24px;margin-bottom:22px;">
+            <sc-if value="{{ sHasSources }}" hint-placeholder-val="{{ false }}">
+            <div>
+              <div style="display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;border-bottom:2px solid var(--ink);padding-bottom:6px;margin-bottom:4px;"><span style="font-weight:800;font-size:15px;">Your curated list</span><span style="margin-left:auto;font-family:var(--mono);font-size:9.5px;color:var(--ink-3);white-space:nowrap;">{{ sAdapter }}</span></div>
+              <sc-for list="{{ sSources }}" as="x" hint-placeholder-count="3">
+                <div style="display:flex;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid var(--rule);"><span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;"><span style="font-size:13px;font-weight:600;">{{ x.t }}</span><span style="font-family:var(--mono);font-size:9.5px;color:var(--ink-3);">{{ x.via }}{{ x.originT }}</span></span><span style="{{ x.st }}">{{ x.status }}</span><sc-if value="{{ x.mine }}" hint-placeholder-val="{{ false }}"><button onClick="{{ x.remove }}" style="cursor:pointer;border:none;background:transparent;color:var(--ink-3);font-family:var(--mono);font-size:10px;">remove</button></sc-if></div>
+              </sc-for>
+              <sc-if value="{{ sHasHealth }}" hint-placeholder-val="{{ false }}"><p style="margin:8px 0 0;font-family:var(--mono);font-size:10px;color:var(--warn);">{{ sHealth }}</p></sc-if>
+              <div style="display:flex;gap:5px;margin-top:10px;flex-wrap:wrap;"><input value="{{ srcName }}" onChange="{{ onSrcName }}" onKeyDown="{{ onSrcKey }}" placeholder="{{ srcPlaceholder }}" style="flex:1 1 140px;min-width:0;background:var(--paper);color:var(--ink);border:1px solid var(--rule-strong);padding:6px 8px;font-family:var(--sans);font-size:12.5px;"></input><button onClick="{{ addSource }}" style="cursor:pointer;border:1px solid var(--ink);background:transparent;color:var(--ink);font-family:var(--mono);font-size:10px;font-weight:700;padding:0 10px;white-space:nowrap;">Add source</button></div>
+            </div>
+            </sc-if>
+            <sc-if value="{{ sHasNeeds }}" hint-placeholder-val="{{ false }}">
+            <div>
+              <div style="border-bottom:2px solid var(--ink);padding-bottom:6px;margin-bottom:4px;font-weight:800;font-size:15px;">To wire it</div>
+              <sc-for list="{{ sNeeds }}" as="x" hint-placeholder-count="3"><div style="padding:7px 0;border-bottom:1px solid var(--rule);font-size:13px;line-height:1.4;color:var(--ink-2);">{{ x.t }}</div></sc-for>
+            </div>
+            </sc-if>
+            <div>
+              <div style="border-bottom:2px solid var(--ink);padding-bottom:6px;margin-bottom:8px;font-weight:800;font-size:15px;">Where it fits in the day</div>
+              <div style="display:flex;flex-wrap:wrap;gap:6px;"><sc-for list="{{ sFits }}" as="x" hint-placeholder-count="2"><span style="font-family:var(--mono);font-size:10px;border:1px solid var(--rule-strong);padding:2px 8px;color:var(--ink);white-space:nowrap;">{{ x.t }} · {{ x.m }} min</span></sc-for></div>
+              <sc-if value="{{ sIsPapers }}" hint-placeholder-val="{{ false }}">
+                <div style="font-family:var(--mono);font-size:9px;letter-spacing:.1em;color:var(--ink-3);margin:16px 0 6px;">EXPLAINED FOR YOU AS</div>
+                <div style="display:flex;flex-wrap:wrap;gap:5px;"><sc-for list="{{ profile }}" as="p" hint-placeholder-count="6"><span style="{{ p.st }}" title="{{ p.full }}">{{ p.t }}</span></sc-for></div>
+              </sc-if>
+              <sc-if value="{{ sIsCommunity }}" hint-placeholder-val="{{ false }}">
+                <div style="font-family:var(--mono);font-size:9px;letter-spacing:.1em;color:var(--ink-3);margin:16px 0 6px;">HEADINGS THE DIGEST TRACKS</div>
+                <div style="display:flex;flex-wrap:wrap;gap:5px;"><sc-for list="{{ headings }}" as="p" hint-placeholder-count="4"><span style="{{ p.st }}" title="{{ p.full }}">{{ p.t }}</span></sc-for></div>
+                <p style="margin:8px 0 0;font-size:12px;line-height:1.45;color:var(--ink-2);">Taken from your reader profile. The digest groups threads under these, not under subreddit or account.</p>
+              </sc-if>
+            </div>
+          </div>
+          <sc-if value="{{ sHasSuggested }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;border-bottom:1px solid var(--rule-strong);padding-bottom:5px;margin-bottom:4px;"><span style="font-weight:800;font-size:14px;">Suggested for your list</span><span style="margin-left:auto;font-family:var(--mono);font-size:9.5px;color:var(--ev-asserted);">● candidates from this design session — you choose</span></div>
+            <sc-for list="{{ sSuggested }}" as="x" hint-placeholder-count="2">
+              <div style="display:flex;gap:10px;align-items:center;padding:7px 0;border-bottom:1px dashed var(--rule);"><span style="flex:1;min-width:0;font-size:13px;font-weight:600;">{{ x.t }} <span style="font-family:var(--mono);font-size:9.5px;font-weight:400;color:var(--ink-3);">· {{ x.via }}</span></span><button onClick="{{ x.keep }}" style="cursor:pointer;border:1px solid var(--ink);background:transparent;color:var(--ink);font-family:var(--mono);font-size:10px;padding:3px 9px;white-space:nowrap;">Keep</button><button onClick="{{ x.skip }}" style="cursor:pointer;border:none;background:transparent;color:var(--ink-3);font-family:var(--mono);font-size:10px;white-space:nowrap;">not for me</button></div>
+            </sc-for>
+            <div style="height:20px;"></div>
+          </sc-if>
+          <div style="display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;border-bottom:2px solid var(--ink);padding-bottom:6px;margin-bottom:10px;"><span style="font-weight:800;font-size:16px;">In this channel</span><span style="margin-left:auto;font-family:var(--mono);font-size:9.5px;color:var(--ink-3);white-space:nowrap;">{{ sCountLine }}</span></div>
+          <p style="margin:0 0 10px;font-size:13px;line-height:1.55;color:var(--ink-2);padding:12px 14px;border:1px dashed var(--rule);">{{ sEmptyLine }}</p>
+          <sc-for list="{{ sItems }}" as="i" hint-placeholder-count="0">
+            <div style="display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;background:var(--card);border:1px solid var(--rule);padding:9px 12px;margin-bottom:6px;">
+              <button onClick="{{ i.toggle }}" style="{{ i.boxSt }}" title="Mark done">{{ i.box }}</button>
+              <div style="min-width:0;"><div style="font-size:13.5px;font-weight:700;line-height:1.3;overflow-wrap:anywhere;">{{ i.title }}</div><div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-family:var(--mono);font-size:10px;color:var(--ink-3);margin-top:4px;"><span>{{ i.min }} min · added {{ i.age }}</span><sc-if value="{{ i.hasRepo }}" hint-placeholder-val="{{ false }}"><span>· with</span>{{ i.repoChip }}<span>in mind</span></sc-if></div></div>
+              <button onClick="{{ i.remove }}" style="cursor:pointer;border:none;background:transparent;color:var(--ink-3);font-family:var(--mono);font-size:10px;">remove</button>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <div data-screen-label="Add to the list" style="margin-top:26px;border:1px solid var(--rule-strong);background:var(--card);">
+        <div style="display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;padding:9px 12px;border-bottom:1px solid var(--rule);"><span style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--ink-3);white-space:nowrap;">ADD TO YOUR LIST</span><span style="margin-left:auto;font-family:var(--mono);font-size:9px;color:var(--ink-3);">an article, a paper, an episode, a thread, a lesson, a chapter</span></div>
+        <div style="display:flex;gap:6px;padding:10px 12px 8px;"><input value="{{ dTitle }}" onChange="{{ onTitle }}" onKeyDown="{{ onTitleKey }}" placeholder="{{ dPlaceholder }}" style="flex:1;min-width:0;background:var(--paper);color:var(--ink);border:1px solid var(--rule-strong);padding:8px 10px;font-family:var(--sans);font-size:13px;"></input><button onClick="{{ addItem }}" style="{{ addSt }}">Add</button></div>
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;padding:0 12px 11px;font-family:var(--mono);font-size:9px;letter-spacing:.08em;color:var(--ink-3);">
+          <span style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">CHANNEL<sc-for list="{{ shelfOpts }}" as="o" hint-placeholder-count="6"><button onClick="{{ o.go }}" style="{{ o.st }}">{{ o.t }}</button></sc-for></span>
+          <span style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">MINUTES<sc-for list="{{ minOpts }}" as="o" hint-placeholder-count="5"><button onClick="{{ o.go }}" style="{{ o.st }}">{{ o.t }}</button></sc-for></span>
+          <label style="display:flex;align-items:center;gap:5px;white-space:nowrap;">WITH A REPO IN MIND<select value="{{ dRepo }}" onChange="{{ onRepo }}" style="background:var(--paper);color:var(--ink);border:1px solid var(--rule-strong);font-family:var(--mono);font-size:10px;padding:2px 4px;"><sc-for list="{{ repoOpts }}" as="r" hint-placeholder-count="1"><option value="{{ r.v }}">{{ r.t }}</option></sc-for></select></label>
+        </div>
+      </div>
+
+      <sc-for list="{{ fields }}" as="f" hint-placeholder-count="1">
+        <div data-screen-label="Takeaway" style="margin-top:14px;border:1px solid var(--rule);background:var(--card);">
+          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:8px 12px;border-bottom:1px solid var(--rule);">
+            <label style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--ink-3);margin-right:4px;white-space:nowrap;">{{ f.label }}</label>
+            {{ f.actChip }}{{ f.schemaChip }}
+            <span style="margin-left:auto;font-family:var(--mono);font-size:9px;color:var(--ink-3);">{{ f.count }}</span>
+          </div>
+          <textarea value="{{ f.value }}" onChange="{{ f.onChange }}" rows="3" placeholder="{{ f.placeholder }}" style="display:block;width:100%;resize:vertical;border:none;font-family:var(--sans);font-size:13px;line-height:1.5;color:var(--ink);background:transparent;padding:10px 12px;"></textarea>
+          <sc-if value="{{ f.hasDetected }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-wrap:wrap;align-items:center;gap:5px;padding:6px 12px 8px;border-top:1px dashed var(--rule);font-family:var(--mono);font-size:9px;letter-spacing:.08em;color:var(--ink-3);"><span>DETECTED</span>{{ f.detected }}</div>
+          </sc-if>
+          <sc-for list="{{ f.warnings }}" as="w" hint-placeholder-count="0">
+            <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:7px 12px;border-top:1px solid var(--rule);border-left:3px solid var(--warn);font-size:12px;color:var(--ink-2);line-height:1.45;">{{ w.chip }}<span style="flex:1;min-width:200px;">{{ w.t }}</span></div>
+          </sc-for>
+          <sc-if value="{{ f.needsRecipient }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-wrap:wrap;align-items:center;gap:5px;padding:7px 12px 9px;border-top:1px solid var(--rule);font-family:var(--mono);font-size:9px;letter-spacing:.08em;color:var(--ink-3);"><span>ROUTE TO</span><sc-for list="{{ f.routes }}" as="r" hint-placeholder-count="3"><button onClick="{{ r.go }}" style="{{ r.st }}">{{ r.t }}</button></sc-for></div>
+          </sc-if>
+        </div>
+      </sc-for>
+      <sc-if value="{{ hasDone }}" hint-placeholder-val="{{ false }}">
+        <div style="font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;color:var(--ink-3);margin:22px 0 6px;">DONE · {{ nDone }}</div>
+        <sc-for list="{{ done }}" as="i" hint-placeholder-count="0">
+          <div style="display:flex;gap:12px;align-items:baseline;padding:6px 0;border-bottom:1px solid var(--rule);color:var(--ink-3);"><button onClick="{{ i.toggle }}" style="cursor:pointer;border:none;background:transparent;color:var(--live);font-family:var(--mono);font-size:11px;padding:0;" title="Put it back on the list">✓</button><span style="flex:1;min-width:0;font-size:12.5px;overflow-wrap:anywhere;">{{ i.title }}</span><span style="font-family:var(--mono);font-size:10px;white-space:nowrap;">{{ i.shelf }}</span></div>
+        </sc-for>
+      </sc-if>
+    </main>
+
+    <sc-if value="{{ showLeo }}" hint-placeholder-val="{{ true }}">
+    <aside data-screen-label="Leo rail (reading)" style="border-left:1px solid var(--rule-strong);background:var(--paper-2);display:flex;flex-direction:column;min-height:0;height:100%;">
+      <div style="display:flex;align-items:center;gap:8px;padding:14px 18px 12px;border-bottom:1px solid var(--rule);"><span style="width:7px;height:7px;border-radius:50%;background:var(--live);"></span><span style="font-family:var(--mono);font-size:10px;letter-spacing:.12em;white-space:nowrap;">LEO · CHIEF OF STAFF</span><span style="margin-left:auto;font-family:var(--mono);font-size:9px;color:var(--ink-3);white-space:nowrap;">thread: reading</span>{{ simChip }}</div>
+      <div style="padding:10px 18px 0;font-size:12px;color:var(--ink-2);line-height:1.5;">Here to size a sitting and say what is wired. I won’t summarise what I can’t read.</div>
+      <div style="flex:1;min-height:0;overflow-y:auto;padding:8px 18px;display:flex;flex-direction:column;gap:6px;">
+        <sc-for list="{{ leoLog }}" as="m" hint-placeholder-count="0"><div style="{{ m.st }}">{{ m.t }}</div></sc-for>
+      </div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;padding:6px 18px;"><sc-for list="{{ leoAsks }}" as="q" hint-placeholder-count="3"><button onClick="{{ q.go }}" style="cursor:pointer;border:1px solid var(--rule-strong);background:var(--card);color:var(--ink-2);padding:3px 8px;font-family:var(--mono);font-size:9.5px;white-space:nowrap;">{{ q.t }}</button></sc-for></div>
+      <div style="display:flex;gap:6px;padding:4px 18px 14px;"><input value="{{ leoAsk }}" onChange="{{ onLeoAsk }}" onKeyDown="{{ onLeoKey }}" placeholder="ask about reading…" style="flex:1;min-width:0;background:var(--card);color:var(--ink);border:1px solid var(--rule-strong);padding:7px 9px;font-family:var(--mono);font-size:11px;"></input><button onClick="{{ leoSend }}" style="cursor:pointer;border:1px solid var(--ink);background:var(--ink);color:var(--paper);font-family:var(--mono);font-size:11px;font-weight:700;padding:0 12px;">ASK</button></div>
+    </aside>
+    </sc-if>
+  </div>
+  {{ refCard }}
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;defaultSitting&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;clock&quot;,&quot;first-light&quot;,&quot;short&quot;,&quot;long&quot;],&quot;default&quot;:&quot;clock&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;stackRule&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;fits-first&quot;,&quot;oldest-first&quot;],&quot;default&quot;:&quot;fits-first&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;showLeo&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;embedded&quot;:{&quot;editor&quot;:null,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;onBack&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;() =&gt; void&quot;},&quot;onSummary&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(s) =&gt; void&quot;}}">
+class Component extends DCLogic {
+  state = { data: null, view: 'stack', kind: null, session: null, items: [], srcAdded: {}, srcKept: {}, srcSkipped: {}, srcName: '', dTitle: '', dShelf: 'news', dMin: 10, dRepo: '', takeaway: '', routes: {}, leoAsk: '', leoLog: [], now: new Date() };
+  componentDidMount() {
+    if (window.ckRefs) window.ckRefs.bind(this, React);
+    if (window.ckCorr) window.ckCorr.install();
+    import('./data/snapshot.js').then((d) => { if (window.ckRefs) window.ckRefs.setData(d); this.setState({ data: d }); });
+    try { const s = JSON.parse(localStorage.getItem('mc.proto.reading.v1') || '{}'); this.setState({ items: s.items || [], session: s.session || null, kind: s.kind || null, takeaway: s.takeaway || '', routes: s.routes || {}, srcAdded: s.srcAdded || {}, srcKept: s.srcKept || {}, srcSkipped: s.srcSkipped || {} }); } catch (e) {}
+    this._t = setInterval(() => this.setState({ now: new Date() }), 1000);
+    this._k = (e) => { const t = e.target && e.target.tagName; if (t === 'INPUT' || t === 'TEXTAREA' || t === 'SELECT' || e.metaKey || e.ctrlKey || e.altKey) return; const ids = this._navIds || []; const n = parseInt(e.key, 10); if (!isNaN(n) && ids[n]) this.setState({ view: ids[n], dShelf: ids[n] === 'stack' ? this.state.dShelf : ids[n] }); };
+    document.addEventListener('keydown', this._k);
+  }
+  componentWillUnmount() { clearInterval(this._t); document.removeEventListener('keydown', this._k); }
+  persist(patch) { this.setState(patch, () => { const { items, session, kind, takeaway, routes, srcAdded, srcKept, srcSkipped } = this.state; try { localStorage.setItem('mc.proto.reading.v1', JSON.stringify({ items, session, kind, takeaway, routes, srcAdded, srcKept, srcSkipped })); } catch (e) {} }); }
+  leoAnswer(q) {
+    const c = this._ctx; if (!c) return '[simulated] loading…'; const s = q.toLowerCase();
+    if (/fit|minute|time|sitting/.test(s)) return c.stack.length ? `[simulated] ${c.stack.length} thing(s) fit ${c.budget} minutes: ${c.stack.map((i) => '“' + i.title.slice(0, 40) + '”').join(', ')}.` : `[simulated] Your list is empty, so nothing fits ${c.budget} minutes yet.`;
+    if (/wired|which|channel|source/.test(s)) return '[simulated] ' + c.channels.map((x) => `${x.label}: ${x.statusWord}`).join(' · ') + '. No channel returns items in this prototype — I will not invent them.';
+    if (/reddit|x\b|community|curat/.test(s)) return '[simulated] Community is a digest you read here, never the apps. It needs your curated list first — Keep the suggestions you want, add the rest. Reddit has per-subreddit RSS; X needs the API or a bridge.';
+    return '[simulated] I size sittings and say what is wired. Try a chip.';
+  }
+  renderVals() {
+    const d = this.state.data; const now = this.state.now; const mono = 'font-family:var(--mono);';
+    const embedded = !!this.props.embedded;
+    const dateLine = [now.toLocaleDateString([], { weekday: 'long' }), now.getDate(), now.toLocaleDateString([], { month: 'long' }), now.getFullYear()].join(' ').toUpperCase();
+    const clock = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const showLeo = !embedded && (this.props.showLeo ?? true);
+    const CK = window.ckRefs; if (CK && d) CK.setData(d); const chip = (k, id, o) => (CK && d ? CK.chip(k, id, o) : null);
+    const say = (t) => this.setState((s) => ({ leoLog: [...s.leoLog, { role: 'u', t }, { role: 'a', t: this.leoAnswer(t) }], leoAsk: '' }));
+    const backToDesk = () => { this.persist({ session: null }); if (this.props.onBack) this.props.onBack(); else window.location.href = 'Adaptive%20Workspace.dc.html'; };
+    const base = { standalone: !embedded, rootH: embedded ? '100%' : '100vh', dateLine, clock, showLeo, railW: showLeo ? '320px' : '0px', refCard: !embedded && CK ? CK.card() : null, simChip: chip('evidence', 'simulated'), backToDesk,
+      leoAsk: this.state.leoAsk, onLeoAsk: (e) => this.setState({ leoAsk: e.target.value }), onLeoKey: (e) => { if (e.key === 'Enter' && this.state.leoAsk.trim()) say(this.state.leoAsk); }, leoSend: () => this.state.leoAsk.trim() && say(this.state.leoAsk),
+      leoLog: this.state.leoLog.map((m) => ({ t: m.t, st: m.role === 'u' ? `${mono}font-size:11px;color:var(--ink-2);margin-top:4px;` : 'padding:6px 10px;background:var(--card);border-left:2px solid var(--live);font-size:12.5px;line-height:1.5;' })),
+      dTitle: this.state.dTitle, onTitle: (e) => this.setState({ dTitle: e.target.value }), dRepo: this.state.dRepo, onRepo: (e) => this.setState({ dRepo: e.target.value }),
+      srcName: this.state.srcName, onSrcName: (e) => this.setState({ srcName: e.target.value }) };
+    if (!d) return { ...base, lede: '', sessionBtns: [], nav: [], stack: [], overflow: [], channelCards: [], shelfOpts: [], minOpts: [], repoOpts: [], fields: [], done: [], leoAsks: [], sSources: [], sSuggested: [], sNeeds: [], sFits: [], sItems: [], profile: [], headings: [], idle: true };
+    const R = d.READING; const channels = R.channels; const sessions = R.sessions; const chById = (id) => channels.find((x) => x.id === id) || channels[0];
+    const MODE = { read: 'READ', listen: 'LISTEN', scan: 'SCAN' };
+    // sources: one selector — snapshot list + kept suggestions + your own additions
+    const sourcesOf = (c) => [].concat(c.sources || [],
+      (c.suggested || []).filter((x) => this.state.srcKept[c.id + '|' + x.t]).map((x) => ({ ...x, status: 'planned', origin: 'kept', key: c.id + '|' + x.t })),
+      (this.state.srcAdded[c.id] || []).map((x) => ({ ...x, status: 'planned', origin: 'mine' })));
+    const pendingSuggested = (c) => (c.suggested || []).filter((x) => !this.state.srcKept[c.id + '|' + x.t] && !this.state.srcSkipped[c.id + '|' + x.t]);
+    const allSrc = [].concat(...channels.map(sourcesOf)); const nSrc = allSrc.length; const nSrcWired = allSrc.filter((x) => x.status === 'wired' || x.status === 'degraded').length;
+    const h = now.getHours(); const pref = this.props.defaultSitting ?? 'clock';
+    const clockKind = pref !== 'clock' ? pref : h >= 5 && h < 11 ? 'first-light' : h >= 17 ? 'long' : 'short';
+    const S = this.state.session; const kind = S ? S.kind : (this.state.kind || clockKind);
+    const sess = sessions.find((x) => x.id === kind) || sessions[1]; const budget = S ? S.minutes : sess.minutes;
+    const leftMs = S ? S.start + S.minutes * 6e4 - now.getTime() : 0;
+    const running = !!S && leftMs > 0; const over = !!S && leftMs <= 0; const idle = !S;
+    const mmss = (ms) => { const t = Math.max(0, Math.ceil(ms / 1000)); return Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0'); };
+    const sessionBtns = sessions.map((x) => ({ t: `${x.label} · ${x.minutes}m`, tip: x.tip, go: () => { if (!S) this.persist({ kind: x.id }); }, st: `cursor:${S ? 'default' : 'pointer'};border:1px solid ${kind === x.id ? 'var(--ink)' : 'var(--rule-strong)'};margin-left:-1px;background:${kind === x.id ? 'var(--ink)' : 'transparent'};color:${kind === x.id ? 'var(--paper)' : 'var(--ink-2)'};padding:4px 10px;${mono}font-size:10px;letter-spacing:.06em;white-space:nowrap;` }));
+    const items = this.state.items; const openItems = items.filter((i) => !i.done); const doneItems = items.filter((i) => i.done);
+    const rule = this.props.stackRule ?? 'fits-first';
+    const fitsKind = (i) => (chById(i.shelf).fits || []).includes(sess.id);
+    const ordered = [...openItems].sort((a, b) => (rule === 'fits-first' ? (fitsKind(a) ? 0 : 1) - (fitsKind(b) ? 0 : 1) : 0) || a.added - b.added);
+    let acc = 0; const inStack = {}; ordered.forEach((i) => { if (acc + i.minutes <= budget) { acc += i.minutes; inStack[i.id] = true; } });
+    const stackItems = ordered.filter((i) => inStack[i.id]); const overflowItems = ordered.filter((i) => !inStack[i.id]);
+    const ago = (t) => { const hr = Math.round((now - t) / 36e5); return hr < 1 ? 'just now' : hr < 48 ? hr + 'h ago' : Math.round(hr / 24) + 'd ago'; };
+    const setItem = (id, patch) => this.persist({ items: this.state.items.map((i) => (i.id === id ? { ...i, ...patch } : i)) });
+    const row = (i) => ({ title: i.title, shelf: chById(i.shelf).label, mode: MODE[chById(i.shelf).mode].toLowerCase(), min: i.minutes, age: ago(i.added), hasUrl: !!i.url, url: i.url || undefined, hasRepo: !!i.repo, repoChip: i.repo ? chip('repo', i.repo, { phase: false }) : null,
+      box: i.done ? '✓' : '', boxSt: `cursor:pointer;width:18px;height:18px;border:1px solid ${i.done ? 'var(--live)' : 'var(--rule-strong)'};background:transparent;color:var(--live);${mono}font-size:11px;padding:0;line-height:1;`,
+      toggle: () => setItem(i.id, { done: !i.done, doneAt: !i.done ? Date.now() : null }), remove: () => this.persist({ items: this.state.items.filter((x) => x.id !== i.id) }) });
+    const COL = { up: 'var(--live)', wired: 'var(--live)', degraded: 'var(--warn)', planned: 'var(--ev-simulated)', later: 'var(--ink-3)' };
+    const badge = (s, dashed) => `${mono}font-size:9px;letter-spacing:.08em;padding:1px 6px;border:1px ${dashed ? 'dashed' : 'solid'} ${COL[s]};color:${COL[s]};white-space:nowrap;line-height:1.5;`;
+    const chStatus = { up: 'WIRED', degraded: 'WIRED · DEGRADED', planned: 'NOT WIRED', later: 'LATER' };
+    const srcStatus = { wired: 'WIRED', degraded: 'DEGRADED', planned: 'NOT WIRED' };
+    const view = this.state.view; const cur = view === 'stack' ? null : chById(view);
+    const countOn = (id) => openItems.filter((i) => i.shelf === id).length;
+    const chLabel = (x) => (x.id === 'course' ? `${x.provider} · ${x.title}` : x.label);
+    const navIds = ['stack'].concat(channels.map((x) => x.id)); this._navIds = navIds;
+    const nav = [{ id: 'stack', label: 'Today’s stack', sub: `${sess.label.toLowerCase()} · ${budget} min`, n: stackItems.length, s: null, tip: 'Everything that fits this sitting' }]
+      .concat(channels.map((x) => ({ id: x.id, label: x.id === 'course' ? 'Course · newline' : x.label, sub: `${MODE[x.mode]} · ${chStatus[x.status]}`, n: countOn(x.id), s: x.status, tip: x.what })))
+      .map((n, k) => ({ ...n, key: String(k), subSt: `${mono}font-size:8.5px;letter-spacing:.08em;color:${n.s ? COL[n.s] : 'var(--ink-3)'};`,
+        go: () => this.setState({ view: n.id, dShelf: n.id === 'stack' ? this.state.dShelf : n.id }), st: `display:flex;width:100%;align-items:center;gap:8px;text-align:left;padding:8px 16px 8px 13px;border:none;border-left:3px solid ${view === n.id ? 'var(--ink)' : 'transparent'};background:${view === n.id ? 'var(--card)' : 'transparent'};color:var(--ink);cursor:pointer;` }));
+    const channelCards = channels.map((x) => { const src = sourcesOf(x); const w = src.filter((s) => s.status !== 'planned').length; const sg = pendingSuggested(x).length;
+      return { label: chLabel(x), mode: MODE[x.mode], status: chStatus[x.status], statusSt: badge(x.status), go: () => this.setState({ view: x.id, dShelf: x.id }),
+        line: x.status === 'later' ? 'Wired later. Add what you’re on by hand.' : x.status === 'planned' ? (src.length ? `${src.length} source${src.length > 1 ? 's' : ''} on your list, none wired yet.` : 'Nothing on your list yet.') : `${x.health}. Items need the live adapter.`,
+        counts: x.status === 'later' ? `${countOn(x.id)} on your list` : `${w}/${src.length} sources wired · ${countOn(x.id)} on your list${sg ? ` · ${sg} suggested` : ''}` }; });
+    const lede = over ? 'Time’s up. Nothing moved while you read; the desk is where you left it.' : running ? `${mmss(leftMs)} left. ${stackItems.length ? 'Take the top one; mark it when done.' : 'Nothing on the list — use the time to curate a channel.'}` : `${sess.label}: ${budget} minutes. ${stackItems.length ? `${stackItems.length} thing${stackItems.length > 1 ? 's' : ''} from your list fit.` : 'Your list is empty.'} Switch channels with 0–6; nothing in here asks for a decision.`;
+    const pchip = (p) => ({ t: p.t.length > 34 ? p.t.slice(0, 33) + '…' : p.t, full: p.t, st: `display:inline-flex;font-size:10px;line-height:1.3;padding:2px 7px;border:1px ${p.k === 'learning' ? 'dashed' : 'solid'} var(--rule-strong);color:${p.k === 'domain' ? 'var(--ink)' : 'var(--ink-2)'};background:var(--paper);max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;` });
+    const sv = cur ? (() => { const src = sourcesOf(cur);
+      return { sKicker: cur.id.toUpperCase(), sTitle: chLabel(cur), sStatus: chStatus[cur.status], sStatusSt: badge(cur.status), sMode: MODE[cur.mode],
+        sOrigin: cur.origin === 'repo' ? 'READ FROM THE RENDERER' : 'NAMED BY YOU', sOriginSt: `${mono}font-size:9px;letter-spacing:.08em;padding:1px 6px;color:${cur.origin === 'repo' ? 'var(--ev-derived)' : 'var(--ev-asserted)'};border:1px solid ${cur.origin === 'repo' ? 'var(--ev-derived)' : 'var(--ev-asserted)'};white-space:nowrap;line-height:1.5;`,
+        sWhat: cur.what, sIsPapers: cur.id === 'papers', sIsCommunity: cur.id === 'community', sAdapter: cur.adapter || 'no adapter yet', sHealth: cur.health || '', sHasHealth: !!cur.health,
+        sHasSources: cur.status !== 'later', sHasNeeds: (cur.needs || []).length > 0,
+        sSources: src.map((x) => ({ t: x.t, via: x.via, originT: { repo: ' · in the renderer', operator: ' · named by you', kept: ' · kept from suggestions', mine: ' · added here' }[x.origin] || '', status: srcStatus[x.status], st: badge(x.status), mine: x.origin === 'mine' || x.origin === 'kept',
+          remove: () => x.origin === 'kept' ? this.persist({ srcKept: { ...this.state.srcKept, [x.key]: false } }) : this.persist({ srcAdded: { ...this.state.srcAdded, [cur.id]: (this.state.srcAdded[cur.id] || []).filter((y) => y.t !== x.t) } }) })),
+        sSuggested: pendingSuggested(cur).map((x) => ({ t: x.t, via: x.via, keep: () => this.persist({ srcKept: { ...this.state.srcKept, [cur.id + '|' + x.t]: true } }), skip: () => this.persist({ srcSkipped: { ...this.state.srcSkipped, [cur.id + '|' + x.t]: true } }) })),
+        sHasSuggested: pendingSuggested(cur).length > 0, sNeeds: (cur.needs || []).map((t) => ({ t })),
+        sFits: (cur.fits || []).map((id) => sessions.find((x) => x.id === id)).filter(Boolean).map((x) => ({ t: x.label, m: x.minutes })),
+        sCountLine: `${countOn(cur.id)} on your list · ${(cur.items || []).length} fetched`,
+        sEmptyLine: cur.status === 'later' ? `Nothing fetched — this channel is wired later. Add ${cur.id === 'course' ? 'the lesson you’re on' : 'the chapter you’re on'} by hand below; it stays on this device and joins the stack.` : cur.status === 'planned' ? `Nothing fetched — no ${cur.label.toLowerCase()} adapter exists yet. ${cur.mode === 'listen' ? 'Add an episode by hand; its length is its minutes.' : 'Add a thread by hand below.'} Nothing was made up to fill this space.` : `Nothing fetched here — the ${cur.adapter} adapter runs in the app, not in this prototype. No headline was made up.`,
+        srcPlaceholder: { news: 'Add a feed — name or URL', papers: 'Add an arXiv category or query', podcasts: 'Add a show', community: 'Add r/subreddit or an X account', }[cur.id] || 'Add a source',
+        sItems: openItems.filter((i) => i.shelf === cur.id).map(row) }; })() : { sSources: [], sSuggested: [], sNeeds: [], sFits: [], sItems: [] };
+    const addSource = () => { const t = this.state.srcName.trim(); if (!t || !cur) return; const via = /^r\//i.test(t) ? 'subreddit RSS' : /^@/.test(t) ? 'X account' : /^https?:/i.test(t) ? 'feed URL' : cur.mode === 'listen' ? 'podcast RSS' : 'to be found'; this.persist({ srcAdded: { ...this.state.srcAdded, [cur.id]: [...(this.state.srcAdded[cur.id] || []), { t, via, added: Date.now() }] }, srcName: '' }); };
+    const ds = this.state.dShelf; const dm = this.state.dMin;
+    const addItem = () => { const raw = this.state.dTitle.trim(); if (!raw) return; const isUrl = /^https?:\/\//i.test(raw); let title = raw; if (isUrl) { try { const u = new URL(raw); title = u.hostname.replace(/^www\./, '') + u.pathname.replace(/\/$/, ''); } catch (e) {} }
+      this.persist({ items: [...this.state.items, { id: Date.now(), title, url: isUrl ? raw : null, shelf: ds, minutes: dm, repo: this.state.dRepo || null, added: Date.now(), done: false }], dTitle: '' }); };
+    const optSt = (on) => `cursor:pointer;border:1px solid ${on ? 'var(--ink)' : 'var(--rule-strong)'};background:${on ? 'var(--ink)' : 'var(--card)'};color:${on ? 'var(--paper)' : 'var(--ink-2)'};padding:2px 7px;${mono}font-size:9.5px;letter-spacing:0;white-space:nowrap;`;
+    const shelfOpts = channels.map((x) => ({ t: x.label.toLowerCase(), go: () => this.setState({ dShelf: x.id }), st: optSt(ds === x.id) }));
+    const minOpts = [5, 10, 20, 30, 45].map((m) => ({ t: m + 'm', go: () => this.setState({ dMin: m }), st: optSt(dm === m) }));
+    const repoOpts = [{ v: '', t: '— none —' }].concat(d.REPOS.map((r) => ({ v: r.name, t: r.name })));
+    const dPlaceholder = { news: 'Paste an article link', papers: 'Paste a paper link (arXiv, HF)', podcasts: 'An episode — show · title, or its link', community: 'A thread or post link', course: 'The lesson you’re on — e.g. “Module 3 · lesson 2”', textbooks: 'Book · chapter you’re on' }[ds];
+    const canAdd = !!this.state.dTitle.trim();
+    const CO = window.ckCorr; const value = this.state.takeaway; const routes = this.state.routes.takeaway || [];
+    const m = CO ? CO.analyze(value, { data: d, fieldKind: 'notes', recipients: routes, thread: 'reading-room' }) : { act: 'observation', warnings: [], refs: [], repos: [], agents: [], findings: [], memos: [], recipients: [] };
+    const detected = [].concat((m.repos || []).map((r) => chip('repo', r, { phase: false })), (m.agents || []).filter((x) => d.AGENTS.some((a) => a.id === x)).map((x) => chip('who', x)), (m.refs || []).map((r) => chip('ref', r)), (m.findings || []).map((f) => chip('finding', f)), (m.memos || []).map((x) => chip('memo', x)));
+    const fields = [{ label: 'WHAT I TOOK FROM IT', value, placeholder: 'A line or two from whatever you read, heard or scanned. Name a repo and it is lifted as a cross-link; ask someone to act and it needs a recipient.', onChange: (e) => this.persist({ takeaway: e.target.value }),
+      count: value.length ? value.length + ' chars' : 'empty — stays on this device', actChip: chip('act', m.act), schemaChip: chip('schema', 'v2'),
+      hasDetected: detected.length > 0, detected, warnings: (m.warnings || []).map((w) => ({ t: w.t, chip: chip('rule', w.id) })), needsRecipient: m.act === 'request' && (m.recipients || []).length === 0,
+      routes: ['code-claude', 'claude-design', 'James', 'leo'].map((who) => ({ t: who, go: () => this.persist({ routes: { ...this.state.routes, takeaway: [who] } }), st: optSt(false) })) }];
+    this._ctx = { stack: stackItems, budget, channels: channels.map((x) => ({ label: x.label, statusWord: chStatus[x.status].toLowerCase() })) };
+    if (this.props.onSummary) { const sum = `${stackItems.length}|${budget}|${nSrcWired}|${nSrc}|${sess.label}`; if (sum !== this._sum) { this._sum = sum; setTimeout(() => this.props.onSummary({ stack: stackItems.length, budget, sitting: sess.label, nSrcWired, nSrc }), 0); } }
+    return { ...base, ...sv, lede, sessionBtns, sessionTip: sess.tip, sessionLabel: sess.label, budget, idle, running, over, remaining: mmss(leftMs), elapsedPct: S ? Math.min(100, Math.round(100 * (1 - leftMs / (S.minutes * 6e4)))) : 0,
+      startSession: () => this.persist({ session: { kind, minutes: sess.minutes, start: Date.now() } }), stopSession: () => this.persist({ session: null }), extend: () => this.persist({ session: { ...S, minutes: S.minutes + 5 } }),
+      nOpen: openItems.length, stackMin: acc, nSrc, nSrcWired, nav, isStack: view === 'stack', isShelf: view !== 'stack',
+      stack: stackItems.map(row), stackEmpty: stackItems.length === 0, stackEmptyLine: openItems.length ? `Nothing on your list fits ${budget} minutes — the shortest thing is ${Math.min(...openItems.map((i) => i.minutes))} min. Pick a longer sitting.` : 'The stack is built from your list, sized to this sitting. Your list is empty and no channel returns items in this prototype — so nothing is here, and nothing was made up.',
+      overflow: overflowItems.map(row), hasOverflow: overflowItems.length > 0, stackRuleLine: rule === 'fits-first' ? 'channels that suit this sitting first, then oldest' : 'oldest first',
+      channelCards, profile: R.profile.map(pchip), headings: R.headings.map(pchip), addSource, onSrcKey: (e) => { if (e.key === 'Enter') addSource(); },
+      shelfOpts, minOpts, repoOpts, dPlaceholder, addItem, onTitleKey: (e) => { if (e.key === 'Enter') addItem(); }, addSt: `cursor:${canAdd ? 'pointer' : 'default'};border:1px solid var(--ink);background:${canAdd ? 'var(--ink)' : 'transparent'};color:${canAdd ? 'var(--paper)' : 'var(--ink-3)'};${mono}font-size:11px;font-weight:700;padding:0 14px;`,
+      fields, done: doneItems.map(row), hasDone: doneItems.length > 0, nDone: doneItems.length,
+      leoAsks: ['what fits this sitting?', 'which channels are wired?', 'how does community work?'].map((t) => ({ t, go: () => say(t) })) };
+  }
+}
+</script>
+</body>
+</html>

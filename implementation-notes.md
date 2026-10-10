@@ -278,6 +278,18 @@ a number down. A deviation logged is the plan telling us what it didn't know.
   a missed occurrence would display that past value as the "next occurrence" in the
   schedule line. Used a time-neutral label while retaining the producer timestamp.
 
+- **#25 — The single-write description omitted an accepted exception.** MC-UX-01 planning assumed the project description fully matched code; the committed app also exposes core-backed claims and internal cockpit writes. Preserved existing behavior and reconciled the delegated human claim with accepted ADR-0010. New verbs still require their own decision.
+
+- **#26 — Frozen evidence contains source whitespace.** MC-UX-01 capture assumed all imported files passed whitespace checks; four lines contain trailing whitespace, including Markdown hard breaks. Preserved byte identity and checked whitespace only on authored files.
+
+- **#27 — The primary checkout held concurrent work.** MC-UX-01 capture assumed a clean application checkout; uncommitted PR Train work was present. Captured committed HEAD in isolation and excluded parallel changes.
+
+- **#28 — Export references were incomplete.** MC-UX-01 capture assumed complete screen references; baseline CSS is missing and the manifest/dossier omit later screens. Preserved source bytes, documented gaps in `planning/mc-ux-01/CAPTURE.md`, and left preview repair to a new reviewed cut.
+
+- **#29 — The local fleet-runner directory was only notes.** MC-UX-01 planning assumed a separate implementation repository and operative cockpit correspondence; core is the accepted home and the pilot contract remains Proposed. Recorded core pins and a registration proposal without sibling writes or schema adoption.
+
+- **#30 — Published source paths were unnecessary for reproduction.** PR #54's authored receipt/plans exposed an absolute home path and unrelated local branches. Normalized receipt provenance, retained remote pins, and preserved the frozen source and original receipt commit.
+
 ## Log
 
 - **2026-07-28** — Branched `feat/anthropic-watch-stage1` from `origin/main` (`cec5678`).

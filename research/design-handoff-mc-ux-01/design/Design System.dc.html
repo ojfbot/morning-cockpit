@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="ds/cockpit.css">
+<script src="ds/refs.js"></script>
+</helmet>
+<div data-screen-label="Design system reference" style="min-height:100vh;background:var(--paper);color:var(--ink);padding:0 0 64px;">
+  <header style="padding:24px var(--s5) 18px;border-bottom:3px solid var(--ink);">
+    <div style="font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--ink-3);">DS · COCKPIT · DERIVED 2026-10-08 · ds/cockpit.css + ds/refs.js</div>
+    <h1 style="margin:8px 0 10px;font-weight:800;font-size:clamp(36px,5vw,64px);letter-spacing:-.04em;line-height:.9;text-transform:uppercase;">Cockpit system</h1>
+    <p style="margin:0;max-width:70ch;font-size:15px;line-height:1.5;color:var(--ink-2);">Three sources, one sheet. The base is the cockpit's OJF Editorial tokens (paper, ink, Helvetica Neue 800 + JetBrains Mono, 8px grid, no radius). Fleet Navigator and the v2 pass contribute the cluster hues, dashed-means-unregistered, dim-don't-remove, and red's single job. The LEGO Drafting Table contributes the contrast contract, the evidence axes as visible badges, plain-words-first copy, and the navigable hover card. Light by default; dark follows the OS.</p>
+  </header>
+
+  <section style="padding:24px var(--s5) 0;">
+    <div style="display:flex;align-items:baseline;gap:10px;border-bottom:2px solid var(--ink);padding-bottom:6px;margin-bottom:12px;"><span style="font-weight:800;font-size:18px;">Signal roles</span><span style="margin-left:auto;font-family:var(--mono);font-size:9.5px;color:var(--ink-3);">each has one job</span></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;">
+      <sc-for list="{{ roles }}" as="r" hint-placeholder-count="5">
+        <div style="border:1px solid var(--rule);background:var(--card);padding:12px 14px;"><div style="{{ r.sw }}"></div><div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--ink-3);margin-top:10px;">{{ r.token }}</div><div style="font-size:14px;font-weight:700;margin-top:2px;">{{ r.name }}</div><div style="font-size:12px;color:var(--ink-2);line-height:1.45;margin-top:4px;">{{ r.job }}</div></div>
+      </sc-for>
+    </div>
+  </section>
+
+  <section style="padding:28px var(--s5) 0;">
+    <div style="display:flex;align-items:baseline;gap:10px;border-bottom:2px solid var(--ink);padding-bottom:6px;margin-bottom:12px;"><span style="font-weight:800;font-size:18px;">Evidence axes</span><span style="margin-left:auto;font-family:var(--mono);font-size:9.5px;color:var(--ink-3);">every number says how it was made before it says how big it is</span></div>
+    <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:center;">{{ evChips }}</div>
+    <p style="margin:10px 0 0;font-size:12.5px;color:var(--ink-2);max-width:70ch;line-height:1.5;">Hover a badge for its definition. Suppression ("rates unverified") stays an orthogonal flag: we have the number and refuse to show it.</p>
+  </section>
+
+  <section style="padding:28px var(--s5) 0;">
+    <div style="display:flex;align-items:baseline;gap:10px;border-bottom:2px solid var(--ink);padding-bottom:6px;margin-bottom:12px;"><span style="font-weight:800;font-size:18px;">Cluster hues</span><span style="margin-left:auto;font-family:var(--mono);font-size:9.5px;color:var(--ink-3);">categorical, muted · registry membership = fact, unregistered = judgment</span></div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;">{{ clusterChips }}</div>
+  </section>
+
+  <section style="padding:28px var(--s5) 0;">
+    <div style="display:flex;align-items:baseline;gap:10px;border-bottom:2px solid var(--ink);padding-bottom:6px;margin-bottom:12px;"><span style="font-weight:800;font-size:18px;">Reference chips + the navigable card</span><span style="margin-left:auto;font-family:var(--mono);font-size:9.5px;color:var(--ink-3);">ds/refs.js · ported from lego-village-pipeline dt/overlay.js</span></div>
+    <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;">
+      <div>
+        <p style="margin:0 0 10px;font-size:13px;line-height:1.5;color:var(--ink-2);">A label is never just a name. The <b>repo chip</b> encodes cluster hue (left bar), registration (solid / dashed), liveness (dot), briefs waiting on you (red count) and phase. The <b>agent chip</b> carries state; the <b>brief chip</b> its waiting colour; refs (<code style="font-family:var(--mono);font-size:11px;">adr: rm: ns: file:</code>) their evidence colour.</p>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:12px;border:1px solid var(--rule);background:var(--card);">{{ sampleChips }}</div>
+      </div>
+      <div>
+        <p style="margin:0 0 10px;font-size:13px;line-height:1.5;color:var(--ink-2);"><b>Hover</b> previews after 120ms; leaving closes after 180ms. <b>Click pins.</b> Chips inside the card <b>push a page</b> (breadcrumb + ← BACK). <b>ESC</b> or clicking outside closes. One card open page-wide. Every page ends in <span style="font-family:var(--mono);font-size:10px;letter-spacing:.08em;">WHERE THIS CAME FROM</span>. Pages: repo · brief · agent · cluster · ref · evidence.</p>
+        <div style="font-family:var(--mono);font-size:10px;line-height:1.7;color:var(--ink-2);padding:12px;border:1px solid var(--rule);background:var(--paper-2);">componentDidMount → ckRefs.bind(this, React)<br>after data → ckRefs.setData(snapshot)<br>renderVals → ckRefs.chip('repo','core') · ckRefs.card() exposed as the refCard hole at the end of the template</div>
+      </div>
+    </div>
+  </section>
+
+  <section data-screen-label="Who asked" style="padding:28px var(--s5) 0;">
+    <div style="display:flex;align-items:baseline;gap:10px;border-bottom:2px solid var(--ink);padding-bottom:6px;margin-bottom:12px;"><span style="font-weight:800;font-size:18px;">Who asked — the provenance chip</span><span style="margin-left:auto;font-family:var(--mono);font-size:9.5px;color:var(--ink-3);">issue MC-UX-01/asked-by · ckRefs.chip('who', actor) · hover peeks, click opens</span></div>
+    <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;">
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <p style="margin:0;font-size:13px;line-height:1.5;color:var(--ink-2);">"Asked by code-claude" names a <b>tool</b>, not a worker. A bead should carry <b>harness › named process › role › session › host</b> — the way Gas Town names its workers and the way <b>Leo</b> is already a named runner here. The top level stays quiet: a two-letter harness mark, a state dot, and the process name — or the bare actor id, dimmed, when no name is on the bead. Everything else lives one hover away.</p>
+        <div style="display:flex;flex-direction:column;gap:8px;padding:12px;border:1px solid var(--rule);background:var(--card);">
+          <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;"><span style="font-family:var(--mono);font-size:9px;letter-spacing:.1em;color:var(--ink-3);width:92px;">ON THE BEADS</span>{{ whoToday }}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;"><span style="font-family:var(--mono);font-size:9px;letter-spacing:.1em;color:var(--ink-3);width:92px;">NAMED TODAY</span>{{ whoNamed }}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;"><span style="font-family:var(--mono);font-size:9px;letter-spacing:.1em;color:var(--ink-3);width:92px;">TARGET STATE</span>{{ whoProposed }}<span style="font-family:var(--mono);font-size:9px;color:var(--ev-simulated);">dashed = simulated, not on any bead</span></div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;"><span style="font-family:var(--mono);font-size:9px;letter-spacing:.1em;color:var(--ink-3);">HARNESS MARKS</span>{{ harnessMarks }}</div>
+      </div>
+      <div>
+        <p style="margin:0 0 10px;font-size:13px;line-height:1.5;color:var(--ink-2);"><b>Overlap rules for the peek.</b> It is a second layer, not a second card: 260px, non-interactive (pointer-events none), under the card's z. <b>One page-wide</b> — a new hover replaces it, nothing stacks. <b>220ms</b> intent delay cold, 40ms warm when moving chip to chip. <b>Never opens while a card is pinned</b> and never for a chip inside the card — the card is already the detail. Leaving closes it after 120ms; click, scroll and ESC close it at once. Flips above when there is no room below; clamps to the viewport. Keyboard focus peeks too. Only <code style="font-family:var(--mono);font-size:11px;">who</code> chips peek; every other chip keeps the native tooltip (ruling 2026-10-08).</p>
+        <div style="font-family:var(--mono);font-size:10px;line-height:1.7;color:var(--ink-2);padding:12px;border:1px solid var(--rule);background:var(--paper-2);">actor: code-claude                      ← today: harness only<br>actor: { harness: claude-code, name: Ferrier,<br>&nbsp;&nbsp;role: implementing_agent, session: 7f3a, host: mbp-14 }   ← proposed<br>evidence: repo → DERIVED · id-classified → ASSERTED · target state → SIMULATED</div>
+      </div>
+    </div>
+  </section>
+
+  <section style="padding:28px var(--s5) 0;">
+    <div style="display:flex;align-items:baseline;gap:10px;border-bottom:2px solid var(--ink);padding-bottom:6px;margin-bottom:12px;"><span style="font-weight:800;font-size:18px;">Type &amp; rules</span></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:24px;">
+      <div><div style="font-weight:800;font-size:48px;letter-spacing:-.04em;line-height:.9;text-transform:uppercase;">Display 800</div><div style="font-family:var(--mono);font-size:10px;color:var(--ink-3);margin-top:6px;">Helvetica Neue · wordmarks, section heads · −.035 to −.045em</div></div>
+      <div><div style="font-weight:700;font-size:20px;line-height:1.2;">Lede 700 — one sentence that carries the state, red only on a decision count.</div><div style="font-family:var(--mono);font-size:10px;color:var(--ink-3);margin-top:6px;">17–30px</div></div>
+      <div><div style="font-size:13px;line-height:1.55;color:var(--ink-2);">Body 500 at 12.5–14px in ink-2; labels in JetBrains Mono 9–11px, letter-spaced .08–.14em, uppercase.</div><div style="font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--ink-3);margin-top:6px;">MONO LABEL · 10PX · .12EM</div></div>
+    </div>
+    <ul style="margin:18px 0 0;padding-left:18px;font-size:13px;line-height:1.7;color:var(--ink-2);max-width:80ch;">
+      <li>3px ink rule under section heads; 2px under block heads; 1px <code style="font-family:var(--mono);font-size:11px;">--rule</code> between rows. No radius anywhere.</li>
+      <li>Selection is an ink stroke. Red is never selection, never progress, never a count of zero.</li>
+      <li>Filtering dims to .14 — never removes. Spatial stability over tidiness.</li>
+      <li>A control says what happens when you press it ("Write this brief into morning-cockpit →"). A number says how it was made (badge) before how big it is.</li>
+      <li>Text tokens meet 4.5:1 on their ground in both themes (ink-3 was lifted from #938a7c to #7d7466 for this).</li>
+    </ul>
+  </section>
+  {{ refCard }}
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { data: null };
+  componentDidMount() { if (window.ckRefs) window.ckRefs.bind(this, React); import('./data/snapshot.js').then((d) => { if (window.ckRefs) window.ckRefs.setData(d); this.setState({ data: d }); }); }
+  renderVals() {
+    const d = this.state.data; const CK = window.ckRefs; if (CK && d) CK.setData(d); const chip = (k, id, o) => (CK && d ? CK.chip(k, id, o) : null);
+    const roles = [
+      ['--decision', 'Decision', 'A human decision is needed. Nothing else is red.', 'var(--decision)'],
+      ['--live', 'Live', 'Running, confirmed, written.', 'var(--live)'],
+      ['--warn', 'Warn', 'Stale, drifting, unverified.', 'var(--warn)'],
+      ['--progress', 'Progress', 'Bars and volumes — neutral, never red.', 'var(--progress)'],
+      ['--selection', 'Selection', 'An ink stroke. Never the accent.', 'var(--selection)'],
+    ].map(([token, name, job, c]) => ({ token, name, job, sw: `height:28px;background:${c};` }));
+    const W = d && d.WHO; const mk = (t) => React.createElement('span', { key: t[0], style: { display: 'inline-flex', alignItems: 'center', gap: 5, fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-2)' } }, [React.createElement('span', { key: 'm', style: { background: 'var(--ink)', color: 'var(--card)', fontSize: 8.5, fontWeight: 700, padding: '1px 4px' } }, t[1].mark), t[1].label]);
+    return { roles, refCard: CK ? CK.card() : null,
+      whoToday: d ? ['code-claude', 'claude-design', 'claude-design-session', 'codex-hygiene'].map((id) => chip('who', id)) : [],
+      whoNamed: d ? ['leo', 'daily-logger', 'watch-poll', 'James'].map((id) => chip('who', id)) : [],
+      whoProposed: W ? Object.keys(W.proposed).map((id) => chip('who', id, { proposed: true })) : [],
+      harnessMarks: W ? Object.entries(W.harnesses).map(mk) : [],
+      evChips: ['derived', 'asserted', 'synth', 'simulated'].map((k) => chip('evidence', k)),
+      clusterChips: d ? d.CLUSTERS.map((c) => chip('cluster', c.id)) : [],
+      sampleChips: d ? [chip('repo', 'morning-cockpit'), chip('repo', 'core'), chip('repo', 'lego-village-pipeline'), chip('repo', 'shell'), chip('who', 'code-claude'), chip('who', 'codex-hygiene'), chip('brief', d.BRIEFS[0].id), chip('ref', 'adr:0002'), chip('ref', 'rm:rm-l1-morning-cockpit#S8')] : [] };
+  }
+}
+</script>
+</body>
+</html>

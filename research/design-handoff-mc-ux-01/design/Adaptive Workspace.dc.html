@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="ds/cockpit.css">
+<script src="ds/refs.js"></script>
+<script src="ds/correspond.js"></script>
+</helmet>
+<div data-screen-label="D · Adaptive Workspace" style="height:100vh;background:var(--paper);color:var(--ink);display:grid;grid-template-rows:40px auto minmax(0,1fr);overflow:hidden;">
+  <header style="display:flex;align-items:center;gap:14px;padding:0 var(--s5);height:40px;border-bottom:1px solid var(--rule);font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--ink-3);">
+    <span>MORNING COCKPIT</span><span style="color:var(--rule-strong);">·</span><span>CONCEPT D · ADAPTIVE WORKSPACE</span><span style="color:var(--rule-strong);">·</span><span>{{ dateLine }}</span>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:14px;">
+      <span title="Clock says this phase">{{ clockPhase }}</span>
+      <div style="display:flex;border:1px solid var(--rule-strong);">
+        <sc-for list="{{ intents }}" as="i" hint-placeholder-count="4"><button onClick="{{ i.go }}" style="{{ i.st }}" title="{{ i.tip }}">{{ i.t }}</button></sc-for>
+      </div>
+      <span style="color:var(--ink-2);">{{ clock }}</span>
+    </div>
+  </header>
+
+  <section style="padding:14px var(--s5) 12px;border-bottom:3px solid var(--ink);display:flex;align-items:center;gap:28px;flex-wrap:wrap;">
+    <div style="font-weight:800;font-size:clamp(28px,3.4vw,44px);letter-spacing:-.04em;line-height:.9;text-transform:uppercase;white-space:nowrap;">{{ wordmark }}</div>
+    <p style="margin:0;flex:1 1 320px;min-width:0;font-weight:700;font-size:clamp(14px,1.4vw,18px);line-height:1.25;max-width:48ch;text-wrap:pretty;">{{ lede }}</p>
+    <div style="display:flex;gap:22px;font-family:var(--mono);font-size:9.5px;letter-spacing:.04em;color:var(--ink-3);flex-wrap:wrap;white-space:nowrap;">
+      <div style="display:flex;align-items:baseline;gap:6px;"><span style="font-size:22px;font-weight:800;color:var(--decision-ink);font-family:var(--sans);letter-spacing:-.02em;">{{ nDecisions }}</span>waiting on you</div>
+      <div style="display:flex;align-items:baseline;gap:6px;"><span style="font-size:22px;font-weight:800;font-family:var(--sans);letter-spacing:-.02em;">{{ nAgents }}</span>agents working</div>
+      <div style="display:flex;align-items:baseline;gap:6px;"><span style="font-size:22px;font-weight:800;font-family:var(--sans);letter-spacing:-.02em;">{{ nStale }}</span>quiet &gt; 60 days</div>
+    </div>
+  </section>
+
+  <div style="display:grid;grid-template-columns:minmax(0,1fr) 340px;min-height:0;">
+  <div style="min-width:0;min-height:0;overflow-y:auto;">
+  <!-- ORIENT -->
+  <sc-if value="{{ isOrient }}" hint-placeholder-val="{{ true }}">
+  <main data-screen-label="Mode · Orient" style="padding:18px var(--s5) 32px;display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:28px;">
+    <div style="display:flex;flex-direction:column;gap:28px;min-width:0;">
+      <div>
+        <div style="display:flex;align-items:baseline;gap:10px;border-bottom:2px solid var(--ink);padding-bottom:6px;margin-bottom:10px;"><span style="font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--ink-3);">1</span><span style="font-weight:800;font-size:18px;letter-spacing:-.01em;">What needs a decision</span><span style="margin-left:auto;font-family:var(--mono);font-size:9.5px;color:var(--ink-3);">oldest first · red means only this</span></div>
+        <sc-for list="{{ decisions }}" as="dcn" hint-placeholder-count="3">
+          <div style="display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;background:var(--card);border:1px solid var(--rule);border-left:3px solid var(--decision);padding:12px 14px;margin-bottom:8px;">
+            <div style="min-width:0;"><div style="font-size:14px;font-weight:700;line-height:1.3;">{{ dcn.title }}</div><div style="display:flex;flex-wrap:wrap;gap:5px;align-items:center;font-family:var(--mono);font-size:10px;color:var(--ink-3);margin-top:5px;">{{ dcn.repoChip }}<span>· no reply for {{ dcn.age }} days · asked by</span>{{ dcn.actorChip }}</div></div>
+            <div style="display:flex;gap:6px;"><button onClick="{{ dcn.work }}" style="cursor:pointer;border:1px solid var(--ink);background:var(--ink);color:var(--paper);font-family:var(--mono);font-size:10px;padding:5px 10px;" title="Switch to Work mode on this repo">Work on it →</button><button onClick="{{ dcn.defer }}" style="cursor:pointer;border:1px solid var(--rule-strong);background:transparent;color:var(--ink-2);font-family:var(--mono);font-size:10px;padding:5px 10px;" title="Hide for 7 days; the deferral is counted in Review">Not today</button></div>
+          </div>
+        </sc-for>
+        <sc-if value="{{ noDecisions }}" hint-placeholder-val="{{ false }}"><p style="margin:0;font-size:13px;color:var(--ink-2);padding:16px;border:1px dashed var(--rule);text-align:center;">Nothing is waiting on you. Nothing was made up to fill this box.</p></sc-if>
+      </div>
+      <div>
+        <div style="display:flex;align-items:baseline;gap:10px;border-bottom:2px solid var(--ink);padding-bottom:6px;margin-bottom:10px;"><span style="font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--ink-3);">2</span><span style="font-weight:800;font-size:18px;letter-spacing:-.01em;">What’s holding things up</span><span style="margin-left:auto;font-family:var(--mono);font-size:9.5px;color:var(--ev-asserted);">● hand-written chains, not derived</span></div>
+        <sc-for list="{{ blockers }}" as="b" hint-placeholder-count="3">
+          <div style="display:flex;gap:12px;align-items:baseline;padding:10px 0;border-bottom:1px solid var(--rule);"><span style="{{ b.sevSt }}">{{ b.sev }}</span><div style="flex:1;min-width:0;"><span style="font-size:14px;font-weight:700;">{{ b.title }}</span><span style="font-size:12.5px;color:var(--ink-2);"> — holds up {{ b.blocks }}</span> {{ b.refChip }}</div><span style="font-family:var(--mono);font-size:10px;color:var(--ink-3);white-space:nowrap;">{{ b.impact }}</span></div>
+        </sc-for>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:28px;min-width:0;">
+      <div>
+        <div style="display:flex;align-items:baseline;gap:10px;border-bottom:2px solid var(--ink);padding-bottom:6px;margin-bottom:10px;"><span style="font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--ink-3);">3</span><span style="font-weight:800;font-size:18px;letter-spacing:-.01em;">Overnight</span><span style="margin-left:auto;font-family:var(--mono);font-size:9.5px;color:var(--ev-derived);">● since last evening · from agent events</span></div>
+        <sc-for list="{{ overnight }}" as="o" hint-placeholder-count="3">
+          <div style="display:flex;gap:10px;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--rule);"><span style="{{ o.dotSt }}"></span><span style="flex:1;display:flex;">{{ o.chip }}</span><span style="font-size:12px;color:var(--ink-2);">{{ o.what }}</span><span style="font-family:var(--mono);font-size:10px;color:var(--ink-3);">{{ o.when }}</span></div>
+        </sc-for>
+        <p style="margin:10px 0 0;font-family:var(--mono);font-size:10px;color:var(--ink-3);">This lane keeps its time-of-day meaning on purpose — compare Concept E, where it becomes “since you last looked”.</p>
+      </div>
+      <div>
+        <div style="display:flex;align-items:baseline;gap:10px;border-bottom:2px solid var(--ink);padding-bottom:6px;margin-bottom:10px;"><span style="font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--ink-3);">4</span><span style="font-weight:800;font-size:18px;letter-spacing:-.01em;">Where to spend today</span></div>
+        <sc-for list="{{ focusPicks }}" as="f" hint-placeholder-count="3">
+          <button onClick="{{ f.go }}" style="display:flex;width:100%;text-align:left;gap:10px;align-items:center;background:var(--card);border:1px solid var(--rule);padding:10px 12px;margin-bottom:6px;cursor:pointer;" style-hover="border-color:var(--ink);">
+            <span style="flex:1;display:flex;">{{ f.chip }}</span><span style="font-size:12px;color:var(--ink-2);">{{ f.why }}</span>
+          </button>
+        </sc-for>
+      </div>
+    </div>
+  </main>
+  </sc-if>
+
+  <!-- WORK -->
+  <sc-if value="{{ isWork }}" hint-placeholder-val="{{ false }}">
+  <main data-screen-label="Mode · Work" style="padding:0;display:grid;grid-template-columns:200px minmax(0,1fr) 280px;min-height:100%;">
+    <nav style="border-right:1px solid var(--rule);padding:16px 0;">
+      <div style="font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;color:var(--ink-3);padding:0 16px 8px;">PICK A PROJECT</div>
+      <sc-for list="{{ projects }}" as="p" hint-placeholder-count="8"><button onClick="{{ p.go }}" style="{{ p.st }}"><span style="{{ p.hueSt }}"></span><span style="flex:1;font-size:13px;font-weight:600;">{{ p.name }}</span><sc-if value="{{ p.hot }}" hint-placeholder-val="{{ false }}"><span style="font-family:var(--mono);font-size:9px;color:var(--decision-ink);">{{ p.n }}</span></sc-if></button></sc-for>
+    </nav>
+    <div style="padding:24px 28px;min-width:0;">
+      <div style="font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--ink-3);">SESSION DESK · {{ focusName }}</div>
+      <h2 style="margin:6px 0 4px;font-size:30px;font-weight:800;letter-spacing:-.03em;line-height:1;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">{{ focusName }} <span style="display:flex;">{{ focusChip }}</span></h2>
+      <p style="margin:0 0 20px;font-size:14px;color:var(--ink-2);">{{ focusRole }}</p>
+      <div style="display:flex;align-items:baseline;gap:10px;border-bottom:2px solid var(--ink);padding-bottom:6px;margin-bottom:10px;"><span style="font-weight:800;font-size:16px;">Bring me up to date</span><span style="margin-left:auto;font-family:var(--mono);font-size:9.5px;color:var(--ev-derived);">● from briefs, slices and agent events</span></div>
+      <p style="margin:0 0 22px;font-size:14px;line-height:1.6;padding-left:12px;border-left:2px solid var(--ink);color:var(--ink-2);">{{ catchUp }}</p>
+      <div style="display:flex;align-items:baseline;gap:10px;border-bottom:2px solid var(--ink);padding-bottom:6px;margin-bottom:10px;"><span style="font-weight:800;font-size:16px;">Open questions here</span></div>
+      <sc-for list="{{ focusBriefs }}" as="b" hint-placeholder-count="2">
+        <div style="display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;background:var(--card);border:1px solid var(--rule);border-left:3px solid var(--decision);padding:10px 12px;margin-bottom:8px;"><div><div style="font-size:13.5px;font-weight:700;line-height:1.3;">{{ b.title }}</div><div style="display:flex;gap:5px;align-items:center;font-family:var(--mono);font-size:10px;color:var(--ink-3);margin-top:4px;">{{ b.chip }}<span>· {{ b.age }} days · from</span>{{ b.actorChip }}</div></div><button onClick="{{ b.pick }}" style="cursor:pointer;border:1px solid var(--rule-strong);background:transparent;color:var(--ink);font-family:var(--mono);font-size:10px;padding:4px 9px;">Resume</button></div>
+      </sc-for>
+      <sc-if value="{{ focusQuiet }}" hint-placeholder-val="{{ false }}"><p style="margin:0 0 8px;font-size:13px;color:var(--ink-2);">No brief is waiting here.</p></sc-if>
+      <div style="display:flex;align-items:baseline;gap:10px;border-bottom:2px solid var(--ink);padding-bottom:6px;margin:22px 0 10px;"><span style="font-weight:800;font-size:16px;">Next slices</span><span style="margin-left:auto;font-family:var(--mono);font-size:9.5px;color:var(--ink-3);">{{ focusSliceLine }}</span></div>
+      <sc-for list="{{ focusSlices }}" as="s" hint-placeholder-count="3"><div style="display:flex;gap:12px;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--rule);"><span style="font-family:var(--mono);font-size:11px;color:var(--ink-3);width:28px;">{{ s.id }}</span><span style="flex:1;font-size:13.5px;font-weight:600;">{{ s.title }}</span><span style="{{ s.chipSt }}">{{ s.status }}</span></div></sc-for>
+    </div>
+    <aside style="border-left:1px solid var(--rule);background:var(--paper-2);padding:20px 18px;display:flex;flex-direction:column;gap:14px;">
+      <div style="font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--ink-3);">SESSION NOTES <span style="font-size:8px;border:1px solid var(--ev-simulated);color:var(--ev-simulated);padding:0 4px;margin-left:6px;">LOCAL ONLY</span></div>
+      <p style="margin:0;font-size:12px;color:var(--ink-2);line-height:1.5;">Jot as you go. Review mode turns these into a report bead you approve before anything is written.</p>
+
+      <sc-for list="{{ noteFields }}" as="f" hint-placeholder-count="1">
+        <div style="margin-bottom:14px;border:1px solid var(--rule);background:var(--card);">
+          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:8px 12px;border-bottom:1px solid var(--rule);">
+            <label style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--ink-3);margin-right:4px;white-space:nowrap;">{{ f.label }}</label>
+            {{ f.actChip }}{{ f.schemaChip }}
+            <sc-if value="{{ f.generated }}" hint-placeholder-val="{{ false }}"><span style="font-family:var(--mono);font-size:8.5px;letter-spacing:.08em;color:var(--ev-synth);border:1px solid var(--ev-synth);padding:1px 6px;white-space:nowrap;">PASTED FROM A SESSION</span>{{ f.fromChip }}</sc-if>
+            <span style="margin-left:auto;font-family:var(--mono);font-size:9px;color:var(--ink-3);">{{ f.count }}</span>
+          </div>
+          <textarea value="{{ f.value }}" onChange="{{ f.onChange }}" rows="{{ f.rows }}" placeholder="{{ f.placeholder }}" style="display:block;width:100%;resize:vertical;border:none;font-family:var(--sans);font-size:13px;line-height:1.5;color:var(--ink);background:transparent;padding:10px 12px;"></textarea>
+          <sc-if value="{{ f.hasDetected }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-wrap:wrap;align-items:center;gap:5px;padding:6px 12px 8px;border-top:1px dashed var(--rule);font-family:var(--mono);font-size:9px;letter-spacing:.08em;color:var(--ink-3);"><span>DETECTED</span>{{ f.detected }}</div>
+          </sc-if>
+          <sc-for list="{{ f.warnings }}" as="w" hint-placeholder-count="0">
+            <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:7px 12px;border-top:1px solid var(--rule);border-left:3px solid var(--warn);font-size:12px;color:var(--ink-2);line-height:1.45;">{{ w.chip }}<span style="flex:1;min-width:200px;">{{ w.t }}</span></div>
+          </sc-for>
+          <sc-if value="{{ f.needsRecipient }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-wrap:wrap;align-items:center;gap:5px;padding:7px 12px 9px;border-top:1px solid var(--rule);font-family:var(--mono);font-size:9px;letter-spacing:.08em;color:var(--ink-3);"><span>ROUTE TO</span><sc-for list="{{ f.routes }}" as="r" hint-placeholder-count="3"><button onClick="{{ r.go }}" style="{{ r.st }}">{{ r.t }}</button></sc-for></div>
+          </sc-if>
+        </div>
+      </sc-for>
+    </aside>
+  </main>
+  </sc-if>
+
+  <!-- REVIEW -->
+  <sc-if value="{{ isReview }}" hint-placeholder-val="{{ false }}">
+  <main data-screen-label="Mode · Review" style="padding:18px var(--s5) 32px;display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:28px;">
+    <div style="min-width:0;">
+      <div style="display:flex;align-items:baseline;gap:10px;border-bottom:2px solid var(--ink);padding-bottom:6px;margin-bottom:12px;"><span style="font-weight:800;font-size:18px;">Close the day</span><span style="margin-left:auto;font-family:var(--mono);font-size:9.5px;color:var(--ink-3);">three lines, then approve — that is the whole ritual</span></div>
+
+      <sc-for list="{{ reviewFields }}" as="f" hint-placeholder-count="1">
+        <div style="margin-bottom:14px;border:1px solid var(--rule);background:var(--card);">
+          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:8px 12px;border-bottom:1px solid var(--rule);">
+            <label style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--ink-3);margin-right:4px;white-space:nowrap;">{{ f.label }}</label>
+            {{ f.actChip }}{{ f.schemaChip }}
+            <sc-if value="{{ f.generated }}" hint-placeholder-val="{{ false }}"><span style="font-family:var(--mono);font-size:8.5px;letter-spacing:.08em;color:var(--ev-synth);border:1px solid var(--ev-synth);padding:1px 6px;white-space:nowrap;">PASTED FROM A SESSION</span>{{ f.fromChip }}</sc-if>
+            <span style="margin-left:auto;font-family:var(--mono);font-size:9px;color:var(--ink-3);">{{ f.count }}</span>
+          </div>
+          <textarea value="{{ f.value }}" onChange="{{ f.onChange }}" rows="{{ f.rows }}" placeholder="{{ f.placeholder }}" style="display:block;width:100%;resize:vertical;border:none;font-family:var(--sans);font-size:13px;line-height:1.5;color:var(--ink);background:transparent;padding:10px 12px;"></textarea>
+          <sc-if value="{{ f.hasDetected }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-wrap:wrap;align-items:center;gap:5px;padding:6px 12px 8px;border-top:1px dashed var(--rule);font-family:var(--mono);font-size:9px;letter-spacing:.08em;color:var(--ink-3);"><span>DETECTED</span>{{ f.detected }}</div>
+          </sc-if>
+          <sc-for list="{{ f.warnings }}" as="w" hint-placeholder-count="0">
+            <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:7px 12px;border-top:1px solid var(--rule);border-left:3px solid var(--warn);font-size:12px;color:var(--ink-2);line-height:1.45;">{{ w.chip }}<span style="flex:1;min-width:200px;">{{ w.t }}</span></div>
+          </sc-for>
+          <sc-if value="{{ f.needsRecipient }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-wrap:wrap;align-items:center;gap:5px;padding:7px 12px 9px;border-top:1px solid var(--rule);font-family:var(--mono);font-size:9px;letter-spacing:.08em;color:var(--ink-3);"><span>ROUTE TO</span><sc-for list="{{ f.routes }}" as="r" hint-placeholder-count="3"><button onClick="{{ r.go }}" style="{{ r.st }}">{{ r.t }}</button></sc-for></div>
+          </sc-if>
+        </div>
+      </sc-for>
+      <div style="border:1px solid var(--rule-strong);background:var(--card);padding:12px 14px;">
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;"><span style="font-family:var(--mono);font-size:9px;letter-spacing:.12em;color:var(--ink-2);">MEMO · DRAFT</span>{{ memoActChip }}{{ memoSchemaChip }}<span style="margin-left:auto;font-family:var(--mono);font-size:9px;color:var(--ink-3);">{{ focusName }}/.handoff/ · in_reply_to {{ respondsTo }}</span></div>
+        <p style="margin:8px 0 10px;font-size:12.5px;line-height:1.5;color:var(--ink-2);">Your three lines become one memo in the operative schema. A report that <i>in_reply_to</i>s a live brief closes that loop; anything that asks someone to act is routed as a separate request with a named recipient. You approve each write.</p>
+        <details style="margin-bottom:10px;"><summary style="cursor:pointer;font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;color:var(--ink-3);">FRONTMATTER PREVIEW</summary><pre style="margin:6px 0 0;font-family:var(--mono);font-size:10.5px;line-height:1.6;color:var(--ink-2);background:var(--paper-2);border:1px solid var(--rule);padding:10px 12px;white-space:pre-wrap;">{{ memoPreview }}</pre></details>
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;">
+          <span style="font-family:var(--mono);font-size:9px;letter-spacing:.08em;color:var(--ink-3);">DISPATCH TO</span>
+          <sc-for list="{{ dispatchTargets }}" as="t" hint-placeholder-count="4"><button onClick="{{ t.go }}" style="{{ t.st }}" title="{{ t.tip }}">{{ t.t }}</button></sc-for>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:10px;">
+          <button onClick="{{ dispatch }}" style="{{ dispatchSt }}" title="Prepare the memo and record a publication intent for the chosen recipient (simulated)">{{ dispatchLabel }}</button>
+          <sc-if value="{{ hasDispatched }}" hint-placeholder-val="{{ false }}"><button onClick="{{ dispatchAnother }}" style="cursor:pointer;border:1px solid var(--ink);background:transparent;color:var(--ink);font-family:var(--mono);font-size:11px;font-weight:700;padding:7px 14px;" title="Keep this memo; start a second act to another recipient (a new act, not a revision)">Dispatch another →</button></sc-if>
+          <span style="font-family:var(--mono);font-size:9px;color:var(--ink-3);">prepared ≠ delivered</span>{{ ruleD6 }}<span style="font-family:var(--mono);font-size:9px;color:var(--ev-simulated);">· simulated</span>
+        </div>
+        <sc-for list="{{ dispatches }}" as="dp" hint-placeholder-count="0">
+          <div style="margin-top:10px;border-top:1px solid var(--rule);padding-top:8px;display:grid;grid-template-columns:auto 1fr;gap:3px 12px;font-family:var(--mono);font-size:10px;line-height:1.6;">
+            <span style="color:var(--ink);font-weight:700;">{{ dp.n }}</span><span style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;color:var(--ink);">{{ dp.actChip }}<span>→</span>{{ dp.toChip }}<span style="color:var(--ink-3);">· {{ dp.when }}</span></span>
+            <span style="color:var(--live);">✓ PREPARED</span><span style="color:var(--ink-2);">{{ dp.memo }} R0 · {{ dp.path }}</span>
+            <span style="color:var(--warn);">○ INTENT</span><span style="color:var(--ink-2);">publication intent recorded · in_reply_to {{ dp.replyTo }} · publisher: cockpit (ADR-0005 path)</span>
+            <span style="color:var(--ink-3);">○ RECEIPT</span><span style="color:var(--ink-3);">pending remote readback — the loop stays open until then</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    <div style="min-width:0;display:flex;flex-direction:column;gap:26px;">
+      <div>
+        <div style="display:flex;align-items:baseline;gap:10px;border-bottom:2px solid var(--ink);padding-bottom:6px;margin-bottom:10px;"><span style="font-weight:800;font-size:18px;">Patterns this week</span><span style="margin-left:auto;font-family:var(--mono);font-size:9.5px;color:var(--ev-derived);">● derived</span></div>
+        <sc-for list="{{ patterns }}" as="p" hint-placeholder-count="4"><div style="display:flex;gap:12px;align-items:baseline;padding:9px 0;border-bottom:1px solid var(--rule);"><span style="font-size:22px;font-weight:800;letter-spacing:-.02em;width:44px;text-align:right;">{{ p.n }}</span><div style="flex:1;"><div style="font-size:13.5px;font-weight:700;">{{ p.t }}</div><div style="font-size:12px;color:var(--ink-2);">{{ p.sub }}</div></div></div></sc-for>
+      </div>
+      <div>
+        <div style="display:flex;align-items:baseline;gap:10px;border-bottom:2px solid var(--ink);padding-bottom:6px;margin-bottom:10px;"><span style="font-weight:800;font-size:18px;">Progress recorded</span><span style="margin-left:auto;font-family:var(--mono);font-size:9.5px;color:var(--ink-3);">recorded only when work merged</span></div>
+        <sc-for list="{{ movements }}" as="m" hint-placeholder-count="2"><div style="display:flex;gap:12px;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--rule);font-family:var(--mono);font-size:11px;"><span style="color:var(--ink-3);width:84px;">{{ m.date }}</span><span style="font-weight:700;">{{ m.prop }} {{ m.delta }}</span><span style="flex:1;color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ m.evidence }}</span></div></sc-for>
+        <p style="margin:10px 0 0;font-size:12.5px;color:var(--ink-2);">Last recorded progress was <b>{{ movementGap }} days ago</b>. That number, not a streak, is the habit signal.</p>
+      </div>
+    </div>
+  </main>
+  </sc-if>
+
+  <!-- NIGHT -->
+  <sc-if value="{{ isNight }}" hint-placeholder-val="{{ false }}">
+  <main data-screen-label="Mode · Night watch" style="padding:24px var(--s5) 40px;max-width:760px;">
+    <div style="display:flex;align-items:baseline;gap:10px;border-bottom:2px solid var(--ink);padding-bottom:6px;margin-bottom:12px;"><span style="font-weight:800;font-size:18px;">Running without you</span><span style="margin-left:auto;font-family:var(--mono);font-size:9.5px;color:var(--ev-derived);">● from agent events</span></div>
+    <sc-for list="{{ nightAgents }}" as="a" hint-placeholder-count="4"><div style="display:flex;gap:12px;align-items:baseline;padding:10px 0;border-bottom:1px solid var(--rule);"><span style="{{ a.dotSt }}"></span><span style="flex:1;display:flex;">{{ a.chip }}</span><span style="display:flex;">{{ a.repoChip }}</span><span style="font-family:var(--mono);font-size:10px;color:var(--ink-3);">{{ a.state }} · {{ a.when }}</span></div></sc-for>
+    <p style="margin:22px 0 0;font-size:15px;font-weight:700;line-height:1.4;max-width:40ch;">Nothing here needs you before morning. Decisions wait; they do not expire overnight.</p>
+    <p style="margin:8px 0 0;font-family:var(--mono);font-size:10px;color:var(--ink-3);">Orient mode will open with what changed while you were away.</p>
+  </main>
+  </sc-if>
+
+  <!-- READ -->
+  <sc-if value="{{ isRead }}" hint-placeholder-val="{{ false }}">
+  <dc-import name="Reading Room" embedded="{{ true }}" on-back="{{ readBack }}" on-summary="{{ readSummary }}" data-screen-label="Mode · Reading Room" hint-size="100%,100%" style="display:block;height:100%;"></dc-import>
+  </sc-if>
+  </div>
+  <aside data-screen-label="Leo rail (persistent)" style="border-left:1px solid var(--rule-strong);background:var(--paper-2);display:flex;flex-direction:column;min-height:0;height:100%;">
+    <div style="display:flex;align-items:center;gap:8px;padding:14px 18px 12px;border-bottom:1px solid var(--rule);"><span style="width:7px;height:7px;border-radius:50%;background:var(--live);"></span><span style="font-family:var(--mono);font-size:10px;letter-spacing:.12em;">LEO · CHIEF OF STAFF</span><span style="margin-left:auto;font-family:var(--mono);font-size:9px;color:var(--ink-3);">{{ leoScope }}</span>{{ simChip }}</div>
+    <div style="padding:10px 18px 0;font-size:12px;color:var(--ink-2);line-height:1.5;">{{ leoIntro }}</div>
+    <div style="flex:1;min-height:0;overflow-y:auto;padding:8px 18px;display:flex;flex-direction:column;gap:6px;">
+      <sc-for list="{{ leoLog }}" as="m" hint-placeholder-count="0"><div style="{{ m.st }}">{{ m.t }}</div></sc-for>
+    </div>
+    <div style="display:flex;gap:5px;flex-wrap:wrap;padding:6px 18px;"><sc-for list="{{ leoAsks }}" as="q" hint-placeholder-count="3"><button onClick="{{ q.go }}" style="cursor:pointer;border:1px solid var(--rule-strong);background:var(--card);color:var(--ink-2);padding:3px 8px;font-family:var(--mono);font-size:9.5px;white-space:nowrap;">{{ q.t }}</button></sc-for></div>
+    <div style="display:flex;gap:6px;padding:4px 18px 14px;"><input value="{{ leoAsk }}" onChange="{{ onLeoAsk }}" onKeyDown="{{ onLeoKey }}" placeholder="{{ leoPlaceholder }}" style="flex:1;min-width:0;background:var(--card);color:var(--ink);border:1px solid var(--rule-strong);padding:7px 9px;font-family:var(--mono);font-size:11px;"></input><button onClick="{{ leoSend }}" style="cursor:pointer;border:1px solid var(--ink);background:var(--ink);color:var(--paper);font-family:var(--mono);font-size:11px;font-weight:700;padding:0 12px;">ASK</button></div>
+  </aside>
+  </div>
+  {{ refCard }}
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { dispatchTo: null, dispatches: [], routes: {}, leoAsk: '', leoLog: [], data: null, intent: null, focus: 'morning-cockpit', notes: '', rDone: '', rOpen: '', rNext: '', deferred: {}, written: false, now: new Date() };
+  componentDidMount() {
+    if (window.ckRefs) window.ckRefs.bind(this, React);
+    if (window.ckCorr) window.ckCorr.install();
+    import('./data/snapshot.js').then((d) => { if (window.ckRefs) window.ckRefs.setData(d); this.setState({ data: d }); });
+    try { const s = JSON.parse(localStorage.getItem('mc.proto.adaptive.v1') || '{}'); this.setState({ notes: s.notes || '', rDone: s.rDone || '', rOpen: s.rOpen || '', rNext: s.rNext || '', focus: s.focus || 'morning-cockpit', deferred: s.deferred || {}, routes: s.routes || {} }); } catch (e) {}
+    this._t = setInterval(() => this.setState({ now: new Date() }), 30000);
+  }
+  componentWillUnmount() { clearInterval(this._t); }
+  leoAnswer(q) {
+    const c = this._leoCtx || {}; const { open = [], focus = {}, nAgents = 0, d } = c; const s = q.toLowerCase();
+    if (!d) return '[simulated] loading…';
+    if (/need|start|first/.test(s)) return open.length ? `[simulated] ${open.length} briefs wait on you; the oldest is “${open[0].title.slice(0, 48)}…” (${open[0].staleDays} days). Start there — Work on it → opens the desk.` : '[simulated] Nothing waits on you.';
+    if (/moved|overnight|running|stuck/.test(s)) { const st = d.AGENTS.filter((a) => a.state === 'stalled'); return `[simulated] ${nAgents} agents working: ${d.AGENTS.filter((a) => a.state === 'live').map((a) => a.id + ' (' + a.task + ')').join('; ')}.${st.length ? ' Stuck: ' + st.map((a) => a.id).join(', ') + '.' : ''}`; }
+    if (/up to date|brief|decide|blocked/.test(s)) { const fb = d.BRIEFS.filter((b) => b.repo === focus.name && b.open && !b.decidedInFlight); return fb.length ? `[simulated] ${focus.name}: ${fb.length} brief(s) open; newest is “${fb[fb.length - 1].title.slice(0, 48)}…”. ${fb.some((b) => b.closes) ? 'One carries a closes: ref — a decision already made, delivery in flight.' : 'No decision has been recorded against them.'}` : `[simulated] ${focus.name || 'this project'} has no open brief.`; }
+    if (/fit|sitting|channel|wired|podcast|community|read/.test(s)) { const r = this.state.readSum; return r ? `[simulated] ${r.sitting}: ${r.stack} item(s) fit ${r.budget} minutes. ${r.nSrcWired} of ${r.nSrc} sources are wired; the rest are on your curated list, not yet connected. I won’t summarise what I can’t read.` : '[simulated] Loading the Reading Room…'; }
+    if (/wait|while/.test(s)) return `[simulated] ${open.length} brief(s) wait on you. They keep — none expire during a break.`;
+    if (/defer|slipped|report/.test(s)) return `[simulated] ${Object.keys(this.state.deferred).length} item(s) deferred this week. Every open brief is older than 60 days — the northstar-evolution brief has been re-briefed twice. Your three lines above become the report; I only draft, you approve.`;
+    return '[simulated] I answer in words and point at items; the verbs stay yours. Try one of the chips.';
+  }
+  persist(patch) { this.setState(patch, () => { const { notes, rDone, rOpen, rNext, focus, deferred, routes } = this.state; try { localStorage.setItem('mc.proto.adaptive.v1', JSON.stringify({ notes, rDone, rOpen, rNext, focus, deferred, routes })); } catch (e) {} }); }
+  renderVals() {
+    const d = this.state.data; const mono = 'font-family:var(--mono);'; const now = this.state.now; const h = now.getHours();
+    const clockMode = h >= 5 && h < 11 ? 'orient' : h >= 11 && h < 17 ? 'work' : h >= 17 && h < 22 ? 'review' : 'night';
+    const mode = this.state.intent || clockMode;
+    const dateLine = [now.toLocaleDateString([], { weekday: 'long' }), now.getDate(), now.toLocaleDateString([], { month: 'long' }), now.getFullYear()].join(' ').toUpperCase();
+    const clock = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const intents = [['orient', 'ORIENT', 'Start the day: what changed, what needs you'], ['work', 'WORK', 'A session on one project: context, open questions, next slices'], ['review', 'REVIEW', 'End of day: capture, patterns, progress'], ['night', 'NIGHT', 'What runs without you'], ['read', 'READ', 'A sitting in the Reading Room — news, papers, podcasts, community. Start of day or a break; never chosen by the clock']].map(([k, t, tip]) => ({ t, tip, go: () => this.setState({ intent: k === clockMode ? null : k }), st: `cursor:pointer;border:none;border-right:1px solid var(--rule-strong);background:${mode === k ? 'var(--ink)' : 'transparent'};color:${mode === k ? 'var(--paper)' : 'var(--ink-2)'};padding:4px 10px;${mono}font-size:10px;letter-spacing:.1em;` }));
+    const CK = window.ckRefs; if (CK && d) CK.setData(d); const chip = (k, id, o) => (CK && d ? CK.chip(k, id, o) : null);
+    const say = (t) => this.setState((s) => ({ leoLog: [...s.leoLog, { role: 'u', t: s.leoAsk || t }, { role: 'a', t: this.leoAnswer(t) }], leoAsk: '' }));
+    const base = { refCard: CK ? CK.card() : null, leoAsk: this.state.leoAsk, onLeoAsk: (e) => this.setState({ leoAsk: e.target.value }), onLeoKey: (e) => { if (e.key === 'Enter' && this.state.leoAsk.trim()) say(this.state.leoAsk); }, leoSend: () => this.state.leoAsk.trim() && say(this.state.leoAsk), simChip: chip('evidence', 'simulated'),
+      leoLog: this.state.leoLog.map((m) => ({ t: m.t, st: m.role === 'u' ? `font-family:var(--mono);font-size:11px;color:var(--ink-2);margin-top:4px;` : `padding:6px 10px;background:var(--card);border-left:2px solid var(--live);font-size:12.5px;line-height:1.5;` })), dateLine, clock, intents, clockPhase: `CLOCK SAYS ${clockMode.toUpperCase()}`, isOrient: mode === 'orient', isWork: mode === 'work', isReview: mode === 'review', isNight: mode === 'night', isRead: mode === 'read', readBack: () => this.setState({ intent: null }), readSummary: (r) => this.setState({ readSum: r }),
+      notes: this.state.notes, onNotes: (e) => this.persist({ notes: e.target.value }), rDone: this.state.rDone, onDone: (e) => this.persist({ rDone: e.target.value }), rOpen: this.state.rOpen, onOpen: (e) => this.persist({ rOpen: e.target.value }), rNext: this.state.rNext, onNext: (e) => this.persist({ rNext: e.target.value }), approveReport: () => this.setState({ written: true }), reportWritten: this.state.written };
+    if (!d) return { ...base, dispatchTargets: [], dispatches: [], reviewFields: [], noteFields: [], memoPreview: '', leoScope: '', leoIntro: '', leoAsks: [], leoPlaceholder: 'ask…', decisions: [], blockers: [], overnight: [], focusPicks: [], projects: [], focusBriefs: [], focusSlices: [], patterns: [], movements: [], nightAgents: [], wordmark: '', lede: '' };
+    const hue = (id) => (d.CLUSTERS.find((c) => c.id === id) || {}).hue || 'var(--ink-3)';
+    const open = d.BRIEFS.filter((b) => b.open && !b.decidedInFlight && !this.state.deferred[b.id]).sort((a, b) => b.staleDays - a.staleDays);
+    const nDecisions = open.length; const nAgents = d.AGENTS.filter((a) => a.state === 'live').length; const nStale = d.REPOS.filter((r) => r.lastDays > 60).length;
+    const W = { orient: ['First Light', `${nDecisions} things want a decision. The oldest has waited ${open[0] ? open[0].staleDays : 0} days. Start there, or pick a project.`], work: ['The Desk', `You’re on ${this.state.focus}. Everything on this page is about that one project.`], review: ['Last Light', `Three lines close the day. Progress was last recorded ${Math.round((now - new Date(d.LOOP.odometer.last)) / 864e5)} days ago.`], night: ['Night Watch', `${nAgents} agents are working. Nothing needs you before morning.`], read: ['Reading Room', (() => { const r = this.state.readSum; return r ? `${r.sitting}, ${r.budget} minutes. ${r.stack ? r.stack + ' thing' + (r.stack > 1 ? 's' : '') + ' from your list fit.' : 'Your list is empty.'} ${r.nSrcWired} of ${r.nSrc} sources wired. Decisions wait here; they don’t follow you in.` : 'A sitting away from the desk. Decisions wait; they don’t follow you in.'; })()] }[mode];
+    const decisions = open.slice(0, 4).map((b) => ({ title: b.title, repo: b.repo, age: b.staleDays, actor: b.actor, repoChip: chip('repo', b.repo), actorChip: chip('who', b.actor), work: () => this.persist({ focus: b.repo, intent: 'work' }), defer: () => this.persist({ deferred: { ...this.state.deferred, [b.id]: Date.now() } }) }));
+    const sevSt = (s) => `${mono}font-size:9px;letter-spacing:.08em;text-transform:uppercase;padding:1px 6px;color:var(--card);background:${{ high: 'var(--ink)', blocked: 'var(--warn)', decision: 'var(--decision)' }[s]};`;
+    const blockers = d.CRITICAL.chains.map((c) => ({ title: c.title, refChip: c.id === 'adr-0002' ? chip('ref', 'adr:0002') : chip('repo', 'core', { phase: false }), sev: { high: 'blocker', blocked: 'blocked', decision: 'needs a ruling' }[c.severity], sevSt: sevSt(c.severity), blocks: c.blocks.join(', '), impact: c.impact }));
+    const since = (iso) => { const hrs = Math.round((now - new Date(iso)) / 36e5); return hrs < 1 ? 'now' : hrs < 48 ? `${hrs}h ago` : `${Math.round(hrs / 24)}d ago`; };
+    const dot = (s) => `width:8px;height:8px;border-radius:50%;flex:none;align-self:center;background:${{ live: 'var(--live)', idle: 'var(--ink-3)', stalled: 'var(--warn)' }[s] || 'var(--rule-strong)'};`;
+    const overnight = d.AGENTS.filter((a) => a.state !== 'stalled').map((a) => ({ agent: a.id, chip: chip('who', a.id), what: a.state === 'live' ? `working in ${a.repo}` : `ran, now resting (${a.repo})`, when: since(a.lastEvent), dotSt: dot(a.state) })).concat(d.AGENTS.filter((a) => a.state === 'stalled').map((a) => ({ agent: a.id, chip: chip('who', a.id), what: `stuck — no event in ${Math.round((now - new Date(a.lastEvent)) / 864e5)} days`, when: since(a.lastEvent), dotSt: dot(a.state) })));
+    const waitingBy = (name) => d.BRIEFS.filter((b) => b.repo === name && b.open && !b.decidedInFlight).length;
+    const focusPicks = [...d.REPOS].sort((a, b) => (waitingBy(b.name) * 100 + (b.liveness === 'live' ? 10 : 0)) - (waitingBy(a.name) * 100 + (a.liveness === 'live' ? 10 : 0))).slice(0, 4).map((r) => ({ repo: r.name, chip: chip('repo', r.name), why: waitingBy(r.name) ? `${waitingBy(r.name)} waiting on you` : r.liveness === 'live' ? 'an agent is active here' : `${r.openCount} open`, hueSt: `width:10px;height:10px;background:${hue(r.cluster)};flex:none;`, go: () => this.persist({ focus: r.name, intent: 'work' }) }));
+    const focus = d.REPOS.find((r) => r.name === this.state.focus) || d.REPOS[1];
+    const projects = [...d.REPOS].filter((r) => waitingBy(r.name) || r.liveness !== 'dark').sort((a, b) => waitingBy(b.name) - waitingBy(a.name)).map((r) => ({ name: r.name, hot: waitingBy(r.name) > 0, n: waitingBy(r.name), hueSt: `width:8px;height:8px;background:${hue(r.cluster)};flex:none;`, go: () => this.persist({ focus: r.name }), st: `display:flex;width:100%;align-items:center;gap:8px;text-align:left;padding:8px 16px;border:none;border-left:3px solid ${r.name === focus.name ? 'var(--ink)' : 'transparent'};background:${r.name === focus.name ? 'var(--card)' : 'transparent'};cursor:pointer;` }));
+    const fb = d.BRIEFS.filter((b) => b.repo === focus.name && b.open && !b.decidedInFlight).sort((a, b) => b.staleDays - a.staleDays);
+    const fa = d.AGENTS.filter((a) => a.repo === focus.name);
+    const slices = focus.slices && focus.name === 'morning-cockpit' ? d.DELIVERY.roadmap.phases.flatMap((p) => p.slices).filter((s) => s.status !== 'merged') : [];
+    const catchUp = `${focus.role}. ${fb.length ? `${fb.length} brief${fb.length > 1 ? 's are' : ' is'} waiting for a reply — the oldest since ${fb[0].created}.` : 'No brief is waiting here.'} ${fa.length ? `${fa.map((a) => a.id).join(' and ')} ${fa.length > 1 ? 'have' : 'has'} been active here (last ${since(fa[0].lastEvent)}).` : 'No agent has touched it recently.'} ${focus.slices ? `${focus.slices.merged} slices merged so far; ${focus.slices.ready} ready to pick up.` : focus.registered ? 'It has a goal on record but no roadmap yet.' : 'It has no goal on record — delivery can’t see it.'}`;
+    const chipSt = (s) => `${mono}font-size:10px;padding:2px 8px;color:${{ ready: 'var(--ink)', claimed: 'var(--decision-ink)', queued: 'var(--ink-3)' }[s]};border:1px solid var(--rule);`;
+    const deferredN = Object.keys(this.state.deferred).length;
+    const patterns = [
+      { n: open.filter((b) => b.staleDays > 60).length, t: 'briefs older than 60 days', sub: 'written, never answered — the backlog is the pattern' },
+      { n: deferredN, t: 'things you said “not today” to', sub: deferredN > 1 ? 'the same item deferred twice is a decision in disguise' : 'deferrals are counted, never hidden' },
+      { n: d.REPOS.filter((r) => r.liveness === 'live').length, t: 'repos touched this week', sub: `of ${d.REPOS.length} — attention is concentrated, which is fine if deliberate` },
+      { n: d.LOOP.populations[0].rows.ignored, t: 'skill suggestions skipped', sub: `${d.LOOP.populations[0].rows.acted} used · rates withheld until capture quality is checked` },
+    ];
+    const movements = d.DELIVERY.movements.map((m) => ({ date: m.date, prop: m.prop, delta: `${m.from}→${m.to}%`, evidence: m.evidence }));
+    const nightAgents = d.AGENTS.map((a) => ({ id: a.id, repo: a.repo, chip: chip('who', a.id), repoChip: chip('repo', a.repo, { phase: false }), state: a.state === 'live' ? 'working' : a.state === 'idle' ? 'resting' : 'stuck', when: since(a.lastEvent), dotSt: dot(a.state) }));
+    const CO = window.ckCorr; const fb0 = d.BRIEFS.filter((b) => b.repo === focus.name && b.open && !b.decidedInFlight).sort((x, y) => y.staleDays - x.staleDays);
+    const mkField = (key, label, placeholder, rows, kind) => {
+      const value = this.state[key] || ''; const routes = this.state.routes[key] || [];
+      const m = CO ? CO.analyze(value, { data: d, fieldKind: kind, recipients: routes, inReplyTo: fb0[0] ? fb0[0].id : null, reportsOn: fb0.map((b) => 'bead:' + b.id.slice(0, 13)), thread: kind === 'notes' ? 'session-' + focus.name : 'cockpit-daily-review' }) : { act: 'report', warnings: [], refs: [], repos: [], agents: [], findings: [], memos: [], recipients: [] };
+      const detected = [].concat(m.repos.map((r) => chip('repo', r, { phase: false })), m.agents.filter((x) => d.AGENTS.some((ag) => ag.id === x)).map((x) => chip('who', x)), m.refs.map((r) => chip('ref', r)), m.findings.map((f) => chip('finding', f)), m.memos.map((x) => chip('memo', x)), m.recipients.map((t) => React.createElement('span', { key: 'to' + t, style: { cssText: `${mono}font-size:9px;color:var(--decision-ink);border:1px solid var(--decision);padding:0 5px;` } }, 'to: ' + t)));
+      return { key, label, value, rows, placeholder, onChange: (e) => this.persist({ [key]: e.target.value }), count: value.length ? value.length + ' chars' + (m.fm ? ' · frontmatter read' : '') : 'empty — paste a session’s output or type',
+        actChip: chip('act', m.act), schemaChip: chip('schema', 'v2'), generated: !!m.generated, fromChip: m.fromAgent && d.AGENTS.some((ag) => ag.id === m.fromAgent) ? chip('who', m.fromAgent) : (m.fromAgent ? React.createElement('span', { style: { cssText: `${mono}font-size:9.5px;color:var(--ink-2);` } }, m.fromAgent) : null),
+        hasDetected: detected.length > 0, detected, warnings: m.warnings.map((w) => ({ t: w.t, chip: chip('rule', w.id) })), needsRecipient: m.act === 'request' && m.recipients.length === 0,
+        routes: ['code-claude', 'claude-design', 'James', 'leo'].map((who) => ({ t: who, go: () => this.persist({ routes: { ...this.state.routes, [key]: [who] } }), st: `cursor:pointer;border:1px solid var(--rule-strong);background:var(--card);color:var(--ink);padding:2px 7px;${mono}font-size:9.5px;letter-spacing:0;` })), model: m };
+    };
+    const reviewFields = [mkField('rDone', 'WHAT GOT DECIDED OR DONE', 'Paste the session’s closing report, or write it: what was decided, what merged, what closed.', 4, 'report'), mkField('rOpen', 'STILL OPEN', 'What is unresolved — name who it waits on if it waits on someone (that makes it a request).', 3, 'report'), mkField('rNext', 'FIRST THING TOMORROW', 'One line. If it is for another agent, say who.', 2, 'report')];
+    const noteFields = [mkField('notes', 'SESSION NOTES', 'Decided… · Still open… · Follow up… — or paste what the session reported.', 8, 'notes')];
+    const memoAct = reviewFields.some((f) => f.model.act === 'request') ? 'request' : reviewFields.some((f) => f.model.act === 'decision') ? 'decision' : 'report';
+    const memoPreview = CO ? CO.analyze([this.state.rDone, this.state.rOpen, this.state.rNext].filter(Boolean).join('\n\n'), { data: d, fieldKind: 'report', recipients: [].concat(...reviewFields.map((f) => f.model.recipients || []), this.state.dispatchTo ? [this.state.dispatchTo] : []), inReplyTo: fb0[0] ? fb0[0].id : null, reportsOn: fb0.map((b) => 'bead:' + b.id.slice(0, 13)), thread: 'cockpit-daily-review' }).preview : '';
+    const LEO = { orient: ['what needs me?', 'what moved overnight?', 'where should I start?'], work: ['bring me up to date', 'what did the last brief decide?', 'what is blocked here?'], review: ['what did I defer?', 'draft the report', 'what slipped this week?'], night: ['what is running?', 'anything stuck?', 'wake me if…'], read: ['what fits this sitting?', 'which channels are wired?', 'what waits while I read?'] }[mode];
+    this._leoCtx = { mode, focus, open, nAgents, d, now };
+    const TARGETS = [['code-claude', 'implementing agent — picks up work orders and findings'], ['claude-design', 'design agent — reviews and design briefs'], ['James', 'operator — rulings and anything binding'], ['leo', 'chief of staff — files it to the global thread as context']];
+    const toSel = this.state.dispatchTo || (memoAct === 'request' ? null : 'leo');
+    const dispatchTargets = TARGETS.map(([who, tip]) => ({ t: who, tip, go: () => this.setState({ dispatchTo: who }), st: `cursor:pointer;border:1px solid ${toSel === who ? 'var(--ink)' : 'var(--rule-strong)'};background:${toSel === who ? 'var(--ink)' : 'var(--card)'};color:${toSel === who ? 'var(--paper)' : 'var(--ink-2)'};padding:3px 9px;${mono}font-size:10px;` }));
+    const canDispatch = !!toSel && [this.state.rDone, this.state.rOpen, this.state.rNext].some((v) => v && v.trim());
+    const dispatches = this.state.dispatches.map((dp, i) => ({ n: 'ACT ' + (i + 1), actChip: chip('act', dp.act), toChip: d.AGENTS.some((ag) => ag.id === dp.to) ? chip('who', dp.to) : React.createElement('span', { style: { cssText: `${mono}font-size:10px;` } }, dp.to), when: dp.when, memo: dp.memo, path: dp.path, replyTo: dp.replyTo }));
+    const dispatch = () => { if (!canDispatch) return; const n = this.state.dispatches.length + 1; this.setState((s) => ({ written: true, dispatches: [...s.dispatches, { act: memoAct, to: toSel, when: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), memo: 'CORR-OJF-COCKPIT-' + String(36 + n).padStart(3, '0'), path: focus.name + '/.handoff/' + now.toISOString().slice(0, 10).replace(/-/g, '') + '-' + (memoAct === 'request' ? 'brief' : 'report') + '-' + focus.name + (n > 1 ? '-' + n : '') + '.md', replyTo: fb0[0] ? fb0[0].id.slice(0, 13) + '…' : '—' }] })); };
+    const dispatchAnother = () => this.setState({ dispatchTo: null, written: false });
+    return { ...base, reviewFields, noteFields, dispatchTargets, dispatch, dispatchAnother, dispatches, hasDispatched: this.state.dispatches.length > 0 && !!this.state.written, dispatchLabel: this.state.written ? 'Dispatched ✓' : canDispatch ? `Approve & dispatch to ${toSel} →` : toSel ? 'Write something first' : 'Pick a recipient', dispatchSt: `cursor:${canDispatch && !this.state.written ? 'pointer' : 'default'};border:1px solid var(--ink);background:${this.state.written ? 'var(--live)' : canDispatch ? 'var(--ink)' : 'transparent'};color:${canDispatch || this.state.written ? 'var(--paper)' : 'var(--ink-3)'};${mono}font-size:11px;font-weight:700;padding:7px 14px;${this.state.written ? 'border-color:var(--live);' : ''}`, memoActChip: chip('act', memoAct), memoSchemaChip: chip('schema', 'v2'), memoPreview, ruleD6: chip('rule', 'D6'), leoScope: mode === 'work' ? `thread: ${focus.name}` : mode === 'read' ? 'thread: reading' : 'thread: global', leoIntro: mode === 'read' ? 'Scoped to reading. I size the sitting and say what is wired; I won’t summarise what I can’t read.' : mode === 'work' ? `Scoped to ${focus.name}; shares context with the global thread (#340). Answers point at things on this desk.` : mode === 'review' ? 'Here to turn your three lines into a report, and to say what slipped.' : mode === 'night' ? 'Watching the agents. I will not wake you for a decision — those keep.' : 'Ask what needs you. I answer in words and point at the item; the verbs stay yours.', leoAsks: LEO.map((t) => ({ t, go: () => say(t) })), leoPlaceholder: mode === 'read' ? 'ask about reading…' : mode === 'work' ? `ask about ${focus.name}…` : 'ask Leo…',
+      wordmark: W[0], lede: W[1], nDecisions, nAgents, nStale, decisions, noDecisions: nDecisions === 0, blockers, overnight, focusPicks, projects,
+      focusName: focus.name, focusUpper: focus.name.toUpperCase(), focusRole: focus.role, catchUp, focusBriefs: fb.map((b) => ({ title: b.title, age: b.staleDays, actor: b.actor, chip: chip('brief', b.id, { label: 'open' }), actorChip: chip('who', b.actor), pick: () => {} })), focusChip: chip('repo', focus.name), focusQuiet: fb.length === 0,
+      focusSlices: slices.map((s) => ({ id: s.id, title: s.title, status: s.status, chipSt: chipSt(s.status) })), focusSliceLine: focus.slices ? `${focus.slices.ready} ready · ${focus.slices.queued} queued` : 'no roadmap',
+      respondsTo: fb[0] ? fb[0].id.slice(0, 13) + '…' : '—', reportId: `${now.toISOString().slice(0, 10).replace(/-/g, '')}-report-${focus.name}.md`,
+      patterns, movements, movementGap: Math.round((now - new Date(d.DELIVERY.movements[0].date)) / 864e5), nightAgents };
+  }
+}
+</script>
+</body>
+</html>
