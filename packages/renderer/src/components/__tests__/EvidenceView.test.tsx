@@ -30,7 +30,7 @@ function record(repository: string, sourceRecordKey: string): HandoffRecordEvide
 
 function evidence(records: HandoffRecordEvidence[]): CockpitEvidence {
   return {
-    coverage: { status: 'complete', repositoriesObserved: records.length, skippedRecords: 0 },
+    coverage: { status: 'complete', repositoriesObserved: records.length, skippedRecords: 0, unreadableRepositories: 0 },
     records,
     standaloneUnansweredBriefs: {
       name: 'standaloneUnansweredBriefs',
@@ -96,7 +96,7 @@ describe('EvidenceView', () => {
     const user = userEvent.setup();
     const alpha = record('alpha', 'alpha-key');
     const partial: CockpitEvidence = {
-      coverage: { status: 'partial', repositoriesObserved: 1, skippedRecords: 1 },
+      coverage: { status: 'partial', repositoriesObserved: 1, skippedRecords: 1, unreadableRepositories: 0 },
       records: [alpha],
       standaloneUnansweredBriefs: {
         name: 'standaloneUnansweredBriefs',

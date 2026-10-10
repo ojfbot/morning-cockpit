@@ -72,6 +72,12 @@ function literalString(value: unknown): string | undefined {
   return typeof value === 'string' ? value : undefined;
 }
 
+function isProvenAbsence(error: unknown): boolean {
+  if (!(error instanceof Error) || !('code' in error)) return false;
+  const code = (error as NodeJS.ErrnoException).code;
+  return code === 'ENOENT' || code === 'ENOTDIR';
+}
+
 /** Read only the YAML frontmatter and stop the stream at its closing delimiter. */
 async function readFrontmatter(filePath: string): Promise<string | null> {
   const stream = createReadStream(filePath, { encoding: 'utf8' });
@@ -137,6 +143,7 @@ export async function fetchHandoff(ctx: LaneContext): Promise<HandoffAdapterResu
   let skipped = 0;
   let unreadableRepositories = 0;
   let repoCount = 0;
+  let repositoriesObserved = 0;
   const items: WorkItem[] = [];
   const scanned: ScannedBead[] = [];
   const collectedAt = ctx.now.toISOString();
@@ -151,7 +158,13 @@ export async function fetchHandoff(ctx: LaneContext): Promise<HandoffAdapterResu
     return {
       items,
       health,
-      evidence: emptyCockpitEvidence({ status: 'unavailable', repositoriesObserved: 0, skippedRecords: 0, reason }),
+      evidence: emptyCockpitEvidence({
+        status: 'unavailable',
+        repositoriesObserved: 0,
+        skippedRecords: 0,
+        unreadableRepositories: 0,
+        reason,
+      }),
     };
   }
 
@@ -160,8 +173,9 @@ export async function fetchHandoff(ctx: LaneContext): Promise<HandoffAdapterResu
     const candidate = path.join(config.handoff.repoRoot, name, '.handoff');
     try {
       if ((await stat(candidate)).isDirectory()) dirs.push(candidate);
-    } catch {
-      // Most repositories legitimately have no .handoff directory.
+    } catch (error) {
+      // ENOENT/ENOTDIR proves absence. Permission and I/O errors leave coverage incomplete.
+      if (!isProvenAbsence(error)) unreadableRepositories++;
     }
   }
 
@@ -171,6 +185,7 @@ export async function fetchHandoff(ctx: LaneContext): Promise<HandoffAdapterResu
     let files: string[];
     try {
       files = (await readdir(dir)).filter((file) => file.endsWith('.md') && file !== 'README.md').sort();
+      repositoriesObserved++;
     } catch {
       unreadableRepositories++;
       continue;
@@ -375,8 +390,13 @@ export async function fetchHandoff(ctx: LaneContext): Promise<HandoffAdapterResu
     health,
     evidence: {
       coverage: partial
-        ? { status: 'partial', repositoriesObserved: repoCount - unreadableRepositories, skippedRecords: skipped }
-        : { status: 'complete', repositoriesObserved: repoCount, skippedRecords: 0 },
+        ? {
+            status: 'partial',
+            repositoriesObserved,
+            skippedRecords: skipped,
+            unreadableRepositories,
+          }
+        : { status: 'complete', repositoriesObserved: repoCount, skippedRecords: 0, unreadableRepositories: 0 },
       records: scanned.map((record) => record.evidence).sort((a, b) => a.sourceRecordKey.localeCompare(b.sourceRecordKey)),
       standaloneUnansweredBriefs: buildPopulation(population),
       unresolvedRelations: unresolved,
