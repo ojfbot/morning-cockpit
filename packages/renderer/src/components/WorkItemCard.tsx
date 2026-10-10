@@ -81,11 +81,11 @@ export function WorkItemCard({ item, onClaimed }: { item: WorkItem; onClaimed?: 
           <span className="card-chain-preds">
             {item.chain.map((pred) =>
               pred.url ? (
-                <a key={pred.nativeId} className="card-chain-pred" href={pred.url} rel="noreferrer">
+                <a key={pred.sourceRecordKey ?? pred.nativeId} className="card-chain-pred" href={pred.url} rel="noreferrer">
                   {pred.title}
                 </a>
               ) : (
-                <span key={pred.nativeId} className="card-chain-pred">
+                <span key={pred.sourceRecordKey ?? pred.nativeId} className="card-chain-pred">
                   {pred.title}
                 </span>
               ),

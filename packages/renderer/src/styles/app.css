@@ -4,6 +4,125 @@ html, body, #root { height: 100%; margin: 0; }
 /* Hard guard: the page never scrolls horizontally — a stray wide child clips, not spills. */
 html, body { max-width: 100%; overflow-x: hidden; }
 
+/* ── Beads evidence inspector ── */
+.evidence-view {
+  margin-bottom: var(--gt-space-5);
+  border: 1px solid var(--rule);
+  background: var(--paper-2);
+}
+.evidence-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gt-space-4);
+  padding: var(--gt-space-3) var(--gt-space-4);
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: 700 14px/1.3 var(--sans);
+  text-align: left;
+  cursor: pointer;
+}
+.evidence-toggle:hover { background: var(--gt-surface-hover); }
+.evidence-toggle-meta {
+  display: flex;
+  gap: var(--gt-space-3);
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  font: 10px/1.4 var(--mono);
+  color: var(--ink-3);
+}
+.evidence-coverage {
+  color: var(--amber);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.evidence-panel { border-top: 1px solid var(--rule); padding: var(--gt-space-4); }
+.evidence-filters { display: flex; flex-wrap: wrap; gap: var(--gt-space-2); margin-bottom: var(--gt-space-4); }
+.evidence-filters button,
+.evidence-focus,
+.evidence-close {
+  border: 1px solid var(--rule-strong);
+  background: transparent;
+  color: var(--ink-2);
+  padding: 5px 9px;
+  font: 10px/1.2 var(--mono);
+  cursor: pointer;
+}
+.evidence-filters button:hover,
+.evidence-filters button.is-active,
+.evidence-focus:hover,
+.evidence-close:hover { border-color: var(--red); color: var(--red); }
+.evidence-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 0.7fr); gap: var(--gt-space-5); }
+.evidence-grid h3 {
+  margin: 0 0 var(--gt-space-3);
+  font: 700 13px/1.3 var(--sans);
+  color: var(--ink);
+}
+.evidence-records,
+.evidence-diagnostics,
+.evidence-affected { display: flex; flex-direction: column; gap: var(--gt-space-2); }
+.evidence-record {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: var(--gt-space-3);
+  border: 1px solid var(--rule);
+  background: var(--card);
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+.evidence-record:hover { border-color: var(--red); }
+.evidence-record-title { font: 650 13px/1.35 var(--sans); }
+.evidence-record-meta { font: 9px/1.4 var(--mono); color: var(--ink-3); overflow-wrap: anywhere; }
+.evidence-diagnostic { padding: var(--gt-space-3); border-left: 3px solid var(--amber); background: var(--card); }
+.evidence-diagnostic > strong { display: block; font: 650 12px/1.35 var(--sans); color: var(--ink); }
+.evidence-diagnostic > span { display: block; margin: 3px 0 var(--gt-space-2); font: 9px/1.4 var(--mono); color: var(--ink-3); }
+.evidence-diagnostic .evidence-record { padding: var(--gt-space-2); }
+.evidence-diagnostic code { font: 9px/1.4 var(--mono); color: var(--ink-3); overflow-wrap: anywhere; }
+.evidence-empty { margin: 0; color: var(--ink-3); font: 12px/1.5 var(--sans); }
+.evidence-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: var(--gt-space-4);
+  background: color-mix(in srgb, var(--ink) 60%, transparent);
+}
+.evidence-dialog {
+  width: min(720px, 100%);
+  max-height: calc(100vh - 2 * var(--gt-space-4));
+  overflow: auto;
+  border: 3px solid var(--ink);
+  background: var(--paper);
+  color: var(--ink);
+  padding: var(--gt-space-5);
+  box-shadow: 8px 8px 0 color-mix(in srgb, var(--ink) 20%, transparent);
+}
+.evidence-dialog-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--gt-space-4); }
+.evidence-dialog-head h3 { margin: 4px 0 0; font: 800 clamp(22px, 4vw, 34px)/1 var(--sans); letter-spacing: -0.025em; }
+.evidence-eyebrow { font: 10px/1.2 var(--mono); color: var(--red); letter-spacing: 0.12em; text-transform: uppercase; }
+.evidence-caveat { margin: var(--gt-space-4) 0; padding: var(--gt-space-3); border-left: 3px solid var(--red); background: var(--paper-2); font: 12px/1.5 var(--sans); color: var(--ink-2); }
+.evidence-ledger { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; margin: 0 0 var(--gt-space-4); background: var(--rule); border: 1px solid var(--rule); }
+.evidence-ledger > div { min-width: 0; padding: var(--gt-space-3); background: var(--card); }
+.evidence-ledger dt { margin-bottom: 4px; font: 9px/1.2 var(--mono); color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.06em; }
+.evidence-ledger dd { margin: 0; font: 12px/1.45 var(--sans); color: var(--ink); overflow-wrap: anywhere; }
+.evidence-ledger code { font-family: var(--mono); }
+
+@media (max-width: 900px) {
+  .evidence-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .evidence-toggle { align-items: flex-start; flex-direction: column; }
+  .evidence-toggle-meta { justify-content: flex-start; }
+  .evidence-dialog { padding: var(--gt-space-4); }
+  .evidence-ledger { grid-template-columns: 1fr; }
+}
+
 /* Keyboard accessibility: a visible focus ring on every interactive element (decision tree,
    thread rail, branches, links, inputs). Mouse clicks don't trigger it (:focus-visible). */
 :focus-visible {

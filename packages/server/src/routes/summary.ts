@@ -9,7 +9,7 @@ const LANES: WorkItemLane[] = ['overnight', 'pickup', 'available'];
 /** Content hash of a lane's items — cache key so polls don't re-bill while data is unchanged. */
 function laneHash(lane: WorkItemLane, items: WorkItem[]): string {
   const sig = items
-    .map((i) => `${i.nativeId}:${i.status}:${i.staleDays ?? ''}`)
+    .map((i) => `${i.sourceRecordKey ?? i.id}:${i.status}:${i.staleDays ?? ''}`)
     .sort()
     .join('|');
   return `${lane}:${createHash('sha1').update(sig).digest('hex').slice(0, 12)}`;
