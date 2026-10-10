@@ -294,6 +294,11 @@ export async function fetchHandoff(ctx: LaneContext): Promise<HandoffAdapterResu
   );
   diagnostics.push(...resolution.diagnostics);
   for (const key of resolution.affectedSourceRecordKeys) affected.add(key);
+  // A supported edge cannot fold into a successor that is itself held outside normal lanes by
+  // another unresolved observation. Keep the otherwise-unaffected predecessor standalone.
+  for (const [predecessorKey, successorKey] of resolution.decided) {
+    if (affected.has(predecessorKey) || affected.has(successorKey)) resolution.decided.delete(predecessorKey);
+  }
 
   const byKey = new Map(scanned.map((record) => [record.sourceRecordKey, record]));
   let folded = 0;
