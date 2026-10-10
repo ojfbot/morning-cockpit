@@ -46,9 +46,9 @@ export interface UnresolvedRelationDiagnostic {
 }
 
 export type EvidenceCoverage =
-  | { status: 'complete'; repositoriesObserved: number; skippedRecords: 0 }
-  | { status: 'partial'; repositoriesObserved: number; skippedRecords: number }
-  | { status: 'unavailable'; repositoriesObserved: 0; skippedRecords: 0; reason: string };
+  | { status: 'complete'; repositoriesObserved: number; skippedRecords: 0; unreadableRepositories: 0 }
+  | { status: 'partial'; repositoriesObserved: number; skippedRecords: number; unreadableRepositories: number }
+  | { status: 'unavailable'; repositoriesObserved: 0; skippedRecords: 0; unreadableRepositories: 0; reason: string };
 
 export interface StandaloneUnansweredBriefs {
   name: 'standaloneUnansweredBriefs';

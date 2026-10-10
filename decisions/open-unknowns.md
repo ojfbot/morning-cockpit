@@ -1,11 +1,11 @@
-## 2026-10-10 — MC-UX-01 qualified evidence inspector
+## 2026-10-10 — MC-UX-01 source evidence inspector
 
 **Deferred decisions**
 - Final acceptance of the typed `/api/cockpit` unresolved-relation diagnostic shape — unblocked by: dedicated morning-cockpit contract review and explicit owner approval before merge.
 - Fleet-wide process identity, recipient authority, correspondence, execution receipt, and original-action settlement semantics — unblocked by: their existing core fleet-runner decision venues; they are outside this cockpit read slice.
 
 **Unvalidated assumptions**
-- The smallest additive diagnostic record can carry every affected qualified source identity without requiring GraphQL parity or a raw-body reader.
+- The smallest additive diagnostic record can carry every affected source record reference without requiring GraphQL parity or a raw-body reader.
 - A bounded test-only HTTP harness can exercise fixture collection through `/api/cockpit` without adding a production fixture route or arbitrary source-root control.
 
 **Standard considerations not covered**
