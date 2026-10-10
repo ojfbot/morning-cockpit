@@ -54,7 +54,9 @@ function clip(text: string): string {
 
 function findBead(snapshot: CockpitSnapshot, id: string): WorkItem | undefined {
   for (const lane of ['overnight', 'pickup', 'available'] as const) {
-    const hit = snapshot.lanes[lane].find((w) => w.id === id);
+    const hit = snapshot.lanes[lane].find((w) =>
+      w.sourceRecordKey ? w.sourceRecordKey === id : w.id === id,
+    );
     if (hit) return hit;
   }
   return undefined;

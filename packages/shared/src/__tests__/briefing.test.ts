@@ -129,4 +129,20 @@ describe('briefingFallback', () => {
     expect(deliver?.artifact?.closes).toBe('a1');
     expect(t0.branches.some((b) => b.type === 'defer')).toBe(true);
   });
+
+  it('keeps equal native ids in separate repositories from sharing decision state', () => {
+    const alphaKey = '["handoff-bead","alpha","same-id",".handoff/brief.md"]';
+    const betaKey = '["handoff-bead","beta","same-id",".handoff/brief.md"]';
+    const snap = SNAPSHOT();
+    snap.lanes.available = [];
+    snap.lanes.pickup = [
+      workItem({ nativeId: 'same-id', sourceRecordKey: alphaKey, repo: 'alpha', lane: 'pickup', title: 'Alpha brief' }),
+      workItem({ nativeId: 'same-id', sourceRecordKey: betaKey, repo: 'beta', lane: 'pickup', title: 'Beta brief' }),
+    ];
+
+    const fb = briefingFallback(snap, '2026-07-17T23:00:00Z');
+    expect(new Set(fb.threads.map((thread) => thread.id)).size).toBe(2);
+    expect(fb.threads.map((thread) => thread.branches.find((branch) => branch.type === 'deliver')?.artifact?.closes))
+      .toEqual(['same-id', 'same-id']);
+  });
 });

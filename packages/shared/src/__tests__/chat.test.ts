@@ -144,6 +144,22 @@ describe('buildChatRegistry', () => {
   it('tolerates missing reading/papers snapshots', () => {
     expect(buildChatRegistry(mkSnapshot())).toEqual([]);
   });
+
+  it('uses the qualified source record key for bead attachments', () => {
+    const key = '["handoff-bead","beta","same-id",".handoff/brief.md"]';
+    const snap = mkSnapshot({
+      pickup: [mk({
+        id: 'handoff-bead:same-id',
+        nativeId: 'same-id',
+        source: 'handoff-bead',
+        sourceRecordKey: key,
+        repo: 'beta',
+        lane: 'pickup',
+      })],
+    });
+
+    expect(buildChatRegistry(snap)[0]?.id).toBe(key);
+  });
 });
 
 describe('formatAttachmentBlock', () => {
