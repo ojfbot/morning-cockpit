@@ -205,7 +205,9 @@ export function buildChatRegistry(
   for (const lane of ['overnight', 'pickup', 'available'] as const) {
     for (const w of snapshot.lanes[lane]) {
       items.push({
-        id: w.id,
+        // Attachments must address the exact observed record. A bare legacy id can collide
+        // across repositories and would let the resolver read the wrong handoff body.
+        id: w.sourceRecordKey ?? w.id,
         type: 'bead',
         title: w.title,
         repo: w.repo,

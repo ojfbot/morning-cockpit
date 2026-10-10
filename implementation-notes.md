@@ -290,3 +290,15 @@ a number down. A deviation logged is the plan telling us what it didn't know.
   repeated). Full-text fetch is therefore forced, not a design preference. Confirmed the
   article is server-rendered plain HTML (~28k chars, no `__NEXT_DATA__`), so no headless
   browser is needed.
+
+- **#25 — The managed review worktree had no sibling `core` checkout.**
+  The verification plan assumed the SDL drift gate could resolve `../core`, but the isolated
+  checkout lives under `.codex/worktrees/`. Used the documented read-only
+  `CORE_REPO=/Users/yuri/ojfbot/core` override for verification; core remained unchanged.
+
+- **#26 — Qualified display identity did not automatically preserve mutation routing.**
+  The plan assumed migrating read-side keys was sufficient, but the existing Briefing card
+  guessed handoff-versus-Dolt from an ID regex and the Ollama upgrade authored bare routing IDs.
+  Added REST-only server-derived claimable thread IDs, restricted queue-claim to those confirmed
+  Dolt records, and derived LLM thread identity, target, and closes from an opaque record token;
+  the core-owned GraphQL artifact contract remains unchanged.

@@ -1,10 +1,12 @@
 import {
   finalizeItems,
+  emptyCockpitEvidence,
   overnightWindowStart,
   splitLanes,
   summarizeLane,
   type AdapterHealth,
   type CockpitSnapshot,
+  type CockpitEvidence,
   type LaneContext,
   type WorkItem,
 } from '@cockpit/shared';
@@ -13,7 +15,7 @@ import { TtlCache } from './cache.js';
 import { fetchDolt } from './adapters/dolt.js';
 import { fetchHandoff } from './adapters/handoff.js';
 
-type AdapterResult = { items: WorkItem[]; health: AdapterHealth };
+type AdapterResult = { items: WorkItem[]; health: AdapterHealth; evidence?: CockpitEvidence };
 type Adapter = { key: keyof typeof config.ttl; run: (ctx: LaneContext) => Promise<AdapterResult> };
 
 const adapters: Adapter[] = [
@@ -39,6 +41,17 @@ async function runAdapter(a: Adapter, ctx: LaneContext, now: number): Promise<Ad
         itemCount: 0,
         lastError: err instanceof Error ? err.message : String(err),
       },
+      ...(a.key === 'handoff'
+        ? {
+            evidence: emptyCockpitEvidence({
+              status: 'unavailable',
+              repositoriesObserved: 0,
+              skippedRecords: 0,
+              unreadableRepositories: 0,
+              reason: err instanceof Error ? err.message : String(err),
+            }),
+          }
+        : {}),
     };
   }
   cache.set(a.key, result, config.ttl[a.key], now);
@@ -54,11 +67,19 @@ export async function buildSnapshot(nowDate = new Date()): Promise<CockpitSnapsh
 
   const allItems: WorkItem[] = [];
   const health: AdapterHealth[] = [];
+  let evidence = emptyCockpitEvidence({
+    status: 'unavailable',
+    repositoriesObserved: 0,
+    skippedRecords: 0,
+    unreadableRepositories: 0,
+    reason: 'Handoff adapter did not complete',
+  });
   for (let i = 0; i < settled.length; i++) {
     const s = settled[i]!;
     if (s.status === 'fulfilled') {
       allItems.push(...s.value.items);
       health.push(s.value.health);
+      if (s.value.evidence) evidence = s.value.evidence;
     } else {
       health.push({ name: 'dolt-bead', status: 'down', itemCount: 0, lastError: String(s.reason) });
     }
@@ -72,6 +93,7 @@ export async function buildSnapshot(nowDate = new Date()): Promise<CockpitSnapsh
     overnightSince,
     lanes,
     health,
+    evidence,
     summaries: {
       overnight: summarizeLane('overnight', lanes.overnight),
       pickup: summarizeLane('pickup', lanes.pickup),

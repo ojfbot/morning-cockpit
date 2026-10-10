@@ -11,6 +11,17 @@ export type {
   LaneSummary,
 } from './work-item.js';
 
+export type {
+  SourceRecordRef,
+  HandoffRecordEvidence,
+  UnresolvedRelationReason,
+  UnresolvedRelationDiagnostic,
+  EvidenceCoverage,
+  StandaloneUnansweredBriefs,
+  CockpitEvidence,
+} from './source-record.js';
+export { sourceRecordKey, emptyCockpitEvidence } from './source-record.js';
+
 export { summarizeLane } from './summarize.js';
 
 export type { ReadingItem, ReadingSource, ReadingSnapshot } from './reading.js';
@@ -145,8 +156,8 @@ export {
   buildPopulationFunnels,
 } from './loop.js';
 
-export type { DecidedBead, ChainedPredecessor } from './decided.js';
-export { parseClosesRefs, deriveDecidedInFlight, foldedChainFor } from './decided.js';
+export type { DecidedBead, ChainedPredecessor, DecidedResolution } from './decided.js';
+export { parseClosesRefs, deriveDecidedInFlight, resolveDecidedInFlight, foldedChainFor } from './decided.js';
 
 export type { LaneContext, LaneInput, AgeBucket } from './lanes.js';
 export {

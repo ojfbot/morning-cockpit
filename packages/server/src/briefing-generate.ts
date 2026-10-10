@@ -33,23 +33,37 @@ const SYSTEM = (repos: string[]) =>
     'You are the Chief of Staff for a solo developer running a fleet of repos. You have read the',
     "overnight bead scan. Pick the items that most want a DECISION today and turn each into one",
     'briefing thread. Respond with ONLY a JSON object — no prose:',
-    '{"threads":[{"id":string,"tag":"decision"|"stale"|"quickwin","title":string,"whyNow":string,',
-    '"catchUp":string,"question":string,"recommended":{"label":string,"title":string,"repo":string,',
-    '"closes":string,"align":string,"task":string,"criteria":string[]}}]}',
+    '{"threads":[{"tag":"decision"|"stale"|"quickwin","title":string,"whyNow":string,',
+    '"catchUp":string,"question":string,"recommended":{"record":string,"label":string,"title":string,',
+    '"align":string,"task":string,"criteria":string[]}}]}',
     `Produce at most ${MAX_THREADS} threads, most important first.`,
-    `recommended.repo MUST be one of: ${repos.join(', ')}.`,
+    `The target repository MUST be one of: ${repos.join(', ')}.`,
     'whyNow: one terse line (e.g. "28 days stale · no owner"). catchUp: 2-3 sentences of pre-read,',
     'written to the operator who has NOT seen the beads. question: the decision you need from them.',
     'recommended is the action you advise: label is a short button ("Ship it now"); title is an',
     'imperative brief title; align is the shared intent (1-2 sentences); task is one concrete',
-    'paragraph for a coding session; criteria is 2-4 testable acceptance items; closes is the bead',
-    'id it resolves. Use ONLY facts from the scan — do not invent repos, files, or work.',
+    'paragraph for a coding session; criteria is 2-4 testable acceptance items; record MUST be one',
+    'of the exact record tokens in the scan. Use ONLY facts from the scan — do not invent records,',
+    'repos, files, or work. The server derives routing and identity from the selected record.',
   ].join('\n');
 
-/** Compact grounding: the lanes as titled lines + the deterministic lane headlines. */
-function groundingFacts(snapshot: CockpitSnapshot): string {
+interface GroundedCandidate {
+  token: string;
+  item: WorkItem;
+}
+
+function groundedCandidates(snapshot: CockpitSnapshot): GroundedCandidate[] {
+  return [...snapshot.lanes.pickup, ...snapshot.lanes.available].map((item, index) => ({
+    token: `record-${index}`,
+    item,
+  }));
+}
+
+/** Compact grounding: the lanes as titled lines + opaque record tokens selected by the model. */
+function groundingFacts(snapshot: CockpitSnapshot, candidates: GroundedCandidate[]): string {
+  const tokenByItem = new Map(candidates.map(({ token, item }) => [item, token]));
   const line = (i: WorkItem) =>
-    `- [${i.kind}] ${i.title} — repo:${i.repo ?? '?'} id:${i.nativeId}${i.staleDays ? ` (${i.staleDays}d stale)` : ''}`;
+    `- record:${tokenByItem.get(i) ?? 'unavailable'} [${i.kind}] ${i.title} — repo:${i.repo ?? '?'}${i.staleDays ? ` (${i.staleDays}d stale)` : ''}`;
   const block = (label: string, items: WorkItem[]) =>
     items.length ? `${label}:\n${items.map(line).join('\n')}` : `${label}: (none)`;
   return [
@@ -61,17 +75,15 @@ function groundingFacts(snapshot: CockpitSnapshot): string {
 }
 
 interface RawThread {
-  id?: unknown;
   tag?: unknown;
   title?: unknown;
   whyNow?: unknown;
   catchUp?: unknown;
   question?: unknown;
   recommended?: {
+    record?: unknown;
     label?: unknown;
     title?: unknown;
-    repo?: unknown;
-    closes?: unknown;
     align?: unknown;
     task?: unknown;
     criteria?: unknown;
@@ -93,14 +105,21 @@ const deferBranch = (): BriefingBranch => ({
   doneText: 'Snoozed 7 days — the bead resurfaces next week.',
 });
 
-/** Validate one raw thread into a BriefingThread, or null if its recommended artifact is unusable. */
-function toThread(raw: RawThread, repos: string[], i: number): BriefingThread | null {
+/** Match one model proposal back to an observed record; the model never authors routing identity. */
+function toThread(
+  raw: RawThread,
+  candidates: ReadonlyMap<string, WorkItem>,
+  repos: string[],
+): BriefingThread | null {
   const rec = raw.recommended;
   if (!rec) return null;
+  const item = candidates.get(str(rec.record));
+  const repo = item?.repo;
+  if (!item || !repo || !repos.includes(repo)) return null;
   const artifact: BriefingArtifact = {
     title: str(rec.title),
-    target: `${str(rec.repo)}/.handoff/`,
-    closes: str(rec.closes),
+    target: `${repo}/.handoff/`,
+    closes: item.nativeId,
     align: str(rec.align),
     task: str(rec.task),
     criteria: strList(rec.criteria),
@@ -112,7 +131,7 @@ function toThread(raw: RawThread, repos: string[], i: number): BriefingThread | 
 
   const tag = TAGS.includes(raw.tag as BriefingTag) ? (raw.tag as BriefingTag) : 'decision';
   return {
-    id: str(raw.id) || `cos-${i}`,
+    id: `cos-${item.sourceRecordKey ?? item.id}`,
     tag,
     title: str(raw.title),
     whyNow: str(raw.whyNow) || 'flagged by the Chief of Staff',
@@ -151,9 +170,11 @@ export async function generateBriefing(
   // for other repos (the bug the global allowed-list caused).
   const known = await listKnownRepos();
   const repos = repo ? known.filter((r) => r === repo) : known;
+  const candidates = groundedCandidates(scoped);
+  const candidatesByToken = new Map(candidates.map(({ token, item }) => [token, item]));
   let raw: string;
   try {
-    const res = await ollamaChat(SYSTEM(repos), `Overnight scan:\n\n${groundingFacts(scoped)}`);
+    const res = await ollamaChat(SYSTEM(repos), `Overnight scan:\n\n${groundingFacts(scoped, candidates)}`);
     raw = res.text;
   } catch {
     return tag(briefingFallback(scoped, generatedAt));
@@ -167,13 +188,33 @@ export async function generateBriefing(
   }
 
   const rawThreads = Array.isArray(parsed.threads) ? (parsed.threads as RawThread[]) : [];
-  const threads = rawThreads
-    .slice(0, MAX_THREADS)
-    .map((t, i) => toThread(t, repos, i))
-    .filter((t): t is BriefingThread => t !== null);
+  const threads: BriefingThread[] = [];
+  for (const rawThread of rawThreads.slice(0, MAX_THREADS)) {
+    const thread = toThread(rawThread, candidatesByToken, repos);
+    if (thread && !threads.some((existing) => existing.id === thread.id)) threads.push(thread);
+  }
 
   if (threads.length === 0) return tag(briefingFallback(scoped, generatedAt));
   return tag({ generatedAt, threads, source: 'llm' });
+}
+
+/** REST-only routing metadata. GraphQL remains on the core-owned BriefingArtifact contract. */
+export function doltClaimableThreadIds(
+  snapshot: CockpitSnapshot,
+  briefing: BriefingSnapshot,
+): string[] {
+  const claimable = new Set<string>();
+  for (const lane of ['pickup', 'available'] as const) {
+    for (const item of snapshot.lanes[lane]) {
+      if (item.source !== 'dolt-bead') continue;
+      const key = item.sourceRecordKey ?? item.id;
+      claimable.add(`fb-${key}`);
+      claimable.add(`cos-${key}`);
+    }
+  }
+  return briefing.threads
+    .map((thread) => thread.id)
+    .filter((threadId) => claimable.has(threadId));
 }
 
 /**

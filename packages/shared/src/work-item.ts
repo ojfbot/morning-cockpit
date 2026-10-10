@@ -4,6 +4,7 @@
  */
 
 import type { ChainedPredecessor } from './decided.js';
+import type { CockpitEvidence, SourceRecordRef } from './source-record.js';
 
 export type WorkItemSource = 'dolt-bead' | 'handoff-bead' | 'github' | 'standup';
 
@@ -35,10 +36,14 @@ export type WorkItemDetail =
   | { kind: 'generic' };
 
 export interface WorkItem {
-  /** Globally unique within the cockpit: `${source}:${nativeId}`. */
+  /** Legacy display id. New read-side consumers use sourceRecordKey. */
   id: string;
   /** Native id in the source system (bead id, `repo#123`, handoff filename). */
   nativeId: string;
+
+  /** Additive REST coordinates; nativeId remains the mutation address. */
+  sourceRecord?: SourceRecordRef;
+  sourceRecordKey?: string;
 
   source: WorkItemSource;
   kind: WorkItemKind;
@@ -118,6 +123,8 @@ export interface CockpitSnapshot {
     available: WorkItem[];
   };
   health: AdapterHealth[];
+  /** REST-only cockpit observation contract. It is not a fleet-runner command or receipt. */
+  evidence?: CockpitEvidence;
   /** Deterministic per-lane summaries (always present; LLM version fetched separately). */
   summaries: {
     overnight: LaneSummary;
