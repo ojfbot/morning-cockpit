@@ -13,9 +13,9 @@ import { sseEnd, sseInit, sseSend } from '../sse.js';
 export const briefingRouter: Router = Router();
 
 /** Cache the generated briefing by snapshot content (the LLM pass is slow + the input rarely moves). */
-function snapshotKey(snap: { lanes: { pickup: { id: string }[]; available: { id: string; status: string }[] } }): string {
-  const pick = snap.lanes.pickup.map((i) => i.id).join(',');
-  const avail = snap.lanes.available.map((i) => `${i.id}:${i.status}`).join(',');
+function snapshotKey(snap: { lanes: { pickup: { id: string; sourceRecordKey?: string }[]; available: { id: string; sourceRecordKey?: string; status: string }[] } }): string {
+  const pick = snap.lanes.pickup.map((i) => i.sourceRecordKey ?? i.id).join(',');
+  const avail = snap.lanes.available.map((i) => `${i.sourceRecordKey ?? i.id}:${i.status}`).join(',');
   return `${pick}|${avail}`;
 }
 // Cache per repo (F2) — keyed by `repo` (or '__global__'), so toggling Fleet tiles doesn't thrash

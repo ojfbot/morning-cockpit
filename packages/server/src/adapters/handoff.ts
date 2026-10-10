@@ -1,27 +1,28 @@
-import { readdir, readFile, stat } from 'node:fs/promises';
+import { createReadStream } from 'node:fs';
+import { readdir, stat } from 'node:fs/promises';
 import path from 'node:path';
+import { createInterface } from 'node:readline';
 import { parse as parseYaml } from 'yaml';
 import {
   classifyLane,
-  deriveDecidedInFlight,
+  emptyCockpitEvidence,
   foldedChainFor,
+  resolveDecidedInFlight,
+  sourceRecordKey,
   type AdapterHealth,
   type ChainedPredecessor,
+  type CockpitEvidence,
+  type HandoffRecordEvidence,
   type LaneContext,
   type LaneInput,
+  type SourceRecordRef,
+  type UnresolvedRelationDiagnostic,
   type WorkItem,
   type WorkItemKind,
   type WorkItemStatus,
 } from '@cockpit/shared';
 import { config } from '../config.js';
 
-/**
- * Read-only adapter over per-repo `.handoff/*.md` markdown beads.
- * Open-hook logic ported from core/.claude/skills/bead/scripts/orient.py @ 2026-06-07:
- *   a brief is an "open hook" iff status=live AND no report responds_to it (per repo).
- */
-
-const FRONTMATTER_RE = /^---\n([\s\S]+?)\n---\n/;
 const BEAD_TYPES = new Set(['brief', 'report', 'decision', 'discovery']);
 
 interface ParsedBead {
@@ -35,10 +36,10 @@ interface ParsedBead {
   responding_to?: string;
   refs?: string[];
   filePath: string;
+  relativePath: string;
   mtimeIso: string;
 }
 
-/** A parsed bead plus its per-repo derived facts, collected across all scanned dirs. */
 interface ScannedBead {
   bead: ParsedBead;
   repo: string;
@@ -47,201 +48,333 @@ interface ScannedBead {
   openHook: boolean;
   createdIso: string;
   activityAt: string;
+  sourceRecord: SourceRecordRef;
+  sourceRecordKey: string;
+  evidence: HandoffRecordEvidence;
 }
 
-function toIso(v: unknown, fallback: string): string {
-  if (v instanceof Date) return v.toISOString();
-  if (typeof v === 'string') {
-    const d = new Date(v);
-    if (!Number.isNaN(d.getTime())) return d.toISOString();
+export interface HandoffAdapterResult {
+  items: WorkItem[];
+  health: AdapterHealth;
+  evidence: CockpitEvidence;
+}
+
+function toIso(value: unknown, fallback: string): string {
+  if (value instanceof Date) return value.toISOString();
+  if (typeof value === 'string') {
+    const date = new Date(value);
+    if (!Number.isNaN(date.getTime())) return date.toISOString();
   }
   return fallback;
 }
 
-async function listHandoffDirs(repoRoot: string): Promise<string[]> {
-  let entries: string[] = [];
-  try {
-    entries = await readdir(repoRoot);
-  } catch {
-    return [];
-  }
-  const dirs: string[] = [];
-  for (const name of entries) {
-    const candidate = path.join(repoRoot, name, '.handoff');
-    try {
-      if ((await stat(candidate)).isDirectory()) dirs.push(candidate);
-    } catch {
-      /* no .handoff here */
-    }
-  }
-  return dirs;
+function literalString(value: unknown): string | undefined {
+  return typeof value === 'string' ? value : undefined;
 }
 
-export async function fetchHandoff(ctx: LaneContext): Promise<{ items: WorkItem[]; health: AdapterHealth }> {
+/** Read only the YAML frontmatter and stop the stream at its closing delimiter. */
+async function readFrontmatter(filePath: string): Promise<string | null> {
+  const stream = createReadStream(filePath, { encoding: 'utf8' });
+  const lines = createInterface({ input: stream, crlfDelay: Infinity });
+  const yaml: string[] = [];
+  let opened = false;
+  try {
+    for await (const line of lines) {
+      if (!opened) {
+        if (line !== '---') return null;
+        opened = true;
+        continue;
+      }
+      if (line === '---') return yaml.join('\n');
+      yaml.push(line);
+    }
+    return null;
+  } finally {
+    lines.close();
+    stream.destroy();
+  }
+}
+
+function makeDiagnostic(
+  reason: UnresolvedRelationDiagnostic['reason'],
+  relation: UnresolvedRelationDiagnostic['relation'],
+  targetNativeId: string | null,
+  keys: string[],
+): UnresolvedRelationDiagnostic {
+  return {
+    reason,
+    relation,
+    targetNativeId,
+    affectedSourceRecordKeys: [...new Set(keys)].sort(),
+  };
+}
+
+function sortDiagnostics(diagnostics: UnresolvedRelationDiagnostic[]): UnresolvedRelationDiagnostic[] {
+  const keyed = diagnostics.map((diagnostic) => [JSON.stringify(diagnostic), diagnostic] as const);
+  return [...new Map(keyed).values()].sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
+}
+
+function buildPopulation(records: HandoffRecordEvidence[]) {
+  const sorted = [...records].sort((a, b) => a.sourceRecordKey.localeCompare(b.sourceRecordKey));
+  const counts = new Map<string, number>();
+  for (const record of sorted) {
+    const repository = record.sourceRecord.repository ?? 'unknown';
+    counts.set(repository, (counts.get(repository) ?? 0) + 1);
+  }
+  return {
+    name: 'standaloneUnansweredBriefs' as const,
+    records: sorted,
+    total: sorted.length,
+    byRepository: [...counts]
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([repository, count]) => ({ repository, count })),
+  };
+}
+
+/** Read-only handoff collection plus a metadata-only REST evidence projection. */
+export async function fetchHandoff(ctx: LaneContext): Promise<HandoffAdapterResult> {
   const health: AdapterHealth = { name: 'handoff-bead', status: 'down', itemCount: 0 };
   let skipped = 0;
+  let unreadableRepositories = 0;
   let repoCount = 0;
   const items: WorkItem[] = [];
   const scanned: ScannedBead[] = [];
+  const collectedAt = ctx.now.toISOString();
 
+  let rootEntries: string[];
   try {
-    const dirs = await listHandoffDirs(config.handoff.repoRoot);
+    rootEntries = (await readdir(config.handoff.repoRoot)).sort();
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    health.lastError = reason;
+    health.note = 'Configured handoff root unavailable';
+    return {
+      items,
+      health,
+      evidence: emptyCockpitEvidence({ status: 'unavailable', repositoriesObserved: 0, skippedRecords: 0, reason }),
+    };
+  }
 
-    for (const dir of dirs) {
-      repoCount++;
-      const repo = path.basename(path.dirname(dir));
-      let files: string[];
+  const dirs: string[] = [];
+  for (const name of rootEntries) {
+    const candidate = path.join(config.handoff.repoRoot, name, '.handoff');
+    try {
+      if ((await stat(candidate)).isDirectory()) dirs.push(candidate);
+    } catch {
+      // Most repositories legitimately have no .handoff directory.
+    }
+  }
+
+  for (const dir of dirs.sort()) {
+    repoCount++;
+    const repo = path.basename(path.dirname(dir));
+    let files: string[];
+    try {
+      files = (await readdir(dir)).filter((file) => file.endsWith('.md') && file !== 'README.md').sort();
+    } catch {
+      unreadableRepositories++;
+      continue;
+    }
+
+    const parsed: ParsedBead[] = [];
+    for (const file of files) {
+      const full = path.join(dir, file);
       try {
-        files = (await readdir(dir)).filter((f) => f.endsWith('.md') && f !== 'README.md');
-      } catch {
-        continue;
-      }
-
-      // Parse all beads in this repo first (need the full set to compute open hooks).
-      const beads: ParsedBead[] = [];
-      for (const file of files) {
-        const full = path.join(dir, file);
-        try {
-          const text = await readFile(full, 'utf8');
-          const m = FRONTMATTER_RE.exec(text);
-          if (!m) {
-            skipped++;
-            continue;
-          }
-          const fm = (parseYaml(m[1]!) ?? {}) as Record<string, unknown>;
-          if (!BEAD_TYPES.has(String(fm['type']))) {
-            skipped++;
-            continue;
-          }
-          const mtimeIso = (await stat(full)).mtime.toISOString();
-          const rawRefs = fm['refs'];
-          beads.push({
-            id: fm['id'] as string | undefined,
-            type: fm['type'] as string | undefined,
-            title: fm['title'] as string | undefined,
-            actor: fm['actor'] as string | undefined,
-            to: fm['to'] as string | undefined,
-            status: fm['status'] as string | undefined,
-            created_at: fm['created_at'] as string | undefined,
-            responding_to: fm['responding_to'] as string | undefined,
-            refs: Array.isArray(rawRefs) ? rawRefs.filter((r): r is string => typeof r === 'string') : undefined,
-            filePath: full,
-            mtimeIso,
-          });
-        } catch {
+        const yaml = await readFrontmatter(full);
+        if (yaml === null) {
           skipped++;
+          continue;
         }
-      }
-
-      const responded = new Set(
-        beads.filter((b) => b.type === 'report' && b.responding_to).map((b) => b.responding_to),
-      );
-
-      for (const b of beads) {
-        const kind = b.type as WorkItemKind;
-        const createdIso = toIso(b.created_at, b.mtimeIso);
-        const activityAt = Date.parse(b.mtimeIso) > Date.parse(createdIso) ? b.mtimeIso : createdIso;
-
-        let status: WorkItemStatus;
-        let openHook = false;
-        if (kind === 'brief') {
-          openHook = b.status === 'live' && !responded.has(b.id);
-          status = openHook ? 'open' : 'done';
-        } else {
-          // report / decision / discovery record completed work
-          status = 'done';
+        const frontmatter = (parseYaml(yaml) ?? {}) as Record<string, unknown>;
+        if (!BEAD_TYPES.has(String(frontmatter['type']))) {
+          skipped++;
+          continue;
         }
-
-        scanned.push({ bead: b, repo, kind, status, openHook, createdIso, activityAt });
+        const rawRefs = frontmatter['refs'];
+        parsed.push({
+          id: literalString(frontmatter['id']),
+          type: literalString(frontmatter['type']),
+          title: literalString(frontmatter['title']),
+          actor: literalString(frontmatter['actor']),
+          to: literalString(frontmatter['to']),
+          status: literalString(frontmatter['status']),
+          created_at: literalString(frontmatter['created_at']),
+          responding_to: literalString(frontmatter['responding_to']),
+          refs: Array.isArray(rawRefs) ? rawRefs.filter((ref): ref is string => typeof ref === 'string') : undefined,
+          filePath: full,
+          relativePath: path.posix.join('.handoff', file),
+          mtimeIso: (await stat(full)).mtime.toISOString(),
+        });
+      } catch {
+        skipped++;
       }
     }
 
-    // S8 decision→delivery seam: index the `closes:` refs carried by open beads across every
-    // scanned repo (emission may target a different repo than the bead it closes). A live bead
-    // an open successor closes derives decided-in-flight: folded under the successor below,
-    // never mutated on disk.
-    const decided = deriveDecidedInFlight(
-      scanned.map((s) => ({
-        id: s.bead.id,
-        status: s.bead.status,
-        open: s.openHook,
-        refs: s.bead.refs,
-        createdAt: s.createdIso,
-      })),
-    );
-    const byId = new Map<string, ScannedBead>();
-    for (const s of scanned) {
-      if (s.bead.id) byId.set(s.bead.id, s);
-    }
-    let folded = 0;
-
-    for (const s of scanned) {
-      const { bead: b, kind, status, openHook } = s;
-
-      // A decided-in-flight predecessor is not a standalone item — it rides on its successor.
-      if (b.id && decided.has(b.id)) {
-        folded++;
-        continue;
-      }
-
-      const input: LaneInput = {
+    for (const bead of parsed) {
+      const kind = bead.type as WorkItemKind;
+      const createdIso = toIso(bead.created_at, bead.mtimeIso);
+      const activityAt = Date.parse(bead.mtimeIso) > Date.parse(createdIso) ? bead.mtimeIso : createdIso;
+      const sourceRecord: SourceRecordRef = {
         source: 'handoff-bead',
-        kind,
-        status,
-        activityAt: s.activityAt,
-        openHook,
+        repository: repo,
+        nativeId: bead.id ?? null,
+        sourcePath: bead.relativePath,
       };
-      const lane = classifyLane(input, ctx);
-      if (!lane) continue;
-
-      // If this bead is a winning successor, carry its folded predecessors (transitive: a folded
-      // bead may itself have folded a bead) as the chain, nearest link first.
-      let chain: ChainedPredecessor[] | undefined;
-      if (b.id) {
-        const foldedIds = foldedChainFor(b.id, decided);
-        if (foldedIds.length > 0) {
-          chain = foldedIds.flatMap((id) => {
-            const pred = byId.get(id);
-            if (!pred) return [];
-            return [{
-              nativeId: id,
-              title: pred.bead.title ?? path.basename(pred.bead.filePath),
-              url: `file://${pred.bead.filePath}`,
-              createdAt: pred.createdIso,
-              state: 'decided-in-flight' as const,
-            }];
-          });
-          if (chain.length === 0) chain = undefined;
-        }
-      }
-
-      items.push({
-        id: `handoff-bead:${b.id ?? b.filePath}`,
-        nativeId: b.id ?? path.basename(b.filePath),
-        source: 'handoff-bead',
+      const key = sourceRecordKey(sourceRecord);
+      const evidence: HandoffRecordEvidence = {
+        sourceRecordKey: key,
+        sourceRecord,
+        title: bead.title ?? path.basename(bead.filePath),
+        literal: {
+          type: bead.type ?? null,
+          status: bead.status ?? null,
+          actor: bead.actor ?? null,
+          to: bead.to ?? null,
+          respondingTo: bead.responding_to ?? null,
+          refs: bead.refs ?? [],
+          authoredCreatedAt: bead.created_at ?? null,
+        },
+        observedModifiedAt: bead.mtimeIso,
+        collectedAt,
+      };
+      scanned.push({
+        bead,
+        repo,
         kind,
-        status,
-        lane,
-        title: b.title ?? path.basename(b.filePath),
-        repo: s.repo,
-        actor: b.actor,
-        createdAt: s.createdIso,
-        updatedAt: b.mtimeIso,
-        activityAt: s.activityAt,
-        ...(chain ? { chain } : {}),
-        url: `file://${b.filePath}`,
-        detail: { kind: 'brief', to: b.to, openHook },
-        provenance: { sourcePath: b.filePath, ...(b.refs?.length ? { refs: b.refs } : {}) },
+        status: kind === 'brief' ? 'open' : 'done',
+        openHook: false,
+        createdIso,
+        activityAt,
+        sourceRecord,
+        sourceRecordKey: key,
+        evidence,
       });
     }
-
-    health.status = 'up';
-    health.itemCount = items.length;
-    health.note = `${repoCount} repos with .handoff${skipped ? ` · ${skipped} files skipped` : ''}${folded ? ` · ${folded} decided-in-flight folded` : ''}`;
-    return { items, health };
-  } catch (err) {
-    health.status = 'down';
-    health.lastError = err instanceof Error ? err.message : String(err);
-    return { items, health };
   }
+
+  const diagnostics: UnresolvedRelationDiagnostic[] = [];
+  const affected = new Set<string>();
+  const respondedKeys = new Set<string>();
+
+  // responding_to resolves only within a repository; the authored token carries no repo.
+  for (const report of scanned.filter((record) => record.kind === 'report' && record.bead.responding_to)) {
+    const targetNativeId = report.bead.responding_to!;
+    const candidates = scanned.filter(
+      (record) => record.repo === report.repo && record.kind === 'brief' && record.bead.id === targetNativeId,
+    );
+    if (candidates.length === 1) {
+      respondedKeys.add(candidates[0]!.sourceRecordKey);
+    } else {
+      const diagnostic = makeDiagnostic(
+        candidates.length === 0 ? 'target-not-observed' : 'target-matches-multiple-records',
+        'responding_to',
+        targetNativeId,
+        [report.sourceRecordKey, ...candidates.map((candidate) => candidate.sourceRecordKey)],
+      );
+      diagnostics.push(diagnostic);
+      for (const key of diagnostic.affectedSourceRecordKeys) affected.add(key);
+    }
+  }
+
+  for (const record of scanned) {
+    if (record.kind !== 'brief') continue;
+    record.openHook = record.bead.status === 'live' && !respondedKeys.has(record.sourceRecordKey);
+    record.status = record.openHook ? 'open' : 'done';
+  }
+
+  const resolution = resolveDecidedInFlight(
+    scanned.map((record) => ({
+      sourceRecordKey: record.sourceRecordKey,
+      id: record.bead.id,
+      status: record.bead.status,
+      open: record.openHook,
+      refs: record.bead.refs,
+      createdAt: record.bead.created_at,
+    })),
+  );
+  diagnostics.push(...resolution.diagnostics);
+  for (const key of resolution.affectedSourceRecordKeys) affected.add(key);
+
+  const byKey = new Map(scanned.map((record) => [record.sourceRecordKey, record]));
+  let folded = 0;
+  const population: HandoffRecordEvidence[] = [];
+
+  for (const record of scanned) {
+    const { bead, kind, status, openHook } = record;
+    if (affected.has(record.sourceRecordKey)) continue;
+    if (resolution.decided.has(record.sourceRecordKey)) {
+      folded++;
+      continue;
+    }
+    const input: LaneInput = { source: 'handoff-bead', kind, status, activityAt: record.activityAt, openHook };
+    const lane = classifyLane(input, ctx);
+    if (!lane) continue;
+
+    let chain: ChainedPredecessor[] | undefined;
+    const foldedKeys = foldedChainFor(record.sourceRecordKey, resolution.decided);
+    if (foldedKeys.length > 0) {
+      chain = foldedKeys.flatMap((key) => {
+        const predecessor = byKey.get(key);
+        if (!predecessor) return [];
+        return [{
+          sourceRecordKey: key,
+          nativeId: predecessor.bead.id ?? path.basename(predecessor.bead.filePath),
+          title: predecessor.evidence.title,
+          url: `file://${predecessor.bead.filePath}`,
+          createdAt: predecessor.createdIso,
+          state: 'decided-in-flight' as const,
+        }];
+      });
+      if (chain.length === 0) chain = undefined;
+    }
+
+    const nativeId = bead.id ?? path.basename(bead.filePath);
+    items.push({
+      id: `handoff-bead:${nativeId}`,
+      nativeId,
+      sourceRecord: record.sourceRecord,
+      sourceRecordKey: record.sourceRecordKey,
+      source: 'handoff-bead',
+      kind,
+      status,
+      lane,
+      title: record.evidence.title,
+      repo: record.repo,
+      actor: bead.actor,
+      createdAt: record.createdIso,
+      updatedAt: bead.mtimeIso,
+      activityAt: record.activityAt,
+      ...(chain ? { chain } : {}),
+      url: `file://${bead.filePath}`,
+      detail: { kind: 'brief', to: bead.to, openHook },
+      // Absolute path remains internal for the separately gated chat attachment reader.
+      provenance: { sourcePath: bead.filePath, ...(bead.refs?.length ? { refs: bead.refs } : {}) },
+    });
+    if (kind === 'brief' && openHook) population.push(record.evidence);
+  }
+
+  const unresolved = sortDiagnostics(diagnostics);
+  const partial = skipped > 0 || unreadableRepositories > 0;
+  health.status = partial || unresolved.length > 0 ? 'degraded' : 'up';
+  health.itemCount = items.length;
+  health.note = [
+    `${repoCount} repos with .handoff`,
+    skipped ? `${skipped} records skipped` : '',
+    unreadableRepositories ? `${unreadableRepositories} repos unreadable` : '',
+    folded ? `${folded} decided-in-flight folded` : '',
+    unresolved.length ? `${unresolved.length} unresolved relations` : '',
+  ].filter(Boolean).join(' · ');
+
+  return {
+    items,
+    health,
+    evidence: {
+      coverage: partial
+        ? { status: 'partial', repositoriesObserved: repoCount - unreadableRepositories, skippedRecords: skipped }
+        : { status: 'complete', repositoriesObserved: repoCount, skippedRecords: 0 },
+      records: scanned.map((record) => record.evidence).sort((a, b) => a.sourceRecordKey.localeCompare(b.sourceRecordKey)),
+      standaloneUnansweredBriefs: buildPopulation(population),
+      unresolvedRelations: unresolved,
+    },
+  };
 }

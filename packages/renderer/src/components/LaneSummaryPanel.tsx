@@ -16,7 +16,10 @@ export function LaneSummaryPanel({
   items: WorkItem[];
   deterministic: LaneSummary;
 }) {
-  const signature = useMemo(() => items.map((i) => `${i.nativeId}:${i.status}`).sort().join('|'), [items]);
+  const signature = useMemo(
+    () => items.map((i) => `${i.sourceRecordKey ?? i.id}:${i.status}`).sort().join('|'),
+    [items],
+  );
   const [resp, setResp] = useState<SummaryResponse | null>(null);
   const [loading, setLoading] = useState(false);
 
