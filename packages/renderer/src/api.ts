@@ -269,7 +269,11 @@ export async function fetchCriticalPath(signal?: AbortSignal): Promise<CriticalP
   return (await res.json()) as CriticalPathSnapshot;
 }
 
-export type BriefingResponse = BriefingSnapshot & { cached?: boolean };
+export type BriefingResponse = BriefingSnapshot & {
+  cached?: boolean;
+  /** REST-only server-derived routing; absent from the core-owned GraphQL artifact contract. */
+  doltClaimableThreadIds?: string[];
+};
 
 /**
  * The Chief-of-Staff read-model (LLM threads, deterministic fallback). `repo` scopes it to one repo

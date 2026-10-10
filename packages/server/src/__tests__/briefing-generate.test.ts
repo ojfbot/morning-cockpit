@@ -10,7 +10,7 @@ vi.mock('../handoff-emit.js', () => ({
   listKnownRepos: vi.fn().mockResolvedValue(['core', 'cv-builder']),
 }));
 
-import { briefingFrames, generateBriefing } from '../briefing-generate.js';
+import { briefingFrames, doltClaimableThreadIds, generateBriefing } from '../briefing-generate.js';
 
 function item(repo: string, lane: WorkItemLane, id: string, stale = false): WorkItem {
   return {
@@ -137,8 +137,9 @@ describe('generateBriefing — observed source routing', () => {
     expect(new Set(briefing.threads.map((thread) => thread.id)).size).toBe(2);
     expect(briefing.threads.map((thread) => thread.id)).not.toContain('model-authored-id');
     expect(briefing.threads.map((thread) => thread.branches[0]?.artifact)).toEqual([
-      expect.objectContaining({ source: 'handoff-bead', target: 'core/.handoff/', closes: 'same-id' }),
-      expect.objectContaining({ source: 'dolt-bead', target: 'cv-builder/.handoff/', closes: 'same-id' }),
+      expect.objectContaining({ target: 'core/.handoff/', closes: 'same-id' }),
+      expect.objectContaining({ target: 'cv-builder/.handoff/', closes: 'same-id' }),
     ]);
+    expect(doltClaimableThreadIds(collision, briefing)).toEqual([briefing.threads[1]?.id]);
   });
 });

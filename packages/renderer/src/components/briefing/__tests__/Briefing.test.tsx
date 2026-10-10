@@ -40,7 +40,7 @@ function briefing(repo: string, title: string, source: 'deterministic' | 'llm' =
       id: 't1', tag: 'stale', title, whyNow: '30d stale', catchUp: 'cu', question: 'q?',
       branches: [
         { key: 'ship', label: 'Ship', recommended: true, type: 'deliver',
-          artifact: { title: 'a', source: 'handoff-bead', target: `${repo}/.handoff/`, closes: 'b1', align: 'al', task: 'tk', criteria: ['c1'] } },
+          artifact: { title: 'a', target: `${repo}/.handoff/`, closes: 'b1', align: 'al', task: 'tk', criteria: ['c1'] } },
         { key: 'defer', label: 'Defer', recommended: false, type: 'defer', cta: 'Snooze', outcome: 'o', doneText: 'd' },
       ],
     }],

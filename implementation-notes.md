@@ -299,5 +299,6 @@ a number down. A deviation logged is the plan telling us what it didn't know.
 - **#26 — Qualified display identity did not automatically preserve mutation routing.**
   The plan assumed migrating read-side keys was sufficient, but the existing Briefing card
   guessed handoff-versus-Dolt from an ID regex and the Ollama upgrade authored bare routing IDs.
-  Carried observed source through the artifact, restricted queue-claim to confirmed Dolt records,
-  and made the server derive LLM thread identity, target, and closes from an opaque record token.
+  Added REST-only server-derived claimable thread IDs, restricted queue-claim to those confirmed
+  Dolt records, and derived LLM thread identity, target, and closes from an opaque record token;
+  the core-owned GraphQL artifact contract remains unchanged.

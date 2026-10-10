@@ -118,7 +118,6 @@ function toThread(
   if (!item || !repo || !repos.includes(repo)) return null;
   const artifact: BriefingArtifact = {
     title: str(rec.title),
-    source: item.source,
     target: `${repo}/.handoff/`,
     closes: item.nativeId,
     align: str(rec.align),
@@ -197,6 +196,25 @@ export async function generateBriefing(
 
   if (threads.length === 0) return tag(briefingFallback(scoped, generatedAt));
   return tag({ generatedAt, threads, source: 'llm' });
+}
+
+/** REST-only routing metadata. GraphQL remains on the core-owned BriefingArtifact contract. */
+export function doltClaimableThreadIds(
+  snapshot: CockpitSnapshot,
+  briefing: BriefingSnapshot,
+): string[] {
+  const claimable = new Set<string>();
+  for (const lane of ['pickup', 'available'] as const) {
+    for (const item of snapshot.lanes[lane]) {
+      if (item.source !== 'dolt-bead') continue;
+      const key = item.sourceRecordKey ?? item.id;
+      claimable.add(`fb-${key}`);
+      claimable.add(`cos-${key}`);
+    }
+  }
+  return briefing.threads
+    .map((thread) => thread.id)
+    .filter((threadId) => claimable.has(threadId));
 }
 
 /**

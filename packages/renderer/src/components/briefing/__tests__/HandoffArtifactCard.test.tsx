@@ -12,9 +12,8 @@ vi.mock('../../../api.js', () => ({ claimTask, emitBriefingArtifact }));
 
 import { HandoffArtifactCard } from '../HandoffArtifactCard.js';
 
-function artifact(source: BriefingArtifact['source']): BriefingArtifact {
+function artifact(): BriefingArtifact {
   return {
-    source,
     title: 'Resolve the collision',
     target: 'core/.handoff/',
     closes: 'same-id',
@@ -34,20 +33,30 @@ describe('HandoffArtifactCard source routing', () => {
 
   it('never sends a handoff source id to the Dolt queue-claim verb', async () => {
     const user = userEvent.setup();
-    render(<HandoffArtifactCard artifact={artifact('handoff-bead')} approved={false} onApprove={() => {}} onUndo={() => {}} emittable />);
+    render(<HandoffArtifactCard artifact={artifact()} approved={false} onApprove={() => {}} onUndo={() => {}} emittable doltClaimable={false} />);
 
     await user.click(screen.getByRole('button', { name: /approve & emit/i }));
 
     expect(claimTask).not.toHaveBeenCalled();
-    expect(await screen.findByText(/handoff-bead does not use core queue-claim/i)).toBeInTheDocument();
+    expect(await screen.findByText(/no observed Dolt routing match/i)).toBeInTheDocument();
   });
 
   it('claims only an artifact grounded on an observed Dolt bead', async () => {
     const user = userEvent.setup();
-    render(<HandoffArtifactCard artifact={artifact('dolt-bead')} approved={false} onApprove={() => {}} onUndo={() => {}} emittable />);
+    render(<HandoffArtifactCard artifact={artifact()} approved={false} onApprove={() => {}} onUndo={() => {}} emittable doltClaimable />);
 
     await user.click(screen.getByRole('button', { name: /approve & emit/i }));
 
     expect(claimTask).toHaveBeenCalledWith('same-id');
+  });
+
+  it('surfaces a normal lost-claim response after emission', async () => {
+    const user = userEvent.setup();
+    claimTask.mockResolvedValue({ claimed: false, reason: 'lost' });
+    render(<HandoffArtifactCard artifact={artifact()} approved={false} onApprove={() => {}} onUndo={() => {}} emittable doltClaimable />);
+
+    await user.click(screen.getByRole('button', { name: /approve & emit/i }));
+
+    expect(await screen.findByText(/claim of same-id lost/i)).toBeInTheDocument();
   });
 });
