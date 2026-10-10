@@ -33,6 +33,11 @@ export const REPO_META: RepoMeta[] = [
   { name: 'fairway', role: 'Golf digital twin — explorable twin surface', phase: 'P1' },
   { name: 'cca-prep', role: 'Multi-exam Claude-cert prep engine — generation-over-content drills', phase: 'P0' },
   { name: 'jim-camera', role: 'jim.camera portfolio — Lightroom pipeline + manifest-fed gallery', phase: 'P0' },
+  // Added 2026-09-24: fleet-onboard backport (found unregistered by the daily-logger silent-sweep RCA).
+  { name: 'lego-village-pipeline', role: 'play-well cluster — LEGO village digital twin + build harness', phase: 'P0' },
+  { name: 'play-well-library', role: 'play-well cluster — canonical LEGO village content library', phase: 'P0' },
+  { name: 'dealdesk', role: 'Client-work control plane — bids, proposals, engagements, AI proposal reviewer', phase: 'EXP' },
+  { name: 'foundry-recipes', role: 'Blender tutorial extraction — reels → BlenderRecipe records in Notion', phase: 'EXP' },
   { name: 'asset-foundry', role: 'Asset pipeline — parametric 3D foundry', phase: 'EXP' },
   // Added 2026-07-22: portfolio-first gap-closers (operator sitting; core#249).
   { name: 'dive-briefing', role: 'Dive RAG service — cited answers, tiered corpora', phase: 'EXP' },

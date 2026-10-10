@@ -1,5 +1,7 @@
 import { existsSync, readFileSync, statSync } from 'node:fs';
+import { execFile } from 'node:child_process';
 import path from 'node:path';
+import { promisify } from 'node:util';
 import {
   buildCaptureHealth,
   buildOdometerFreshness,
@@ -9,12 +11,18 @@ import {
   parseDispositionLines,
   parseMovementLines,
   computeStaleDays,
+  parseCodexHygiene,
   type AdapterHealth,
   type DispositionEvent,
   type LoopSnapshot,
+  type HygieneStatus,
   type Movement,
 } from '@cockpit/shared';
 import { config } from '../config.js';
+
+const execFileAsync = promisify(execFile);
+// Core may run two sequential sqlite3 reads, each with its own 3-second limit.
+const HYGIENE_TIMEOUT_MS = 8_000;
 
 /**
  * Loop adapter (read-only) — assembles the self-improvement telemetry loop from three
@@ -91,14 +99,52 @@ function probeAudit(now: Date): { mtime?: string; daysSince?: number; health: Ad
   }
 }
 
-export function buildLoopSnapshot(now = new Date()): LoopSnapshot {
+async function readHygiene(): Promise<{ status: HygieneStatus; health: AdapterHealth }> {
+  const health: AdapterHealth = { name: 'loop-hygiene', status: 'up', itemCount: 0 };
+  const script = path.join(config.delivery.coreRoot, 'scripts', 'codex-automation-status.mjs');
+  if (!existsSync(script)) {
+    health.status = 'down';
+    health.lastError = 'core Codex automation reader is not installed';
+    return { status: { kind: 'unavailable', reason: health.lastError }, health };
+  }
+  let stdout: string;
+  try {
+    ({ stdout } = await execFileAsync(process.execPath, [script], {
+      encoding: 'utf8', timeout: HYGIENE_TIMEOUT_MS, maxBuffer: 64 * 1024,
+    }));
+  } catch {
+    health.status = 'down';
+    health.lastError = 'Codex automation reader failed or timed out';
+    return { status: { kind: 'unavailable', reason: health.lastError }, health };
+  }
+  let status: HygieneStatus;
+  try {
+    status = parseCodexHygiene(JSON.parse(stdout));
+  } catch {
+    health.status = 'down';
+    health.lastError = 'Codex automation reader returned malformed data';
+    return { status: { kind: 'unavailable', reason: health.lastError }, health };
+  }
+  if (status.kind === 'unavailable') {
+    health.status = 'degraded';
+    health.note = status.reason;
+  } else {
+    health.itemCount = 1;
+    health.note = status.kind === 'disabled' ? status.reason : 'Codex automation read';
+  }
+  return { status, health };
+}
+
+export async function buildLoopSnapshot(now = new Date()): Promise<LoopSnapshot> {
   const { events, health: dispositionsHealth } = readDispositions();
   const { movements, health: odometerHealth } = readOdometer();
   const audit = probeAudit(now);
+  const hygiene = await readHygiene();
 
   const fourteenDaysAgo = new Date(now.getTime() - 14 * 86_400_000);
   return {
     generatedAt: now.toISOString(),
+    hygiene: hygiene.status,
     capture: buildCaptureHealth(events, now, config.loop.staleDays),
     funnel: {
       allTime: countDispositions(events),
@@ -111,6 +157,7 @@ export function buildLoopSnapshot(now = new Date()): LoopSnapshot {
     skills: buildSkillBreakdown(events, config.loop.topSkills),
     odometer: buildOdometerFreshness(movements, now),
     audit: { mtime: audit.mtime, daysSince: audit.daysSince },
-    health: { dispositions: dispositionsHealth, odometer: odometerHealth, audit: audit.health },
+    health: { dispositions: dispositionsHealth, odometer: odometerHealth, audit: audit.health,
+      hygiene: hygiene.health },
   };
 }

@@ -129,10 +129,13 @@ afterAll(async () => {
   await rm(root, { recursive: true, force: true });
 });
 
+// Pinned to an unreadable census root so these cases exercise the authored-record fallback
+// regardless of whether the machine running them has a real ~/ojfbot.
 function snapshot() {
   return buildFleetStructureSnapshot({
     coreRoot,
     vaultRoot,
+    censusRoot: path.join(root, 'no-such-census-root'),
     authored: AUTHORED,
     now: new Date('2026-08-08T12:00:00Z'),
   });
@@ -214,6 +217,7 @@ describe('buildFleetStructureSnapshot', () => {
     const snap = buildFleetStructureSnapshot({
       coreRoot: path.join(root, 'no-such-core'),
       vaultRoot,
+      censusRoot: path.join(root, 'no-such-census-root'),
       authored: AUTHORED,
     });
     expect(snap.health.registry.status).toBe('down');
@@ -221,5 +225,32 @@ describe('buildFleetStructureSnapshot', () => {
     // Census-derived nodes and vault counts still render — the deterministic floor.
     expect(snap.nodes.filter((n) => !n.registered).length).toBeGreaterThan(0);
     expect(snap.stats.vaultPages).toBe(2);
+  });
+
+  it('walks the census live off disk, so repos founded after the record still appear', async () => {
+    const censusRoot = path.join(root, 'live-census');
+    for (const name of ['present-app', 'new-repo', 'old-name']) {
+      await mkdir(path.join(censusRoot, name, '.git'), { recursive: true });
+    }
+    await mkdir(path.join(censusRoot, 'not-a-checkout'), { recursive: true });
+    await mkdir(path.join(censusRoot, '.hidden', '.git'), { recursive: true });
+
+    const snap = buildFleetStructureSnapshot({
+      coreRoot,
+      vaultRoot,
+      censusRoot,
+      authored: AUTHORED,
+      now: new Date('2026-10-03T12:00:00Z'),
+    });
+    expect(snap.census.record.live).toBe(true);
+    expect(snap.census.record.repos).toEqual(['new-repo', 'old-name', 'present-app']);
+    expect(snap.stats.censusAsOf).toBe('2026-10-03');
+    // new-repo is missing from the authored record yet still surfaces, as unregistered.
+    expect(snap.census.disagreement.unregistered).toEqual(['new-repo']);
+    expect(snap.nodes.find((n) => n.slug === 'new-repo')?.registered).toBe(false);
+    // Authored aliases still resolve renames on the live walk.
+    expect(snap.census.disagreement.renamed).toEqual([{ census: 'old-name', node: 'present-app' }]);
+    // absent-app is registered but has no checkout here, which is a real disagreement.
+    expect(snap.census.disagreement.registeredNotInCensus).toEqual(['absent-app']);
   });
 });

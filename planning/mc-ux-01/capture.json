@@ -1,7 +1,7 @@
 {
   "capture_format": "mc-ux-01-source-capture/1",
   "status": "captured-exploration",
-  "source": "/Users/yuri/Desktop/design_handoff_mc_ux_01",
+  "source": "~/Desktop/design_handoff_mc_ux_01",
   "source_author": "Claude Design, as attributed by the supplied bundle",
   "operator_scope": "Capture and plan only, confirmed in this Codex chat",
   "captured_at_utc": "2026-10-09T01:52:14Z",

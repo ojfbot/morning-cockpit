@@ -84,7 +84,10 @@ export const EMPTY_TALLY: SliceTally = {
 
 // ── Authored/judgment input (the ONLY non-derived layer; server data module) ─
 
-/** The dated hand-made fleet census record (RFI C17: stale-capable, badge-worthy). */
+/**
+ * The fleet census: walked live off disk when the repo root is readable, else the dated
+ * hand-made record (RFI C17: stale-capable, badge-worthy).
+ */
 export interface CensusRecord {
   /** When the census walk was recorded, e.g. "2026-07-25". */
   asOf: string;
@@ -97,6 +100,8 @@ export interface CensusRecord {
    * alias is reported as `renamed`/covered, never as fake disagreement.
    */
   aliases?: Record<string, string>;
+  /** True when walked off disk this request; absent on the dated authored fallback. */
+  live?: boolean;
 }
 
 /** A northstar declared (e.g. as a registry comment) whose file does not exist yet. */

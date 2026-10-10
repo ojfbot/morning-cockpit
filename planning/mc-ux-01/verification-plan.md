@@ -25,7 +25,7 @@ Compare shapes and coverage, not live totals against historical eight/forty-two/
 
 Relevant baseline reads are GET `/api/cockpit`, `/api/health`, `/api/fleet`, `/api/fleet-structure`, `/api/critical-path`, `/api/delivery`, `/api/loop`, `/api/reading`, `/api/reading/digest`, `/api/papers`, `/api/papers/explainer`, `/api/papers/deepdive`, `/api/papers/suggestions`, `/api/briefing`, `/api/briefing/stream`, `/api/chat/context`, `/api/chat/registry`, `/api/chat/history`, and `/api/chat/handoff/drafts`. `/graphql` has a query-only facade.
 
-Inventory existing side effects separately: POST chat, DELETE chat history, draft/approve/reject, POST briefing emit, POST claim, and POST/DELETE paper suggestions. This inventory is evidence of baseline behavior, not authorization to add writes. Supplied project prose about a single upstream carve-out needs reconciliation with the committed core claim path. Preserve baseline behavior and get the relevant owner decision before any extension. Acceptance tests use temporary repo/data roots and stub external transports/core verbs; they never exercise live side effects.
+Inventory existing side effects separately: POST chat, DELETE chat history, draft/approve/reject, POST briefing emit, POST claim, and POST/DELETE paper suggestions. ADR-0005 governs brief emission; accepted ADR-0010 governs delegated human queue claims through core. Preserve those existing exceptions; new verbs or wider grants need their own decision. Acceptance tests use temporary repo/data roots and stub external transports/core verbs; they never exercise live side effects.
 
 Important discrepancies:
 
@@ -35,7 +35,7 @@ Important discrepancies:
 - `to: code-claude` plus `actor: code-claude` is ambiguous. Do not classify every such brief as waiting on the operator.
 - Agent task/type/process/session/host can be absent. Show unknown. Shared-account strings do not establish a process or decision authority. Derive liveness from event recency, never agent_status.
 - Reading feeds already come from `sources.yaml` under ADR-0015. Q20's claim that News feeds are in code is stale.
-- Actual synthesis configuration uses `ollama | claude | off`; supplied AGENTS mentions Codex. Verify configuration against ADR-0003 before publishing environment examples. Explicit paper deep-dive is an existing cloud path, never an automatic READ action or fallback.
+- Committed `CLAUDE.md`, config and ADR-0003 agree on `ollama | claude | off`. Codex wording came from an uncommitted local AGENTS file supplied to the original session, not committed policy. Explicit paper deep-dive is an existing cloud path, never an automatic READ action or fallback.
 
 ## Acceptance matrix
 

@@ -13,14 +13,22 @@ import { buildLoopSnapshot } from '../adapters/loop.js';
 export const loopRouter: Router = Router();
 
 const cache = new TtlCache<LoopSnapshot>();
+let inFlight: Promise<LoopSnapshot> | undefined;
 
-loopRouter.get('/api/loop', (_req, res) => {
+loopRouter.get('/api/loop', async (_req, res) => {
   try {
     const now = Date.now();
     let snap = cache.get('loop', now);
     if (!snap) {
-      snap = buildLoopSnapshot(new Date(now));
-      cache.set('loop', snap, config.loop.ttlMs, now);
+      if (!inFlight) {
+        inFlight = buildLoopSnapshot(new Date(now))
+          .then((result) => {
+            cache.set('loop', result, config.loop.ttlMs, Date.now());
+            return result;
+          })
+          .finally(() => { inFlight = undefined; });
+      }
+      snap = await inFlight;
     }
     res.json(snap);
   } catch (err) {

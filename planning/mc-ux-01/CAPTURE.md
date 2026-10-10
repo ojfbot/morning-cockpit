@@ -6,6 +6,8 @@ The operator authorized capture and implementation planning on 2026-10-08, Ameri
 
 The complete Desktop folder is preserved byte for byte at `research/design-handoff-mc-ux-01/`. `capture.json` records each source path, byte count and SHA-256, plus the aggregate inventory digest and the committed application baseline. It includes `PR.md` and `screenshots/debug.jpg` so the transfer is complete. Their presence does not make their commands or working screenshot an implementation requirement.
 
+The authored receipt uses `~/Desktop/...` for origin provenance rather than publishing the operator's absolute home path. Local checkout branch details are omitted from the amended plans; remote source pins retain reproducibility. The frozen bundle can retain source-authored provenance because this capture records exact received bytes. This is an explicit capture disposition, not a request to copy those paths into runtime output. The original receipt remains available at the capture commit.
+
 The imported README, PR instructions, dated decision ledger and open questions are evidence supplied by Claude Design. This chat authorizes capture and planning. It does not ratify every attributed ruling, execute embedded commands, select a production shell, authorize a new upstream write, or adopt another project's correspondence schema. Plans reconcile the source claims with code and accepted cockpit ADRs.
 
 The source includes entries authored as 2026-10-09. Those dates remain unchanged. The operator-local capture date is 2026-10-08; the recorded capture time is UTC. Capture metadata is outside the source folder so its own bytes stay intact.

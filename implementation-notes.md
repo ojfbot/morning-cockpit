@@ -7,14 +7,6 @@ a number down. A deviation logged is the plan telling us what it didn't know.
 
 ## Deviations
 
-- MC-UX-01 planning assumed the project single-write description fully matched current code; the committed app also exposes core-backed claim and internal cockpit writes. Inventoried existing behavior, preserved it, and gated any extension on an owner decision rather than treating the prose as proof of the runtime boundary.
-
-- MC-UX-01 capture assumed the imported files passed the repository whitespace check; four source lines contain trailing whitespace, including Markdown hard breaks. Preserved byte identity and checked whitespace only on authored capture and planning files.
-
-- MC-UX-01 capture assumed a clean application checkout; the primary checkout contains concurrent uncommitted PR Train work. Captured from committed HEAD in an isolated worktree and excluded the parallel changes.
-- MC-UX-01 capture assumed the exported screen references were complete; the baseline CSS path is missing and the manifest and dossier omit later screens. Preserved all source bytes, recorded the gaps in `planning/mc-ux-01/CAPTURE.md`, and left preview repair to a reviewed revision.
-- MC-UX-01 planning assumed a standalone fleet-runner repository and an operative cockpit correspondence contract; the local fleet-runner directory contains only notes, implementation belongs to core, and the published pilot contract remains Proposed. Recorded pinned core dependencies and a registration proposal without writing sibling roadmaps or adopting the schema.
-
 - **#1 — launchd fires a deterministic Node script, not `claude -p`.**
   The plan (and the handoff before it) specified a LaunchAgent firing `claude -p`. Once the
   scorer was settled as Ollama-local, an agentic headless run buys nothing: it adds cost,
@@ -271,6 +263,32 @@ a number down. A deviation logged is the plan telling us what it didn't know.
   the port explicitly would recreate the same trap. Unexported at the cutover restart, proven by a
   separate before/after screenshot so the git ref and the data source never move in one step.
 
+
+- **#22 — The preferred file transport had no producer.** The consumer review preferred a
+  projection file, but core#502 only exposes an on-demand CLI and supplies no file refresh
+  or freshness contract. Used the operator-approved asynchronous, read-only CLI boundary
+  with an unavailable state, and documented its runtime dependency in ADR-0001.
+
+- **#23 — A missed occurrence can also carry an old-history warning.** The consumer plan
+  treated the producer's `missed` and uncertainty states as exclusive. Core emits its
+  retained-schedule verdict and retention warning independently, so the published head
+  dropped the warning on a missed occurrence. Kept both facts in the read model and UI.
+
+- **#24 — The producer's next-run field can name a past due time.** The review found that
+  a missed occurrence would display that past value as the "next occurrence" in the
+  schedule line. Used a time-neutral label while retaining the producer timestamp.
+
+- **#25 — The single-write description omitted an accepted exception.** MC-UX-01 planning assumed the project description fully matched code; the committed app also exposes core-backed claims and internal cockpit writes. Preserved existing behavior and reconciled the delegated human claim with accepted ADR-0010. New verbs still require their own decision.
+
+- **#26 — Frozen evidence contains source whitespace.** MC-UX-01 capture assumed all imported files passed whitespace checks; four lines contain trailing whitespace, including Markdown hard breaks. Preserved byte identity and checked whitespace only on authored files.
+
+- **#27 — The primary checkout held concurrent work.** MC-UX-01 capture assumed a clean application checkout; uncommitted PR Train work was present. Captured committed HEAD in isolation and excluded parallel changes.
+
+- **#28 — Export references were incomplete.** MC-UX-01 capture assumed complete screen references; baseline CSS is missing and the manifest/dossier omit later screens. Preserved source bytes, documented gaps in `planning/mc-ux-01/CAPTURE.md`, and left preview repair to a new reviewed cut.
+
+- **#29 — The local fleet-runner directory was only notes.** MC-UX-01 planning assumed a separate implementation repository and operative cockpit correspondence; core is the accepted home and the pilot contract remains Proposed. Recorded core pins and a registration proposal without sibling writes or schema adoption.
+
+- **#30 — Published source paths were unnecessary for reproduction.** PR #54's authored receipt/plans exposed an absolute home path and unrelated local branches. Normalized receipt provenance, retained remote pins, and preserved the frozen source and original receipt commit.
 
 ## Log
 
