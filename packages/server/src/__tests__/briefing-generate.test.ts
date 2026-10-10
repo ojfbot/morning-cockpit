@@ -40,11 +40,11 @@ function snap(): CockpitSnapshot {
   };
 }
 
-const llmThread = (repo: string, id: string) => ({
-  id, tag: 'stale', title: `${repo} thread`, whyNow: '30d', catchUp: 'pre-read here',
+const llmThread = (record: string, label = 'candidate') => ({
+  id: 'model-authored-id', tag: 'stale', title: `${label} thread`, whyNow: '30d', catchUp: 'pre-read here',
   question: 'what do you want to do?',
   recommended: {
-    label: 'Ship it', title: `Fix ${repo}`, repo, closes: id,
+    record, label: 'Ship it', title: `Fix ${label}`, repo: 'model-forged-repo', closes: 'model-forged-id',
     align: 'we agree', task: 'do the work', criteria: ['done is done'],
   },
 });
@@ -62,9 +62,9 @@ describe('generateBriefing — repo scoping (F2)', () => {
   });
 
   it('drops LLM threads that target a different repo than the scoped one', async () => {
-    // The bug: the model returned threads for cv-builder even when scoped to core.
+    // record-99 is not in the scoped scan; record-1 is core/a2 after scoping.
     ollamaChat.mockResolvedValue({
-      text: JSON.stringify({ threads: [llmThread('core', 'a2'), llmThread('cv-builder', 'a1')] }),
+      text: JSON.stringify({ threads: [llmThread('record-1', 'core'), llmThread('record-99', 'forged')] }),
     });
     const b = await generateBriefing(snap(), AT, 'core');
     const targets = b.threads.map((t) => t.branches.find((br) => br.artifact)?.artifact?.target);
@@ -73,7 +73,7 @@ describe('generateBriefing — repo scoping (F2)', () => {
   });
 
   it('a quiet repo yields an honest empty briefing WITHOUT calling the LLM', async () => {
-    ollamaChat.mockResolvedValue({ text: JSON.stringify({ threads: [llmThread('core', 'a2')] }) });
+    ollamaChat.mockResolvedValue({ text: JSON.stringify({ threads: [llmThread('record-0')] }) });
     const b = await generateBriefing(snap(), AT, 'no-such-repo');
     expect(b.repo).toBe('no-such-repo');
     expect(b.threads).toHaveLength(0);
@@ -98,7 +98,7 @@ describe('briefingFrames — deterministic-first + async upgrade (ADR-0014)', ()
   });
 
   it('yields the floor FIRST, then the llm upgrade when the model beats it', async () => {
-    ollamaChat.mockResolvedValue({ text: JSON.stringify({ threads: [llmThread('core', 'a2')] }) });
+    ollamaChat.mockResolvedValue({ text: JSON.stringify({ threads: [llmThread('record-1', 'core')] }) });
     const frames = await collect('core');
     expect(frames.map((f) => f.source)).toEqual(['deterministic', 'llm']); // floor first, then upgrade
   });
@@ -106,5 +106,39 @@ describe('briefingFrames — deterministic-first + async upgrade (ADR-0014)', ()
   it('yields a single floor frame for a quiet repo (no redundant upgrade)', async () => {
     const frames = await collect('no-such-repo');
     expect(frames.map((f) => f.source)).toEqual(['deterministic']);
+  });
+});
+
+describe('generateBriefing — observed source routing', () => {
+  beforeEach(() => ollamaChat.mockReset());
+
+  it('derives thread identity and mutation routing from the selected observed record', async () => {
+    const collision = snap();
+    collision.lanes.pickup = [
+      {
+        ...item('core', 'pickup', 'same-id'),
+        source: 'handoff-bead',
+        sourceRecordKey: '["handoff-bead","core","same-id",".handoff/brief.md"]',
+      },
+      {
+        ...item('cv-builder', 'pickup', 'same-id'),
+        source: 'dolt-bead',
+        sourceRecordKey: '["dolt-bead","cv-builder","same-id",null]',
+      },
+    ];
+    collision.lanes.available = [];
+    ollamaChat.mockResolvedValue({
+      text: JSON.stringify({
+        threads: [llmThread('record-0', 'first'), llmThread('record-1', 'second')],
+      }),
+    });
+
+    const briefing = await generateBriefing(collision, AT);
+    expect(new Set(briefing.threads.map((thread) => thread.id)).size).toBe(2);
+    expect(briefing.threads.map((thread) => thread.id)).not.toContain('model-authored-id');
+    expect(briefing.threads.map((thread) => thread.branches[0]?.artifact)).toEqual([
+      expect.objectContaining({ source: 'handoff-bead', target: 'core/.handoff/', closes: 'same-id' }),
+      expect.objectContaining({ source: 'dolt-bead', target: 'cv-builder/.handoff/', closes: 'same-id' }),
+    ]);
   });
 });

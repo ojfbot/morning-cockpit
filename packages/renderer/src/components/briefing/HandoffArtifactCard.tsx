@@ -9,15 +9,6 @@ type EmitState =
   | { phase: 'error'; errors: string[] };
 
 /**
- * Markdown-ledger bead ids (date-stamped .handoff filenames) and Dolt bead ids are
- * DISJOINT namespaces. queue-claim only knows Dolt ids — calling it with a handoff id
- * is a guaranteed no-op that used to be swallowed by an empty .catch, so the operator
- * believed routing happened when nothing did. A claim that silently fails is worse
- * than no claim mechanism.
- */
-const isHandoffBeadId = (id: string) => /^\d{4}-?\d{2}-?\d{2}/.test(id);
-
-/**
  * The terminal state of a deliver branch: a draft Handoff Artifact. Approve & emit reuses the
  * gated handoff write path (POST /api/briefing/emit → ADR-0005). On success it flips to a green
  * EMITTED state with Undo (clears the approval — the file stays written; Undo only resets the UI).
@@ -49,14 +40,14 @@ export function HandoffArtifactCard({
         // sent to the Dolt claim at all (wave-2 /api/handoff/claim is where that lands).
         let claimNote: string | undefined;
         if (artifact.closes) {
-          if (isHandoffBeadId(artifact.closes)) {
-            claimNote = `bead ${artifact.closes} not claimed — handoff-ledger claim verb not built yet`;
-          } else {
+          if (artifact.source === 'dolt-bead') {
             try {
               await claimTask(artifact.closes);
             } catch (e) {
               claimNote = `claim of ${artifact.closes} failed: ${e instanceof Error ? e.message : String(e)}`;
             }
+          } else {
+            claimNote = `bead ${artifact.closes} not claimed — ${artifact.source} does not use core queue-claim`;
           }
         }
         setState({ phase: 'emitted', path: res.path, beadId: res.beadId, claimNote });

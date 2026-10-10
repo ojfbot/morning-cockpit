@@ -11,6 +11,7 @@ import {
 
 const ARTIFACT: BriefingArtifact = {
   title: 'Ship the first keep/discard fleet metric',
+  source: 'handoff-bead',
   target: 'core/.handoff/',
   closes: 'mc-brief-metric',
   align: 'We agree the first metric is the keystone.',
