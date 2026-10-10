@@ -19,6 +19,7 @@ export function HandoffArtifactCard({
   onApprove,
   onUndo,
   emittable,
+  doltClaimable,
 }: {
   artifact: BriefingArtifact;
   approved: boolean;
@@ -26,6 +27,8 @@ export function HandoffArtifactCard({
   onUndo: () => void;
   /** false for the repo-scaffold case (target repo does not exist yet — §6). */
   emittable: boolean;
+  /** True only when the REST/SSE server matched this qualified thread to an observed Dolt item. */
+  doltClaimable: boolean;
 }) {
   const [state, setState] = useState<EmitState>(approved ? { phase: 'emitted' } : { phase: 'draft' });
 
@@ -40,14 +43,19 @@ export function HandoffArtifactCard({
         // sent to the Dolt claim at all (wave-2 /api/handoff/claim is where that lands).
         let claimNote: string | undefined;
         if (artifact.closes) {
-          if (artifact.source === 'dolt-bead') {
+          if (doltClaimable) {
             try {
-              await claimTask(artifact.closes);
+              const claim = await claimTask(artifact.closes);
+              if (!claim.claimed) {
+                claimNote = claim.reason === 'lost'
+                  ? `claim of ${artifact.closes} lost — another actor holds the queue item`
+                  : `claim of ${artifact.closes} was not accepted${claim.error ? `: ${claim.error}` : ''}`;
+              }
             } catch (e) {
               claimNote = `claim of ${artifact.closes} failed: ${e instanceof Error ? e.message : String(e)}`;
             }
           } else {
-            claimNote = `bead ${artifact.closes} not claimed — ${artifact.source} does not use core queue-claim`;
+            claimNote = `bead ${artifact.closes} not claimed — no observed Dolt routing match`;
           }
         }
         setState({ phase: 'emitted', path: res.path, beadId: res.beadId, claimNote });

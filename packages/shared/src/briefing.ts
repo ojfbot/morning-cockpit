@@ -9,7 +9,7 @@
  */
 
 import type { BriefCandidate } from './handoff-brief.js';
-import type { CockpitSnapshot, WorkItemSource } from './work-item.js';
+import type { CockpitSnapshot } from './work-item.js';
 
 /**
  * Scope a snapshot to a single repo (F2, ADR-0012) — keep only lane items whose `repo` matches.
@@ -34,8 +34,6 @@ export type BranchType = 'deliver' | 'defer' | 'archive';
 
 export interface BriefingArtifact {
   title: string;
-  /** Observed source used only to route source-specific follow-up verbs. */
-  source: WorkItemSource;
   /** Emission target, e.g. "core/.handoff/". The repo is the leading path segment. */
   target: string;
   /** The bead id this delivery closes. */
@@ -117,7 +115,6 @@ export function briefingFallback(snapshot: CockpitSnapshot, generatedAt: string)
           type: 'deliver',
           artifact: {
             title: `Pick up: ${item.title}`,
-            source: item.source,
             target: `${repo}/.handoff/`,
             closes: item.nativeId,
             align: `We agree this ${isStale ? 'stale ' : ''}item needs an owner. This brief hands it to a session with clear acceptance criteria.`,

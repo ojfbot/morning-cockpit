@@ -21,7 +21,6 @@ export const MOCK_THREADS: BriefingThread[] = [
         recommended: true,
         type: 'deliver',
         artifact: {
-          source: 'handoff-bead',
           title: 'Ship the first keep/discard fleet metric',
           target: 'core/.handoff/',
           closes: 'mc-brief-metric',
@@ -43,7 +42,6 @@ export const MOCK_THREADS: BriefingThread[] = [
         recommended: false,
         type: 'deliver',
         artifact: {
-          source: 'handoff-bead',
           title: 'Spike two keep/discard metric candidates',
           target: 'core/.handoff/',
           closes: 'mc-brief-metric',
@@ -85,7 +83,6 @@ export const MOCK_THREADS: BriefingThread[] = [
         recommended: true,
         type: 'deliver',
         artifact: {
-          source: 'handoff-bead',
           title: 'Fold selfco-box into core as a skill',
           target: 'core/.handoff/',
           closes: 'selfco-box-plan',
@@ -106,7 +103,6 @@ export const MOCK_THREADS: BriefingThread[] = [
         recommended: false,
         type: 'deliver',
         artifact: {
-          source: 'handoff-bead',
           title: 'Greenlight selfco-box as its own project',
           target: 'selfco-box/.handoff/',
           closes: 'selfco-box-plan',
@@ -148,7 +144,6 @@ export const MOCK_THREADS: BriefingThread[] = [
         recommended: true,
         type: 'deliver',
         artifact: {
-          source: 'handoff-bead',
           title: 'Cleanup convoy — drain the 4 stale tasks',
           target: 'core/.handoff/',
           closes: 'core+shell ×4 tasks',
@@ -169,7 +164,6 @@ export const MOCK_THREADS: BriefingThread[] = [
         recommended: false,
         type: 'deliver',
         artifact: {
-          source: 'handoff-bead',
           title: 'Triage the 4 stale tasks',
           target: 'core/.handoff/',
           closes: 'core+shell ×4 tasks',
@@ -211,7 +205,6 @@ export const MOCK_THREADS: BriefingThread[] = [
         recommended: true,
         type: 'deliver',
         artifact: {
-          source: 'handoff-bead',
           title: 'Stand up the bead_events writer (emitEvent)',
           target: 'core/.handoff/',
           closes: 'bead-events-writer',
@@ -233,7 +226,6 @@ export const MOCK_THREADS: BriefingThread[] = [
         recommended: false,
         type: 'deliver',
         artifact: {
-          source: 'handoff-bead',
           title: 'Ship emitEvent + queue-post together',
           target: 'core/.handoff/',
           closes: 'bead-events-writer + queue-post',
