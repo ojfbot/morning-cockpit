@@ -99,7 +99,9 @@ export function briefingFallback(snapshot: CockpitSnapshot, generatedAt: string)
       ? `${item.staleDays ?? '?'}d stale · ${repo}`
       : `pickup · ${repo}`;
     return {
-      id: `fb-${item.nativeId}`,
+      // Choice/approval state is persisted by thread id. Qualify new records so equal native
+      // ids in different repositories cannot inherit one another's local decision state.
+      id: `fb-${item.sourceRecordKey ?? item.nativeId}`,
       tag: isStale ? 'stale' : 'decision',
       title: item.title,
       whyNow: why,
