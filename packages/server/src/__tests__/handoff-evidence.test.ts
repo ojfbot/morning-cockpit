@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
+import { chmod, mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
@@ -112,10 +112,33 @@ describe('handoff REST evidence contract', () => {
     const emptyRoot = await rootWith([]);
     const empty = await collect(emptyRoot);
     expect(empty.health.status).toBe('up');
-    expect(empty.evidence.coverage).toEqual({ status: 'complete', repositoriesObserved: 0, skippedRecords: 0 });
+    expect(empty.evidence.coverage).toEqual({
+      status: 'complete',
+      repositoriesObserved: 0,
+      skippedRecords: 0,
+      unreadableRepositories: 0,
+    });
 
     const unavailable = await collect(path.join(emptyRoot, 'missing'));
     expect(unavailable.health.status).toBe('down');
     expect(unavailable.evidence.coverage.status).toBe('unavailable');
+  });
+
+  it('reports partial coverage when a repository candidate cannot be inspected', async () => {
+    const root = await rootWith([{ repo: 'alpha', file: 'brief.md', body: brief('alpha', 'Alpha') }]);
+    const restricted = path.join(root, 'restricted');
+    await mkdir(restricted);
+    await chmod(restricted, 0o000);
+    try {
+      const result = await collect(root);
+      expect(result.items.map((item) => item.nativeId)).toEqual(['alpha']);
+      expect(result.evidence.coverage).toMatchObject({
+        status: 'partial',
+        repositoriesObserved: 1,
+        unreadableRepositories: 1,
+      });
+    } finally {
+      await chmod(restricted, 0o700);
+    }
   });
 });
