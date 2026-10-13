@@ -84,3 +84,26 @@ navigation, **persisted** so it survives restarts, and **invalidated by input ch
 - Measured latencies above (2026-06-27, live `:3040`).
 - `packages/server/src/{aggregate.ts (TtlCache), routes/briefing.ts (per-repo Map), routes/summary.ts, sse.ts}`.
 - ADR-0003 (deterministic floor — the basis for deterministic-first serving).
+
+## Supplemental research input registered 2026-10-11
+
+The [NanoClaw research registry, core #528](https://github.com/ojfbot/core/issues/528)
+registers [transaction ownership and durable projections, core #529](https://github.com/ojfbot/core/issues/529)
+as input to Q1 through Q3. This ADR remains Draft / Proposed. The registration accepts
+neither a store nor a background scheduler.
+
+Compare disk, a cockpit-local SQLite store, and a dedicated Dolt store against the
+existing read-only-over-fleet-state boundary. For each candidate, identify the writer,
+the source coordinates, the input hash, and the derivation version. Test restart,
+overlapping warming runs, invalidation, and restoration from a backup. The result must
+show whether a returned view matches its recorded input without rerunning the model.
+
+[Cockpit #57](https://github.com/ojfbot/morning-cockpit/issues/57) supplies the open
+resource-identity question for future GitHub inputs. A cache key must preserve the
+difference between a resource and the account that observed it. A cached summary
+records a derivation; it does not establish a work item's execution, publication,
+or settlement outcome.
+
+The [accepted watch-store scope in ADR-0016](0016-watch-store-and-scheduled-job.md#supplemental-research-input-registered-2026-10-11)
+is a concrete local-store precedent. Research must assess that scope before proposing
+a second writable package store or a shared core capability.
