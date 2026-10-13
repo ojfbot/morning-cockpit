@@ -16,7 +16,7 @@ The three plans were assigned to separate subagents by the operator's request. T
 
 ## What the review needs to resolve
 
-- Reconcile the existing S9 through S18 roadmap work with its actual implementation before registering new tasks. Preserve PR Train work in the parallel checkout.
+- Reconcile the existing S9 through S19 roadmap work with its actual implementation before registering new tasks. Preserve PR Train work in the parallel checkout.
 - Establish a live baseline and compare the competing room and single-page concepts before choosing the production shell, Q2.
 - Define actor identity and obligation evidence, Q4/Q12/Q15. An actor string or self-reported tuple cannot establish a verified process identity or a human obligation.
 - Decide the correspondence profile and recipients, Q13/Q14, before a preview becomes an executable memo. Preparation, approval and delivery receipts are separate states.
@@ -35,7 +35,7 @@ The fleet-runner registration amendment remains a proposal in this repository. T
 
 ```sh
 python3 planning/mc-ux-01/verify-capture.py
-git diff --check 1b15bc9 HEAD -- planning/mc-ux-01 implementation-notes.md
+git diff --check origin/main...HEAD -- planning/mc-ux-01 implementation-notes.md
 ```
 
 The capture verifier checks 60 source files, their hashes and byte counts, and 29 declared manifest references. Source whitespace stays intact, including original Markdown hard breaks. These checks validate the handoff transfer. Production tests and usability checks are specified in the verification plan and must be run against each implementation slice.
