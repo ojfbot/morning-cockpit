@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="ds/cockpit.css">
+<script src="ds/refs.js"></script>
+</helmet>
+<div data-screen-label="E · Open Loops" style="min-height:100vh;background:var(--paper);color:var(--ink);">
+  <header style="display:flex;align-items:center;gap:14px;padding:0 var(--s5);height:40px;border-bottom:1px solid var(--rule);font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--ink-3);">
+    <span>CONCEPT E · OPEN LOOPS</span><span style="color:var(--rule-strong);">·</span><span>derived from the data: every item in the app is either a promise or evidence about one</span>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:14px;"><span>LAST LOOKED {{ lastLooked }}</span><button onClick="{{ markLooked }}" style="cursor:pointer;border:1px solid var(--rule-strong);background:var(--card);color:var(--ink-2);padding:3px 9px;font-family:var(--mono);font-size:10px;letter-spacing:.1em;" title="Store now as the last-viewed time; the diff below resets">I’VE LOOKED</button></div>
+  </header>
+
+  <section style="padding:28px var(--s5) 24px;border-bottom:3px solid var(--ink);">
+    <div style="font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--ink-3);">SINCE YOU LAST LOOKED · {{ sinceGap }}</div>
+    <h1 style="margin:8px 0 18px;font-weight:800;font-size:clamp(28px,3.6vw,46px);letter-spacing:-.03em;line-height:1.02;max-width:26ch;text-wrap:pretty;">{{ headline }}</h1>
+    <div style="display:grid;grid-template-columns:{{ diffCols }};gap:12px;align-items:stretch;transition:grid-template-columns 240ms var(--ease-expressive);">
+      <sc-for list="{{ diff }}" as="x" hint-placeholder-count="4">
+        <div style="{{ x.st }}"><div style="display:flex;align-items:flex-start;gap:8px;"><div style="{{ x.numSt }}">{{ x.n }}</div><button onClick="{{ x.toggle }}" title="Focus this card — the others step back" style="margin-left:auto;cursor:pointer;border:1px solid var(--rule-strong);background:transparent;color:var(--ink-2);font-family:var(--mono);font-size:8.5px;letter-spacing:.1em;padding:2px 6px;">{{ x.modeLabel }}</button></div><div style="{{ x.titleSt }}">{{ x.t }}</div><div style="font-size:11.5px;color:var(--ink-2);margin:2px 0 6px;line-height:1.4;display:flex;flex-wrap:wrap;gap:4px;align-items:center;">{{ x.sub }}{{ x.chips }}</div>
+        <sc-if value="{{ x.dim }}" hint-placeholder-val="{{ false }}"><div style="font-family:var(--mono);font-size:9.5px;color:var(--ink-3);margin-top:8px;padding-top:8px;border-top:1px solid var(--rule);">{{ x.rowCount }} · expand to see them</div></sc-if>
+        <div style="{{ x.rowSt }}">
+        <sc-for list="{{ x.rows }}" as="r" hint-placeholder-count="0">
+          <div style="display:flex;flex-direction:column;gap:4px;padding:8px 0;border-top:1px solid var(--rule);">
+            <div style="display:flex;flex-wrap:wrap;gap:5px;align-items:center;font-family:var(--mono);font-size:9.5px;color:var(--ink-3);">{{ r.head }}</div>
+            <div style="{{ x.rowTitleSt }}">{{ r.title }}</div>
+            <div style="display:flex;flex-wrap:wrap;gap:5px;align-items:center;font-family:var(--mono);font-size:9.5px;color:var(--ink-3);">{{ r.meta }}</div>
+          </div>
+        </sc-for>
+        </div><div style="{{ x.evSt }}">{{ x.evChip }} <span style="margin-left:4px;">{{ x.ev }}</span></div></div>
+      </sc-for>
+    </div>
+  </section>
+
+  <main style="display:grid;grid-template-columns:minmax(0,1fr) 372px;align-items:start;">
+    <div style="min-width:0;padding:24px var(--s5) 56px;">
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
+        <span style="font-weight:800;font-size:20px;letter-spacing:-.01em;">{{ loopCount }} open loops</span>
+        <span style="font-family:var(--mono);font-size:10px;color:var(--ink-3);">group by</span>
+        <div style="display:flex;border:1px solid var(--rule-strong);"><sc-for list="{{ groupings }}" as="g" hint-placeholder-count="3"><button onClick="{{ g.go }}" style="{{ g.st }}">{{ g.t }}</button></sc-for></div>
+        <span style="margin-left:auto;display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:9.5px;color:var(--ink-3);">a loop = a brief with no report answering it · {{ evDerivedChip }}<span>· hover any chip for detail, click to pin</span></span>
+      </div>
+      <sc-for list="{{ groups }}" as="grp" hint-placeholder-count="3">
+        <div style="margin-bottom:22px;">
+          <div style="display:flex;align-items:baseline;gap:10px;border-bottom:2px solid var(--ink);padding-bottom:5px;margin-bottom:8px;"><span style="font-weight:800;font-size:15px;">{{ grp.title }}</span><span style="font-family:var(--mono);font-size:10px;color:var(--ink-3);">{{ grp.n }}</span><span style="margin-left:auto;font-size:11.5px;color:var(--ink-2);">{{ grp.hint }}</span></div>
+          <sc-if value="{{ grp.empty }}" hint-placeholder-val="{{ false }}"><p style="margin:0;font-size:12.5px;color:var(--ink-3);padding:10px 0;">{{ grp.emptyText }}</p></sc-if>
+          <sc-for list="{{ grp.loops }}" as="l" hint-placeholder-count="2">
+            <article onClick="{{ l.toggle }}" style="{{ l.st }}">
+              <div style="display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:start;">
+                <span style="{{ l.hueSt }}"></span>
+                <div style="min-width:0;">
+                  <div style="font-size:14px;font-weight:700;line-height:1.3;">{{ l.title }}</div>
+                  <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;color:var(--ink-3);margin-top:5px;">{{ l.repoChip }}<span>· promised {{ l.created }} · {{ l.age }} days open · waiting on</span><span style="{{ l.waitSt }}">{{ l.waitingOn }}</span>{{ l.waitChip }}</div>
+                  <sc-if value="{{ l.touched }}" hint-placeholder-val="{{ false }}"><div style="font-family:var(--mono);font-size:10px;color:var(--live);margin-top:4px;">● moved since you last looked</div></sc-if>
+                </div>
+                <div style="display:flex;gap:6px;align-items:center;"><sc-if value="{{ l.chained }}" hint-placeholder-val="{{ false }}"><span style="font-family:var(--mono);font-size:8.5px;letter-spacing:.08em;color:var(--live);border:1px solid var(--live);padding:1px 5px;" title="You decided this; a successor brief is delivering it">DECIDED · IN FLIGHT</span></sc-if><button onClick="{{ l.act }}" style="{{ l.actSt }}">{{ l.verb }}</button></div>
+              </div>
+              <sc-if value="{{ l.open }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top:12px;padding-top:12px;border-top:1px dashed var(--rule);display:grid;grid-template-columns:1fr 1fr;gap:14px;font-size:12.5px;line-height:1.5;">
+                  <div><div style="font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;color:var(--ink-3);margin-bottom:3px;">WHAT WAS PROMISED</div><div style="display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-bottom:5px;">{{ l.fromChip }}<span style="color:var(--ink-3);">→</span>{{ l.toChip }}</div>{{ l.promise }}<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;">{{ l.refChips }}</div></div>
+                  <div><div style="font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;color:var(--ink-3);margin-bottom:3px;">WHAT HAPPENED SINCE</div>{{ l.since }}</div>
+                  <div><div style="font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;color:var(--ink-3);margin-bottom:3px;">HOW IT CLOSES</div>{{ l.closes }}</div>
+                  <div><div style="font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;color:var(--ink-3);margin-bottom:3px;">WHERE THIS CAME FROM</div><span style="font-family:var(--mono);font-size:10px;color:var(--ink-2);word-break:break-all;">{{ l.source }}</span></div>
+                </div>
+              </sc-if>
+            </article>
+          </sc-for>
+        </div>
+      </sc-for>
+    </div>
+    <aside data-screen-label="Rail" style="border-left:1px solid var(--rule);background:var(--paper-2);position:sticky;top:0;align-self:flex-start;height:100vh;display:flex;flex-direction:column;min-width:0;">
+      <header style="display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid var(--rule);">
+        <span style="font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:-.01em;margin-right:auto;">The loop, measured</span>
+        {{ evDerivedChip }}
+      </header>
+      <div style="padding:12px 16px;border-bottom:1px solid var(--rule);">
+        <sc-for list="{{ wheel }}" as="w" hint-placeholder-count="5"><div style="display:flex;gap:10px;align-items:baseline;padding:6px 0;border-bottom:1px solid var(--rule);"><span style="font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;color:var(--ink-3);width:62px;">{{ w.step }}</span><span style="font-size:12.5px;flex:1;color:var(--ink-2);">{{ w.t }}</span><span style="font-family:var(--mono);font-size:11px;font-weight:700;color:{{ w.c }};">{{ w.n }}</span></div></sc-for>
+        <p style="margin:10px 0 0;font-size:12px;line-height:1.5;color:var(--ink-2);">Capture is where the loop leaks: <b style="color:var(--ink);">{{ promiseN }} promises, {{ reportN }} reports</b>. A one-line report at session end is the cheapest fix in the system.</p>
+      </div>
+      <details style="border-bottom:1px dashed var(--rule);">
+        <summary style="display:flex;align-items:center;gap:8px;padding:8px 16px;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);cursor:pointer;user-select:none;">intake, folded <span style="margin-left:auto;color:var(--ink-2);">{{ intakeCount }}</span></summary>
+        <div style="padding:4px 16px 12px;">
+          <sc-for list="{{ intake }}" as="i" hint-placeholder-count="3"><details style="border-top:1px solid var(--rule);padding:7px 0;"><summary style="cursor:pointer;font-size:13px;display:flex;gap:8px;align-items:baseline;"><span style="font-weight:700;flex:1;">{{ i.t }}</span><span style="font-family:var(--mono);font-size:10px;color:var(--ink-3);">{{ i.n }}</span></summary><p style="margin:6px 0 0;font-size:12px;color:var(--ink-2);line-height:1.5;">{{ i.sub }}</p></details></sc-for>
+          <p style="margin:10px 0 0;font-family:var(--mono);font-size:10px;color:var(--ink-3);line-height:1.5;">Reading, papers and loop telemetry inform loops; they are never ranked against them.</p>
+        </div>
+      </details>
+      <div style="flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:12px;padding:16px;">
+        <p style="margin:0;font-size:12px;line-height:1.55;color:var(--ink-3);padding:12px;border:1px dashed var(--rule);">Pre-grounded in today's loops. Leo answers in words and points at the loop; the verb stays yours.</p>
+        <sc-for list="{{ leoLog }}" as="m" hint-placeholder-count="0"><div style="{{ m.st }}">{{ m.t }}</div></sc-for>
+      </div>
+      <div style="border-top:1px solid var(--rule);">
+        <div style="display:flex;flex-wrap:wrap;gap:4px;padding:8px 16px 0;"><sc-for list="{{ asks }}" as="a" hint-placeholder-count="3"><button onClick="{{ a.go }}" style="cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-size:10px;border:1px solid var(--rule);border-left:2px solid var(--live);background:var(--paper);color:var(--ink-2);padding:1px 6px;font-family:var(--mono);">{{ a.t }}</button></sc-for></div>
+        <div style="display:flex;align-items:flex-end;gap:8px;padding:12px 16px;">
+          <textarea rows="2" value="{{ ask }}" onChange="{{ onAsk }}" onKeyDown="{{ onAskKey }}" placeholder="Ask about loops, agents, or what slipped…" style="flex:1;min-width:0;resize:none;font-family:var(--sans);font-size:12px;line-height:1.5;color:var(--ink);background:var(--paper);border:1px solid var(--rule);padding:8px 12px;"></textarea>
+          <button onClick="{{ send }}" style="font-family:var(--mono);font-size:10px;color:var(--paper);background:var(--ink);border:none;padding:6px 12px;cursor:pointer;">Send</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;padding:0 16px 12px;font-family:var(--mono);font-size:10px;color:var(--ink-3);"><span style="width:7px;height:7px;border-radius:50%;background:var(--live);"></span>Leo · chief of staff · global thread {{ simChip }}</div>
+      </div>
+    </aside>
+  </main>
+  {{ refCard }}
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { focusCard: null, data: null, grouping: 'attention', open: {}, lastLooked: null, leo: null, closed: {}, ask: '', leoLog: [] };
+  componentDidMount() {
+    if (window.ckRefs) window.ckRefs.bind(this, React);
+    import('./data/snapshot.js').then((d) => { if (window.ckRefs) window.ckRefs.setData(d); this.setState({ data: d, lastLooked: localStorage.getItem('mc.proto.lastLooked') || d.LAST_LOOKED }); });
+  }
+  leoAnswer(q) { const s = q.toLowerCase(); const hit = (this._answers || []).find((a) => a.t.split(' ')[1] && s.includes(a.t.split(' ')[1].replace('?', ''))); return hit ? hit.a : '[simulated] I point at loops, not at intake. Try “what needs me?”, “what moved?” or “what keeps slipping?”.'; }
+  renderVals() {
+    const d = this.state.data; const mono = 'font-family:var(--mono);'; const now = new Date();
+    const say = (q, a) => this.setState((s) => ({ leoLog: [...s.leoLog, { role: 'u', t: q }, { role: 'a', t: a }], ask: '' }));
+    const base = { refCard: window.ckRefs ? window.ckRefs.card() : null, ask: this.state.ask, onAsk: (e) => this.setState({ ask: e.target.value }), onAskKey: (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (this.state.ask.trim()) say(this.state.ask, this.leoAnswer(this.state.ask)); } }, send: () => this.state.ask.trim() && say(this.state.ask, this.leoAnswer(this.state.ask)),
+      leoLog: this.state.leoLog.map((m) => ({ t: m.t, st: m.role === 'u' ? `align-self:flex-end;max-width:92%;font-size:12px;line-height:1.55;padding:8px 12px;background:var(--paper);border:1px solid var(--rule);border-left:2px solid var(--ink);` : `align-self:flex-start;max-width:92%;font-size:12px;line-height:1.55;padding:8px 12px;background:var(--card);border:1px solid var(--rule);border-left:2px solid var(--live);color:var(--ink-2);` })), markLooked: () => { const t = now.toISOString(); try { localStorage.setItem('mc.proto.lastLooked', t); } catch (e) {} this.setState({ lastLooked: t }); } };
+    if (!d) return { ...base, diffCols: 'repeat(4,minmax(0,1fr))', simChip: null, intakeCount: '', diff: [], groups: [], groupings: [], wheel: [], intake: [], asks: [], lastLooked: '—', sinceGap: '', headline: '' };
+    const C = window.ckRefs; if (C) C.setData(d); const chip = (k, id, o) => (C ? C.chip(k, id, o) : null);
+    const last = new Date(this.state.lastLooked); const gapH = Math.max(0, Math.round((now - last) / 36e5));
+    const sinceGap = gapH < 1 ? 'JUST NOW' : gapH < 48 ? `${gapH}H AGO` : `${Math.round(gapH / 24)}D AGO`;
+    const hue = (id) => (d.CLUSTERS.find((c) => c.id === id) || {}).hue || 'var(--ink-3)';
+    const repoOf = (n) => d.REPOS.find((r) => r.name === n) || {};
+    const agentsSince = d.AGENTS.filter((a) => new Date(a.lastEvent) > last);
+    const loops = d.BRIEFS.filter((b) => b.open && !b.decidedInFlight && !this.state.closed[b.id]).map((b) => {
+      const r = repoOf(b.repo); const touched = d.AGENTS.some((a) => a.repo === b.repo && new Date(a.lastEvent) > last);
+      const waitingOn = b.tag === 'decision' || b.actor !== b.to ? 'you' : b.closes ? 'code-claude (delivering)' : 'you';
+      const blockedByRuling = /ADR-0002|coordination gaps/i.test(b.title + (b.refs || []).join(' '));
+      return { ...b, r, touched, waitingOn: blockedByRuling ? 'a ruling (ADR-0002)' : waitingOn, kind: blockedByRuling ? 'ruling' : waitingOn === 'you' ? 'you' : 'agent' };
+    }).sort((a, b) => b.staleDays - a.staleDays);
+    const diff0 = [
+      { n: agentsSince.length, t: 'agents moved', sub: agentsSince.length ? agentsSince.map((a) => a.id).join(', ') : 'quiet', ev: 'from bead_events', c: 'var(--ev-derived)' },
+      { n: loops.filter((l) => l.touched).length, t: 'open loops touched', sub: 'something happened in a repo with a live brief:', ev: 'from .handoff × bead_events', c: 'var(--ev-derived)' },
+      { n: loops.filter((l) => l.kind === 'you').length, t: 'still waiting on you', sub: `oldest ${loops[0] ? loops[0].staleDays : 0} days — unchanged since you left:`, ev: 'from .handoff', c: 'var(--decision-ink)' },
+      { n: d.DELIVERY.movements.filter((m) => new Date(m.date) > last).length, t: 'progress recorded', sub: 'movement is written only at merge', ev: 'from status.jsonl', c: 'var(--ev-derived)' },
+    ];
+    const ago = (iso) => { const hrs = Math.round((now - new Date(iso)) / 36e5); return hrs < 1 ? 'just now' : hrs < 48 ? hrs + 'h ago' : Math.round(hrs / 24) + 'd ago'; };
+    const typeSt = `${mono}font-size:8.5px;letter-spacing:.08em;text-transform:uppercase;padding:0 4px;border:1px solid var(--rule-strong);color:var(--ink-2);white-space:nowrap;`;
+    const agoSt = `${mono}font-size:9.5px;color:var(--ink-3);`;
+    const mvSince = d.DELIVERY.movements.filter((m) => new Date(m.date) > last);
+    const rowsFor = [
+      agentsSince.map((a) => ({ head: [chip('who', a.id), React.createElement('span', { key: 't', style: { cssText: typeSt } }, a.type), a.lastEvent && ago(a.lastEvent)], title: a.task, meta: ['in', chip('repo', a.repo, { phase: false })] })),
+      loops.filter((l) => l.touched).map((l) => ({ head: [chip('brief', l.id, { label: 'open ' + l.staleDays + 'd' }), l.kind === 'you' ? 'waiting on you' : 'waiting on ' + l.waitingOn], title: l.title, meta: ['in', chip('repo', l.repo, { phase: false }), '· an agent was active here after you left'] })),
+      loops.filter((l) => l.kind === 'you').map((l) => ({ head: [chip('brief', l.id, { label: l.staleDays + ' days, no reply' })], title: l.title, meta: ['in', chip('repo', l.repo, { phase: false }), '· asked by', chip('who', l.actor)] })),
+      (mvSince.length ? mvSince : d.DELIVERY.movements.slice(0, 1)).map((m) => ({ head: [m.date, mvSince.length ? 'since you left' : 'last recorded — nothing since'], title: `${m.prop} ${m.from}→${m.to}% · ${m.evidence}`, meta: ['by', chip('who', m.actor), '·', chip('ref', 'ns:l1-morning-cockpit')] })),
+    ];
+    const fc = this.state.focusCard; const anyFocus = fc !== null;
+    const sp = (arr) => arr.filter(Boolean).map((v, k) => (typeof v === 'string' ? React.createElement('span', { key: 'k' + k }, v) : v));
+    rowsFor.forEach((rows) => rows.forEach((rw) => { rw.head = sp(rw.head); rw.meta = sp(rw.meta); }));
+    const diff = diff0.map((x, i) => { const focused = fc === i; const dim = anyFocus && !focused; return { ...x, rows: dim ? [] : rowsFor[i], rowCount: rowsFor[i].length + (rowsFor[i].length === 1 ? ' row' : ' rows'), dim, focused, chips: [], evChip: chip('evidence', 'derived'), sub: i === 0 && agentsSince.length ? 'what each was doing:' : x.sub,
+      toggle: () => this.setState({ focusCard: focused ? null : i }), modeLabel: focused ? 'NORMAL' : 'EXPAND',
+      st: `background:var(--card);border:1px solid ${focused ? 'var(--ink)' : 'var(--rule)'};border-top:${focused ? '3px' : '2px'} solid ${x.c === 'var(--decision-ink)' ? 'var(--decision)' : 'var(--ink)'};padding:${focused ? '18px 22px 20px' : '12px 14px'};transition:padding 240ms var(--ease-expressive);display:flex;flex-direction:column;height:${dim ? 'auto' : focused ? '380px' : '260px'};min-height:0;`,
+      numSt: `font-size:${focused ? 56 : 30}px;font-weight:800;letter-spacing:-.03em;line-height:1;`, titleSt: `font-size:${focused ? 22 : 13}px;font-weight:${focused ? 800 : 700};letter-spacing:${focused ? '-.02em' : '0'};margin-top:6px;`,
+      rowSt: `flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--rule-strong) transparent;${focused ? 'display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:0 24px;align-content:start;' : ''}`, rowTitleSt: `font-size:${focused ? 14 : 12.5}px;font-weight:700;line-height:1.35;`,
+      evSt: `${mono}font-size:8.5px;letter-spacing:.08em;color:${x.c};margin-top:8px;flex:0 0 auto;` }; });
+    const diffCols = anyFocus ? [0, 1, 2, 3].map((i) => (i === fc ? 'minmax(0,2.6fr)' : 'minmax(0,1fr)')).join(' ') : 'repeat(4,minmax(0,1fr))';
+    const headline = agentsSince.length ? `${agentsSince.length} agent${agentsSince.length > 1 ? 's' : ''} moved while you were away; ${loops.filter((l) => l.kind === 'you').length} loops still wait on you — the same ${loops.filter((l) => l.kind === 'you').length} as before.` : `Nothing moved while you were away. ${loops.length} loops are open; they were open when you left.`;
+    const groupings = [['attention', 'ATTENTION'], ['continuity', 'CONTINUITY'], ['age', 'AGE']].map(([k, t]) => ({ t, go: () => this.setState({ grouping: k }), st: `cursor:pointer;border:none;border-right:1px solid var(--rule-strong);background:${this.state.grouping === k ? 'var(--ink)' : 'transparent'};color:${this.state.grouping === k ? 'var(--paper)' : 'var(--ink-2)'};padding:4px 10px;${mono}font-size:10px;letter-spacing:.1em;` }));
+    const mk = (l) => ({ title: l.title, repo: l.repo, repoChip: chip('repo', l.repo), fromChip: chip('who', l.actor), toChip: chip('who', l.to), refChips: (l.refs || []).concat(l.closes ? ['closes:' + l.closes] : []).map((r) => chip('ref', r)), waitChip: l.kind === 'ruling' ? chip('ref', 'adr:0002') : l.kind === 'agent' ? chip('who', 'code-claude') : null, created: l.created, age: l.staleDays, waitingOn: l.waitingOn, touched: l.touched, chained: !!l.closes, open: !!this.state.open[l.id],
+      hueSt: `width:10px;height:10px;margin-top:4px;background:${hue(l.r.cluster)};`, waitSt: `color:${l.kind === 'you' ? 'var(--decision-ink)' : l.kind === 'ruling' ? 'var(--warn)' : 'var(--live)'};font-weight:700;`,
+      st: `background:var(--card);border:1px solid var(--rule);border-left:3px solid ${l.kind === 'you' ? 'var(--decision)' : l.kind === 'ruling' ? 'var(--warn)' : 'var(--live)'};padding:12px 14px;margin-bottom:8px;cursor:pointer;`,
+      verb: l.kind === 'you' ? 'Decide →' : l.kind === 'ruling' ? 'Settle ADR-0002' : 'Check progress', actSt: `cursor:pointer;${mono}font-size:10px;padding:5px 10px;border:1px solid ${l.kind === 'you' ? 'var(--ink)' : 'var(--rule-strong)'};background:${l.kind === 'you' ? 'var(--ink)' : 'transparent'};color:${l.kind === 'you' ? 'var(--paper)' : 'var(--ink-2)'};white-space:nowrap;`,
+      toggle: () => this.setState((s) => ({ open: { ...s.open, [l.id]: !s.open[l.id] } })), act: (e) => { e.stopPropagation(); this.setState({ leo: `“${l.title.slice(0, 50)}…” — in the real app this opens the Briefing on that thread with Pick up / Defer / Close-with-reason. Closing writes a report bead you approve first.` }); },
+      promise: `${l.actor} wrote this brief for ${l.to} on ${l.created}. A brief is a promise that someone will deliver or close it.`, since: l.touched ? `An agent was active in ${l.repo} after you last looked. No report answers this brief yet.` : `Nothing. No report, no successor, no activity in ${l.repo} since you last looked.`,
+      closes: l.closes ? `This brief delivers a decision you already made (it carries closes: ${l.closes.slice(0, 13)}…). When it closes, both loops close.` : 'A report bead that responds_to this id closes it in the lane logic. Or close it with a one-line reason — that is also a report.', source: `${l.repo}/.handoff/${l.id}.md · open-hook rule from core orient.py` });
+    let groups;
+    if (this.state.grouping === 'attention') groups = [
+      { title: 'Waiting on you', hint: 'the only red in the app', kind: 'you', emptyText: 'Nothing waits on you.' },
+      { title: 'Waiting on an agent', hint: 'you decided; delivery is theirs', kind: 'agent', emptyText: 'No agent owes you anything right now.' },
+      { title: 'Blocked by a ruling', hint: 'no amount of work moves these', kind: 'ruling', emptyText: 'No loop is blocked on a ruling.' },
+    ].map((g) => { const ls = loops.filter((l) => l.kind === g.kind); return { ...g, n: ls.length, empty: ls.length === 0, loops: ls.map(mk) }; });
+    else if (this.state.grouping === 'continuity') groups = [
+      { title: 'Moved since you last looked', hint: 'resume here first', f: (l) => l.touched, emptyText: 'Nothing moved.' },
+      { title: 'Resumable', hint: 'quiet, but under 90 days', f: (l) => !l.touched && l.staleDays <= 90, emptyText: '—' },
+      { title: 'Dormant', hint: 'over 90 days — decide or close, don’t carry', f: (l) => !l.touched && l.staleDays > 90, emptyText: 'Nothing dormant.' },
+    ].map((g) => { const ls = loops.filter(g.f); return { ...g, n: ls.length, empty: ls.length === 0, loops: ls.map(mk) }; });
+    else groups = [
+      { title: 'Over 90 days', hint: 'older than the roadmap phase they were written in', f: (l) => l.staleDays > 90, emptyText: '—' },
+      { title: '30–90 days', hint: '', f: (l) => l.staleDays > 30 && l.staleDays <= 90, emptyText: '—' },
+      { title: 'Under 30 days', hint: '', f: (l) => l.staleDays <= 30, emptyText: 'Nothing recent is open — every loop here is old.' },
+    ].map((g) => { const ls = loops.filter(g.f); return { ...g, n: ls.length, empty: ls.length === 0, loops: ls.map(mk) }; });
+    const reportN = 0; const promiseN = d.BRIEFS.length;
+    const wheel = [
+      { step: 'ORIENT', t: 'visits with a last-looked stamp', n: 'new', c: 'var(--ev-simulated)' },
+      { step: 'DECIDE', t: 'briefs answered this week', n: '0', c: 'var(--decision-ink)' },
+      { step: 'ACT', t: 'slices merged this month', n: String(d.DELIVERY.roadmap.phases.flatMap((p) => p.slices).filter((s) => s.status === 'merged').length), c: 'var(--ink)' },
+      { step: 'CAPTURE', t: 'reports written vs briefs', n: `${reportN}/${promiseN}`, c: 'var(--warn)' },
+      { step: 'REFLECT', t: 'days since progress recorded', n: String(Math.round((now - new Date(d.DELIVERY.movements[0].date)) / 864e5)), c: 'var(--ink-2)' },
+    ];
+    const intake = [
+      { t: 'Reading', n: '9 new', sub: 'Four sources; the digest is one headline and up to three bullets. Nothing here is a loop until you make it one.' },
+      { t: 'Research', n: '3 papers', sub: 'Explained against your profile. Staging a cross-link to the vault is the only verb — and it creates no loop.' },
+      { t: 'Loop telemetry', n: `${d.LOOP.capture.last7d} / 7d`, sub: 'Are suggestions being used? Counts only; rates withheld until capture quality is verified.' },
+      { t: 'Fleet structure', n: `${d.REPOS.filter((r) => !r.registered).length} unregistered`, sub: 'The gap itself is one loop: “register the repos that matter”. See Concept C.' },
+    ];
+    const asksRaw = [['what needs me?', `${loops.filter((l) => l.kind === 'you').length} loops wait on you; the oldest is “${loops[0].title.slice(0, 40)}…” (${loops[0].staleDays} days). I’d start there.`], ['what moved?', agentsSince.length ? `${agentsSince.map((a) => `${a.id} in ${a.repo}`).join('; ')}. No brief was answered.` : 'Nothing moved since you last looked.'], ['what keeps slipping?', `Every open loop is older than 60 days. The northstar-evolution brief has been re-briefed twice without a report — that’s the one slipping.`]]; const asks = asksRaw.map(([t, a]) => ({ t, a, go: () => say(t, a) }));
+    this._answers = asks;
+    return { ...base, lastLooked: last.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).toUpperCase(), sinceGap, headline, diff, diffCols, loopCount: loops.length, groupings, groups, evDerivedChip: chip('evidence', 'derived'), wheel, promiseN, reportN, intake, intakeCount: intake.length + ' sources', asks, simChip: chip('evidence', 'simulated'), leoLine: this.state.leo || 'Ask in words; answers point at loops, and a loop is where you act. Leo never ranks intake above a promise.' };
+  }
+}
+</script>
+</body>
+</html>

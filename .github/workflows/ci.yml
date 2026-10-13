@@ -12,6 +12,11 @@ jobs:
       - name: Checkout cockpit
         uses: actions/checkout@v4
 
+      - name: Verify frozen design capture
+        run: |
+          python3 planning/mc-ux-01/verify-capture.py
+          python3 -m unittest discover -s planning/mc-ux-01 -p 'test_verify_capture.py'
+
       # The read-model contract is authored in core (ADR-0013). We git-clone core (no runtime
       # dependency, no publish — the ADR-0030 sibling-clone precedent) so the vendored-parity and
       # regenerate-diff gates can verify the cockpit SDL has not drifted from core's authority.

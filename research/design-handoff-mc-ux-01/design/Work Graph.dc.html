@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="ds/cockpit.css">
+<script src="ds/refs.js"></script>
+</helmet>
+<div data-screen-label="C · Work Graph" style="height:100vh;display:grid;grid-template-rows:auto 1fr;background:var(--paper);color:var(--ink);overflow:hidden;">
+  <header style="display:flex;align-items:center;gap:16px;padding:10px var(--s5);border-bottom:3px solid var(--ink);flex-wrap:wrap;">
+    <div style="display:flex;align-items:baseline;gap:12px;">
+      <span style="font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--ink-3);">CONCEPT C</span>
+      <span style="font-weight:800;font-size:22px;letter-spacing:-.02em;text-transform:uppercase;">Work Graph</span>
+      <span style="font-size:12px;color:var(--ink-2);">Every repo, what hangs off it, and why it exists — one picture.</span>
+    </div>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <input value="{{ q }}" onChange="{{ onQ }}" placeholder="find… a repo, a cluster, ‘waiting’, ‘unregistered’" style="background:var(--card);border:1px solid var(--rule-strong);color:var(--ink);font-family:var(--mono);font-size:11px;padding:6px 10px;width:300px;"></input>
+      <sc-for list="{{ chips }}" as="c" hint-placeholder-count="5"><button onClick="{{ c.go }}" style="{{ c.st }}">{{ c.t }}</button></sc-for>
+      <span style="font-family:var(--mono);font-size:10px;color:var(--ink-3);">{{ matchLine }}</span>
+    </div>
+  </header>
+  <div style="display:grid;grid-template-columns:1fr 372px;min-height:0;">
+    <div style="position:relative;overflow:hidden;background:var(--paper);">
+      <div style="position:absolute;left:16px;top:12px;z-index:3;display:flex;gap:16px;font-family:var(--mono);font-size:10px;letter-spacing:.06em;color:var(--ink-3);flex-wrap:wrap;">
+        <span><span style="display:inline-block;width:10px;height:10px;border:1px solid var(--rule-strong);vertical-align:-1px;margin-right:5px;background:var(--card);"></span>registered (has a goal on record)</span>
+        <span><span style="display:inline-block;width:10px;height:10px;border:1px dashed var(--ink-3);vertical-align:-1px;margin-right:5px;"></span>unregistered — invisible to delivery</span>
+        <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--decision);vertical-align:-1px;margin-right:5px;"></span>waiting on you</span>
+        <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--live);vertical-align:-1px;margin-right:5px;"></span>an agent is working here</span>
+      </div>
+      <div style="position:absolute;right:16px;top:12px;z-index:3;display:flex;gap:6px;">
+        <button onClick="{{ zoomIn }}" style="cursor:pointer;border:1px solid var(--rule-strong);background:var(--card);color:var(--ink-2);padding:4px 10px;font-family:var(--mono);font-size:11px;">+</button>
+        <button onClick="{{ zoomOut }}" style="cursor:pointer;border:1px solid var(--rule-strong);background:var(--card);color:var(--ink-2);padding:4px 10px;font-family:var(--mono);font-size:11px;">−</button>
+        <button onClick="{{ resetView }}" style="cursor:pointer;border:1px solid var(--rule-strong);background:var(--card);color:var(--ink-2);padding:4px 10px;font-family:var(--mono);font-size:11px;letter-spacing:.06em;">RESET</button>
+      </div>
+      <svg viewBox="{{ viewBox }}" onMouseDown="{{ dragStart }}" onMouseMove="{{ dragMove }}" onMouseUp="{{ dragEnd }}" onMouseLeave="{{ dragEnd }}" style="{{ svgSt }}">
+        <sc-for list="{{ clusters }}" as="k" hint-placeholder-count="9">
+          <g style="{{ k.gSt }}">
+            <path d="{{ k.edge }}" style="fill:none;stroke:var(--rule-strong);stroke-width:1;"></path>
+            <rect x="{{ k.x }}" y="{{ k.y }}" width="{{ k.w }}" height="{{ k.h }}" style="fill:none;stroke:var(--rule);stroke-width:1;"></rect>
+            <rect x="{{ k.x }}" y="{{ k.y }}" width="{{ k.w }}" height="3" style="{{ k.tabSt }}"></rect>
+            <text x="{{ k.lx }}" y="{{ k.ly }}" style="{{ k.labelSt }}">{{ k.label }}</text>
+            <text x="{{ k.rx }}" y="{{ k.ly }}" style="font-family:var(--mono);font-size:9px;fill:var(--ink-3);text-anchor:end;">{{ k.sub }}</text>
+          </g>
+        </sc-for>
+        <sc-for list="{{ nodes }}" as="n" hint-placeholder-count="20">
+          <g onClick="{{ n.pick }}" tabindex="0" role="button" aria-label="{{ n.aria }}" style="{{ n.gSt }}">
+            <rect x="{{ n.x }}" y="{{ n.y }}" width="186" height="40" style="{{ n.bgSt }}"></rect>
+            <rect x="{{ n.x }}" y="{{ n.y }}" width="3" height="40" style="{{ n.tabSt }}"></rect>
+            <text x="{{ n.tx }}" y="{{ n.ty }}" style="{{ n.nameSt }}">{{ n.name }}</text>
+            <text x="{{ n.tx }}" y="{{ n.sy }}" style="font-family:var(--mono);font-size:8.5px;fill:var(--ink-3);">{{ n.sub }}</text>
+            <sc-if value="{{ n.waiting }}" hint-placeholder-val="{{ false }}"><circle cx="{{ n.wx }}" cy="{{ n.wy }}" r="7" style="fill:var(--decision);"></circle><text x="{{ n.wx }}" y="{{ n.wty }}" style="font-family:var(--mono);font-size:8px;font-weight:700;fill:var(--card);text-anchor:middle;">{{ n.waitingN }}</text></sc-if>
+            <sc-if value="{{ n.agent }}" hint-placeholder-val="{{ false }}"><circle cx="{{ n.ax }}" cy="{{ n.ay }}" r="4.5" style="fill:var(--live);stroke:var(--paper);stroke-width:1.5;"></circle></sc-if>
+          </g>
+        </sc-for>
+        <g style="{{ apex.gSt }}">
+          <rect x="{{ apex.x }}" y="{{ apex.y }}" width="220" height="44" style="fill:var(--paper-2);stroke:var(--ink);stroke-width:2;"></rect>
+          <text x="{{ apex.tx }}" y="{{ apex.ty }}" style="font-family:var(--sans);font-weight:800;font-size:12px;fill:var(--ink);text-anchor:middle;letter-spacing:.04em;">L2 · OJFBOT VENTURE</text>
+          <text x="{{ apex.tx }}" y="{{ apex.sy }}" style="font-family:var(--mono);font-size:8.5px;fill:var(--ink-2);text-anchor:middle;">every registered goal answers to this one</text>
+        </g>
+      </svg>
+      <div style="position:absolute;left:16px;bottom:12px;z-index:3;font-family:var(--mono);font-size:10px;color:var(--ink-3);display:flex;gap:14px;flex-wrap:wrap;">
+        <span>{{ statLine }}</span>
+        <span style="color:var(--ev-asserted);">● CLUSTERS OF UNREGISTERED REPOS = JUDGMENT</span>
+        <span style="color:var(--ev-derived);">● WAITING / AGENT = DERIVED FROM .handoff + bead_events</span>
+      </div>
+    </div>
+
+    <aside style="border-left:1px solid var(--rule-strong);background:var(--paper-2);display:grid;grid-template-rows:minmax(60px,1fr) minmax(150px,42%);min-height:0;">
+      <div style="overflow-y:auto;padding:16px 18px;">
+        <div style="font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--ink-3);margin-bottom:10px;">{{ crumb }}</div>
+        <sc-if value="{{ nothing }}" hint-placeholder-val="{{ true }}">
+          <h2 style="margin:0 0 6px;font-size:17px;font-weight:800;">Pick anything on the map</h2>
+          <p style="margin:0 0 14px;font-size:13px;line-height:1.5;color:var(--ink-2);">Repos sit inside the cluster they serve. A red count means briefs are waiting on you; a green dot means an agent is working there right now. Dashed boxes have no goal on record — delivery can’t see them.</p>
+          <div style="font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--ink-3);margin:14px 0 6px;">WHAT NEEDS YOU, FLEET-WIDE</div>
+          <sc-for list="{{ hot }}" as="h" hint-placeholder-count="3">
+            <button onClick="{{ h.go }}" style="display:flex;width:100%;text-align:left;gap:10px;align-items:baseline;background:var(--card);border:1px solid var(--rule);border-left:3px solid var(--decision);padding:8px 10px;margin-bottom:6px;cursor:pointer;" style-hover="border-color:var(--ink);">
+              <span style="flex:1;display:flex;">{{ h.chip }}</span><span style="font-family:var(--mono);font-size:10px;color:var(--decision-ink);">oldest {{ h.oldest }}d</span>
+            </button>
+          </sc-for>
+          <div style="font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--ink-3);margin:14px 0 6px;">THE GAP</div>
+          <p style="margin:0;font-size:12.5px;line-height:1.5;color:var(--ink-2);"><b>{{ unregN }} of {{ repoN }}</b> repos have no goal on record. <button onClick="{{ showGap }}" style="background:none;border:none;padding:0;color:var(--ink);text-decoration:underline;cursor:pointer;font-size:12.5px;">Show them</button></p>
+        </sc-if>
+        <sc-if value="{{ hasSel }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;align-items:center;gap:8px;"><span style="{{ sel.hueSt }}"></span><h2 style="margin:0;font-size:18px;font-weight:800;flex:1;">{{ sel.name }}</h2><button onClick="{{ clearSel }}" style="cursor:pointer;border:1px solid var(--rule-strong);background:none;color:var(--ink-2);font-family:var(--mono);font-size:10px;padding:2px 8px;">ESC</button></div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-family:var(--mono);font-size:10px;color:var(--ink-2);letter-spacing:.05em;margin:6px 0 12px;">{{ sel.clusterChip }}<span>· {{ sel.phase }} · {{ sel.reg }}</span></div>
+          <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--ink-3);margin:10px 0 3px;">WHAT THIS IS <span style="{{ evAuthored }}">AUTHORED</span></div>
+          <p style="margin:0;font-size:13px;line-height:1.55;">{{ sel.role }}</p>
+          <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--ink-3);margin:12px 0 3px;">WHAT’S WAITING ON YOU <span style="{{ evDerived }}">DERIVED</span></div>
+          <sc-if value="{{ sel.noBriefs }}" hint-placeholder-val="{{ true }}"><p style="margin:0;font-size:12.5px;color:var(--ink-2);">Nothing here is waiting on a decision.</p></sc-if>
+          <sc-for list="{{ sel.briefs }}" as="b" hint-placeholder-count="2">
+            <div style="background:var(--card);border:1px solid var(--rule);border-left:3px solid var(--decision);padding:8px 10px;margin-bottom:6px;">
+              <div style="font-size:12.5px;font-weight:700;line-height:1.35;">{{ b.title }}</div>
+              <div style="display:flex;flex-wrap:wrap;gap:5px;align-items:center;font-family:var(--mono);font-size:9.5px;color:var(--ink-3);margin-top:4px;">{{ b.chip }}<span>· {{ b.age }} days without a reply · from</span>{{ b.actorChip }}</div>
+            </div>
+          </sc-for>
+          <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--ink-3);margin:12px 0 3px;">WHO’S WORKING HERE <span style="{{ evDerived }}">DERIVED</span></div>
+          <div style="display:flex;flex-wrap:wrap;gap:5px;font-size:12.5px;color:var(--ink-2);">{{ sel.agentChips }}</div>
+          <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--ink-3);margin:12px 0 3px;">HOW FAR IT’S COME <span style="{{ evDerived }}">DERIVED</span></div>
+          <p style="margin:0;font-size:12.5px;color:var(--ink-2);">{{ sel.slices }}</p>
+          <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--ink-3);margin:12px 0 3px;">WHY IT EXISTS</div>
+          <div style="display:flex;flex-wrap:wrap;gap:5px;align-items:center;font-family:var(--mono);font-size:11px;color:var(--ink-2);line-height:1.6;">{{ sel.ladderChips }}</div>
+          <details style="margin-top:12px;"><summary style="cursor:pointer;font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--ink-3);">WHERE THIS CAME FROM</summary><p style="margin:6px 0 0;font-family:var(--mono);font-size:10px;color:var(--ink-2);word-break:break-all;padding:6px 8px;background:var(--paper);border:1px solid var(--rule);">{{ sel.source }}</p></details>
+        </sc-if>
+      </div>
+      <div style="border-top:2px solid var(--rule-strong);display:flex;flex-direction:column;min-height:0;background:var(--paper-2);">
+        <div style="display:flex;align-items:center;gap:8px;padding:10px 18px 6px;"><span style="width:7px;height:7px;border-radius:50%;background:var(--live);"></span><span style="font-family:var(--mono);font-size:10px;letter-spacing:.12em;">ASK LEO</span><span style="margin-left:auto;font-family:var(--mono);font-size:9px;color:var(--ink-3);">{{ leoScope }}</span><span style="{{ evSim }}">SIMULATED</span></div>
+        <div style="flex:1;min-height:0;overflow-y:auto;padding:0 18px;font-size:12.5px;line-height:1.5;">
+          <sc-for list="{{ log }}" as="m" hint-placeholder-count="2"><div style="{{ m.st }}">{{ m.t }}</div></sc-for>
+        </div>
+        <div style="display:flex;gap:5px;padding:8px 18px 4px;flex-wrap:wrap;">
+          <sc-for list="{{ tokens }}" as="t" hint-placeholder-count="4"><button onClick="{{ t.go }}" title="{{ t.tip }}" style="{{ t.st }}">{{ t.t }}</button></sc-for>
+        </div>
+        <div style="display:flex;gap:6px;padding:4px 18px 12px;"><input value="{{ ask }}" onChange="{{ onAsk }}" onKeyDown="{{ onAskKey }}" placeholder="ask, or type a verb — Leo answers, the map moves" style="flex:1;background:var(--card);color:var(--ink);border:1px solid var(--rule-strong);padding:7px 9px;font-family:var(--mono);font-size:11px;"></input><button onClick="{{ send }}" style="cursor:pointer;border:1px solid var(--ink);background:var(--ink);color:var(--paper);font-family:var(--mono);font-size:11px;font-weight:700;padding:0 14px;">ASK</button></div>
+      </div>
+    </aside>
+  </div>
+  {{ refCard }}
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { data: null, q: '', sel: null, vb: null, drag: null, ask: '', log: [] };
+  componentDidMount() {
+    if (window.ckRefs) window.ckRefs.bind(this, React);
+    import('./data/snapshot.js').then((d) => { if (window.ckRefs) window.ckRefs.setData(d); this.setState({ data: d }); });
+    this._key = (e) => { if (e.key === 'Escape') this.setState({ sel: null }); };
+    window.addEventListener('keydown', this._key);
+  }
+  componentWillUnmount() { window.removeEventListener('keydown', this._key); }
+  layout(d) {
+    // 3 columns of cluster boxes; each box stacks its repos (186×40 + 8 gap). World ≈ 1400×H.
+    const cols = [[], [], []]; const byC = {};
+    d.CLUSTERS.forEach((c, i) => { byC[c.id] = { ...c, repos: d.REPOS.filter((r) => r.cluster === c.id) }; cols[i % 3].push(byC[c.id]); });
+    const colX = [60, 520, 980]; const ys = [120, 120, 120]; const boxes = [];
+    cols.forEach((col, ci) => col.forEach((k) => {
+      const rows = Math.ceil(k.repos.length / 2); const h = 34 + rows * 48 + 6; const w = 406;
+      k.x = colX[ci]; k.y = ys[ci]; k.w = w; k.h = h; ys[ci] += h + 36;
+      k.repos.forEach((r, i) => { r._x = k.x + 10 + (i % 2) * 196; r._y = k.y + 30 + Math.floor(i / 2) * 48; });
+      boxes.push(k);
+    }));
+    return { boxes, height: Math.max(...ys) + 20 };
+  }
+  match(r, q) {
+    if (!q) return true; q = q.toLowerCase();
+    if (q === 'unregistered' || q === 'gaps') return !r.registered;
+    if (q === 'waiting') return r._waiting > 0;
+    if (q === 'live') return r.liveness === 'live';
+    return r.name.toLowerCase().includes(q) || r.cluster.includes(q) || r.role.toLowerCase().includes(q);
+  }
+  say(role, t) { this.setState((s) => ({ log: [...s.log, { role, t }] })); }
+  run(text) {
+    const d = this.state.data; if (!d) return;
+    const [verb, ...rest] = text.trim().split(/\s+/); const arg = rest.join(' ');
+    this.say('u', text);
+    if (verb === '/open') { const r = d.REPOS.find((x) => x.name.toLowerCase() === arg.toLowerCase()); if (r) { this.setState({ sel: r.name }); this.say('a', `Opened ${r.name}. Selection follows on every surface (ADR-0012).`); } else this.say('a', `No repo called “${arg}” in the fleet.`); }
+    else if (verb === '/gap') { this.setState({ q: 'unregistered' }); const n = d.REPOS.filter((r) => !r.registered).length; this.say('a', `${n} repos have no northstar on record. Dimmed everything else — they’re invisible to delivery until registered (TD-007).`); }
+    else if (verb === '/waiting') { this.setState({ q: 'waiting' }); this.say('a', `Showing only repos with briefs waiting on you.`); }
+    else if (verb === '/explain') { const r = d.REPOS.find((x) => x.name.toLowerCase() === (arg || this.state.sel || '').toLowerCase()); this.say('a', r ? `${r.name}: ${r.role}. ${r.registered ? 'Registered — it ladders to l2-ojfbot.' : 'Unregistered — its cluster is a judgment call, not registry fact.'} [authored prose + registry; no model call]` : 'Pick or name a repo to explain.'); }
+    else if (verb === '/draft-handoff') { this.say('a', 'Starting the gated brief flow — nothing is written until you approve (ADR-0005). In this prototype that path is simulated.'); }
+    else { const sel = this.state.sel; this.say('a', sel ? `[simulated reply] About ${sel}: I’d read its waiting briefs first — the oldest has had no reply the longest. Want me to /open it in the Briefing?` : '[simulated reply] Ask about a repo, or try /waiting to see what needs you.'); }
+    this.setState({ ask: '' });
+  }
+  renderVals() {
+    const d = this.state.data; const mono = 'font-family:var(--mono);';
+    const pill = (c) => `font-size:8px;letter-spacing:.08em;padding:0 4px;border:1px solid ${c};color:${c};margin-left:6px;vertical-align:1px;${mono}`;
+    const evAuthored = pill('var(--ev-asserted)'), evDerived = pill('var(--ev-derived)'), evSim = `font-size:8px;letter-spacing:.08em;padding:0 4px;border:1px solid var(--ev-simulated);color:var(--ev-simulated);${mono}`;
+    const CK = window.ckRefs; if (CK && d) CK.setData(d); const chip = (k, id, o) => (CK && d ? CK.chip(k, id, o) : null);
+    const base = { refCard: CK ? CK.card() : null, q: this.state.q, onQ: (e) => this.setState({ q: e.target.value }), ask: this.state.ask, onAsk: (e) => this.setState({ ask: e.target.value }), onAskKey: (e) => { if (e.key === 'Enter' && this.state.ask.trim()) this.run(this.state.ask); }, send: () => this.state.ask.trim() && this.run(this.state.ask), evAuthored, evDerived, evSim, clearSel: () => this.setState({ sel: null }), showGap: () => this.setState({ q: 'unregistered' }) };
+    if (!d) return { ...base, clusters: [], nodes: [], chips: [], hot: [], log: [], tokens: [], apex: {}, sel: {}, nothing: true, hasSel: false, viewBox: '0 0 1400 900', svgSt: 'display:block;width:100%;height:100%;' };
+    d.REPOS.forEach((r) => { r._waiting = d.BRIEFS.filter((b) => b.repo === r.name && b.open && !b.decidedInFlight).length; r._oldest = Math.max(0, ...d.BRIEFS.filter((b) => b.repo === r.name && b.open && !b.decidedInFlight).map((b) => b.staleDays)); r._agents = d.AGENTS.filter((a) => a.repo === r.name && a.state === 'live'); });
+    const { boxes, height } = this.layout(d);
+    const vb = this.state.vb || [0, 0, 1460, Math.max(900, height)];
+    const q = this.state.q; const anyQ = !!q;
+    const hue = (id) => (d.CLUSTERS.find((c) => c.id === id) || {}).hue || 'var(--ink-3)';
+    const apexX = 620, apexY = 36;
+    const clusters = boxes.map((k) => {
+      const anyMatch = !anyQ || k.repos.some((r) => this.match(r, q));
+      const cx = k.x + k.w / 2; const cy = k.y;
+      return { ...k, gSt: `opacity:${anyMatch ? 1 : .15};transition:opacity 240ms;`, edge: `M${cx},${cy} C${cx},${cy - 60} ${apexX + 110},${apexY + 120} ${apexX + 110},${apexY + 44}`, tabSt: `fill:${k.hue};`, lx: k.x + 10, ly: k.y + 19, rx: k.x + k.w - 10, labelSt: `${mono}font-size:10px;font-weight:700;letter-spacing:.08em;fill:${k.hue};`, label: k.label.toUpperCase(), sub: `${k.repos.filter((r) => r.registered).length}/${k.repos.length} registered · ${k.repos.reduce((n, r) => n + r._waiting, 0)} waiting` };
+    });
+    const nodes = d.REPOS.map((r) => {
+      const m = this.match(r, q); const isSel = this.state.sel === r.name;
+      return { name: r.name, x: r._x, y: r._y, tx: r._x + 11, ty: r._y + 17, sy: r._y + 31, wx: r._x + 178, wy: r._y + 8, wty: r._y + 11, ax: r._x + 178, ay: r._y + 32,
+        waiting: r._waiting > 0, waitingN: r._waiting, agent: r._agents.length > 0,
+        sub: r.slices ? `${r.slices.ready} ready · ${r.slices.queued} queued · ${r.slices.merged} merged` : r.registered ? 'registered · no roadmap yet' : 'no goal on record',
+        aria: `${r.name}, ${r.registered ? 'registered' : 'unregistered'}, ${r._waiting} briefs waiting`,
+        gSt: `cursor:pointer;opacity:${!anyQ || m ? 1 : .14};transition:opacity 240ms;`,
+        bgSt: `fill:var(--card);stroke:${isSel ? 'var(--selection)' : anyQ && m ? 'var(--ink-2)' : r.registered ? 'var(--rule-strong)' : 'var(--ink-3)'};stroke-width:${isSel ? 2 : 1};${r.registered ? '' : 'stroke-dasharray:4 3;'}`,
+        tabSt: `fill:${hue(r.cluster)};`, nameSt: `font-family:var(--sans);font-weight:700;font-size:12px;fill:${r.registered ? 'var(--ink)' : 'var(--ink-2)'};`,
+        pick: () => this.setState({ sel: r.name }) };
+    });
+    const apex = { x: apexX, y: apexY, tx: apexX + 110, ty: apexY + 19, sy: apexY + 33, gSt: '' };
+    const chips = [['waiting on you', 'waiting'], ['agents working', 'live'], ['the gap', 'unregistered'], ['F1', 'f1'], ['play-well', 'play-well'], ['clear', '']].map(([t, v]) => ({ t: t.toUpperCase(), go: () => this.setState({ q: v }), st: `cursor:pointer;border:1px solid ${q === v && v ? 'var(--ink)' : 'var(--rule-strong)'};background:${q === v && v ? 'var(--ink)' : 'var(--card)'};color:${q === v && v ? 'var(--paper)' : 'var(--ink-2)'};padding:5px 10px;${mono}font-size:10px;letter-spacing:.05em;` }));
+    const matches = anyQ ? d.REPOS.filter((r) => this.match(r, q)).length : d.REPOS.length;
+    const selR = d.REPOS.find((r) => r.name === this.state.sel);
+    const sel = selR ? { name: selR.name, role: selR.role, phase: selR.phase, cluster: (d.CLUSTERS.find((c) => c.id === selR.cluster) || {}).label, reg: selR.registered ? 'goal on record' : 'NO GOAL ON RECORD', hueSt: `width:10px;height:10px;background:${hue(selR.cluster)};flex:none;`,
+      briefs: d.BRIEFS.filter((b) => b.repo === selR.name && b.open && !b.decidedInFlight).map((b) => ({ title: b.title, age: b.staleDays, actor: b.actor, chip: chip('brief', b.id, { label: 'open' }), actorChip: chip('who', b.actor) })), clusterChip: chip('cluster', selR.cluster), noBriefs: selR._waiting === 0,
+      agentChips: selR._agents.length ? selR._agents.map((a) => chip('who', a.id)) : ['No agent has touched this repo recently.'],
+      slices: selR.slices ? `${selR.slices.merged} slices merged, ${selR.slices.ready} ready to pick up, ${selR.slices.queued} queued.` : selR.registered ? 'Registered, but no roadmap yet — nothing to count.' : 'Not registered — nothing in the delivery system measures this repo.',
+      ladderChips: selR.registered ? [chip('repo', selR.name, { phase: false }), '→ l1-' + selR.name + ' →', chip('ref', 'ns:l2-ojfbot'), '→ l3-shared'] : [chip('repo', selR.name, { phase: false }), '→ no northstar ·', chip('cluster', selR.cluster), 'is a judgment call'],
+      source: `fleet-config.ts REPO_META · registry read 2026-08-08 · ${selR.name}/.handoff/ · bead_events (agent-*)` } : {};
+    const hot = d.REPOS.filter((r) => r._waiting > 0).sort((a, b) => b._oldest - a._oldest).map((r) => ({ repo: r.name, n: r._waiting, oldest: r._oldest, chip: chip('repo', r.name), go: () => this.setState({ sel: r.name }) }));
+    const tokens = [['/waiting', 'var(--decision-ink)', 'Filter the map to repos with briefs waiting on you'], ['/gap', 'var(--ev-asserted)', 'Show unregistered repos'], ['/explain', 'var(--ink-2)', 'Plain-words explainer for the selected repo (authored prose, no model)'], ['/open core', 'var(--live)', 'Select a repo — drives fleet selection'], ['/draft-handoff', 'var(--decision-ink)', 'Start the gated brief flow']].map(([t, c, tip]) => ({ t, tip, go: () => this.run(t), st: `cursor:pointer;border:1px solid ${c};background:transparent;color:${c};padding:2px 7px;${mono}font-size:9.5px;` }));
+    const log = (this.state.log.length ? this.state.log : [{ role: 'a', t: selR ? `Looking at ${selR.name}. Ask me anything about it, or use a verb below — verbs move the map, they don’t go to the model.` : 'Ask what needs you today, or pick a repo. I answer in words; the verbs below move the map.' }]).map((m) => ({ t: m.t, st: m.role === 'u' ? `${mono}font-size:11px;color:var(--ink-2);margin:8px 0 2px;` : `padding:6px 10px;background:var(--card);border-left:2px solid ${m.t.startsWith('[simulated') ? 'var(--ev-simulated)' : 'var(--live)'};margin-bottom:4px;` }));
+    const z = (f) => this.setState({ vb: [vb[0] + vb[2] * (1 - f) / 2, vb[1] + vb[3] * (1 - f) / 2, vb[2] * f, vb[3] * f] });
+    return { ...base, clusters, nodes, apex, chips, hot, tokens, log, sel, hasSel: !!selR, nothing: !selR,
+      matchLine: anyQ ? `${matches} of ${d.REPOS.length} match` : '', statLine: `${d.REPOS.length} REPOS · ${d.REPOS.filter((r) => r.registered).length} REGISTERED · ${d.BRIEFS.filter((b) => b.open && !b.decidedInFlight).length} BRIEFS WAITING · ${d.AGENTS.filter((a) => a.state === 'live').length} AGENTS LIVE`,
+      unregN: d.REPOS.filter((r) => !r.registered).length, repoN: d.REPOS.length, crumb: selR ? `INSPECTOR · ${selR.cluster.toUpperCase()} › ${selR.name.toUpperCase()}` : 'INSPECTOR · FLEET', leoScope: selR ? `thread: ${selR.name}` : 'thread: global',
+      viewBox: vb.join(' '), svgSt: `display:block;width:100%;height:100%;cursor:${this.state.drag ? 'grabbing' : 'grab'};user-select:none;`,
+      zoomIn: () => z(0.8), zoomOut: () => z(1.25), resetView: () => this.setState({ vb: null }),
+      dragStart: (e) => this.setState({ drag: { x: e.clientX, y: e.clientY, vb } }),
+      dragMove: (e) => { const g = this.state.drag; if (!g) return; const svg = e.currentTarget; const k = g.vb[2] / svg.clientWidth; this.setState({ vb: [g.vb[0] - (e.clientX - g.x) * k, g.vb[1] - (e.clientY - g.y) * k, g.vb[2], g.vb[3]] }); },
+      dragEnd: () => this.state.drag && this.setState({ drag: null }) };
+  }
+}
+</script>
+</body>
+</html>

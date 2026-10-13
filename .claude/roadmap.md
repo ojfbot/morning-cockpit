@@ -335,3 +335,22 @@ behaviour are **open decisions**, charted as tickets in
 `core/decisions/wayfinder/cockpit-northstar-conversation.md`. Their slices get appended here when
 that map's frontier empties — a slice whose `moves_to` isn't yet decidable is a question, not a
 delivery, and the two ledgers never merge.
+
+## PH5 — Cockpit v2 instrument shell and fleet structure
+
+### MC-UX-01 blocked planning tasks
+
+T1–T7 are planning tasks, not registered slices. The roadmap schema has no `blocked` slice
+status, so this table records their owners and entrances in prose. No task below is ready or
+dispatchable. The source of record for each entrance is the
+[reconciled T1–T7 table](../planning/mc-ux-01/fleet-integration.md#t1t7-ownership-and-entrances-reconciled-2026-10-10).
+
+| Task | Owner and existing home | Status | Entrance or separate gate |
+| --- | --- | --- | --- |
+| T2 evidence projection | Cockpit, existing S11 | Blocked | Implementation authorization; retain ambiguous and degraded evidence; owner review for public read-contract changes. Q4/Q12/Q15 remain unknown. |
+| T1 E/D comparison | Cockpit, opt-in comparison using T2 | Blocked | T2 fixtures and implementation authorization. Q2 stays open; exclude inherited write controls. |
+| T3 decision-item legibility | Cockpit, S11/S18 | Blocked | T2 evidence; process peek needs qualified identity; reused action controls need truthful claim and emission states. |
+| T4 shell adoption | Cockpit, S14; operator decides Q2 | Blocked | Operator Q2 ruling and observation record before default replacement or S14 supersession. |
+| T5 fleet/scoped navigation | Cockpit, S12 then S13/S15 | Blocked | Reconcile S10 status and S19 absence. Process details need Q15; `/draft-handoff` retains ADR-0005 approval and core claims retain ADR-0010. |
+| T6 reading sitting | Cockpit, existing News/Papers | Blocked | Q19 Community access, Q20 registry writes, Q6 intake-as-work and new producer/storage choices require separate decisions. |
+| T7 preparation/routing/delivery | Cockpit advisory preparation; core contract owners | Blocked | Q3/Q13/Q14/Q15; core #311/#313/#316/#318 and correspondence venue; host #309 before receipt probe #310 where needed. |
