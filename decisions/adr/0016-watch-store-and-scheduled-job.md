@@ -84,3 +84,22 @@ job worth watching.
 
 **Watch for.** If a second package wants a store, do not let `.data/` become an ad-hoc database
 directory — that is the point to design a real one.
+
+## Supplemental research input registered 2026-10-11
+
+The [NanoClaw research registry, core #528](https://github.com/ojfbot/core/issues/528)
+links this local watch ledger to
+[SQLite/Dolt transaction ownership and durable projections, core #529](https://github.com/ojfbot/core/issues/529).
+The accepted scope above governs the watch package. A result about a fleet work queue
+does not make `watch.sqlite` an execution or approval record.
+
+The bounded research questions are which processes open the watch database, which
+SQLite library each process loads, and how overlapping scheduled runs, crashes, and
+backups preserve `seen_items`, `scores`, and `runs`. Qualification must distinguish
+lock contention, structural corruption, lost acknowledgements, and a successful run
+that fetched no sources. Pin the journal mode and storage path in the evidence.
+
+This ADR describes a package-local ledger. NanoClaw's host/container mailbox findings
+apply only if the watch deployment introduces that shared-file topology. Research may
+inform a later store decision, including the open question in
+[proposed ADR-0014](0014-persistent-precomputed-read-model.md#supplemental-research-input-registered-2026-10-11).

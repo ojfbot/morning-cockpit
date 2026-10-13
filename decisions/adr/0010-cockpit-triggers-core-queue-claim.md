@@ -41,3 +41,25 @@ make the cockpit a Dolt mutator, or keep the write in core.
   operational RIDM gate. S4 is human claim only.
 - A claim depends on `~/ojfbot/core/scripts/hooks/bead-emit.mjs` being present and the Dolt server
   reachable; failures surface as a claim error on the card, never a crash.
+
+## Supplemental research input registered 2026-10-11
+
+The [NanoClaw research registry, core #528](https://github.com/ojfbot/core/issues/528)
+records follow-up questions for this delegated claim boundary. This ADR's accepted
+decision remains the governing record. Research findings require a separate decision
+before they change the claim contract.
+
+- [Lease fencing and publication reconciliation, core #530](https://github.com/ojfbot/core/issues/530)
+  asks how an expired claim prevents a still-running worker from publishing or settling
+  the work. It distinguishes a displayed lease from authority checked when an effect occurs.
+- [Routing tags and queue state, core #531](https://github.com/ojfbot/core/issues/531)
+  asks which queue transitions core validates and how rejected claims and corrections
+  appear in the cockpit without treating labels as approval.
+- [The multi-account identity question, cockpit #57](https://github.com/ojfbot/morning-cockpit/issues/57)
+  separates resource identity, access principal, authored actor, and execution host.
+  The `human:cockpit` default above is the existing local convention, not evidence
+  resolving that question.
+
+The related roadmap work is `rm:rm-l1-morning-cockpit#S3`, `#S4`, and `#S18`.
+The [roadmap's supplemental research mapping](../../.claude/roadmap.md#supplemental-research-input-registered-2026-10-11)
+records each question without changing slice readiness or execution authority.

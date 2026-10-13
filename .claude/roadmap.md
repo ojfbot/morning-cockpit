@@ -354,3 +354,24 @@ dispatchable. The source of record for each entrance is the
 | T5 fleet/scoped navigation | Cockpit, S12 then S13/S15 | Blocked | Reconcile S10 status and S19 absence. Process details need Q15; `/draft-handoff` retains ADR-0005 approval and core claims retain ADR-0010. |
 | T6 reading sitting | Cockpit, existing News/Papers | Blocked | Q19 Community access, Q20 registry writes, Q6 intake-as-work and new producer/storage choices require separate decisions. |
 | T7 preparation/routing/delivery | Cockpit advisory preparation; core contract owners | Blocked | Q3/Q13/Q14/Q15; core #311/#313/#316/#318 and correspondence venue; host #309 before receipt probe #310 where needed. |
+
+## Supplemental research input registered 2026-10-11
+
+[Core #528](https://github.com/ojfbot/core/issues/528) registers the NanoClaw,
+SQLite/Dolt, and queue research. The table below connects that research to existing
+slice identities. It leaves the frontmatter's statuses, dependencies, acceptance
+criteria, and authority as recorded. Research completion is evidence for a later
+decision, not a slice readiness transition.
+
+| Existing slice | Research input | Question for the existing work |
+|---|---|---|
+| `rm:rm-l1-morning-cockpit#S1` | [Cockpit #57](https://github.com/ojfbot/morning-cockpit/issues/57), [core #529](https://github.com/ojfbot/core/issues/529) | How do canonical source coordinates distinguish the GitHub resource from its access principal, and remain stable in persisted derived views? |
+| `rm:rm-l1-morning-cockpit#S3` | [Core #530](https://github.com/ojfbot/core/issues/530), [core #531](https://github.com/ojfbot/core/issues/531) | How does repeated compilation preserve one logical work item, and which validated queue state and lease facts does Available render? |
+| `rm:rm-l1-morning-cockpit#S4` | [Core #530](https://github.com/ojfbot/core/issues/530), [core #532](https://github.com/ojfbot/core/issues/532) | Which authority check rejects a stale attempt at publication, and which independent receipt supports delivery while publication is uncertain? |
+| `rm:rm-l1-morning-cockpit#S18` | [Core #531](https://github.com/ojfbot/core/issues/531), [cockpit #57](https://github.com/ojfbot/morning-cockpit/issues/57) | How do source namespaces and claim outcomes stay distinct from routing tags, queue state, and author identity on the Pickup card? |
+
+The existing decisions bound the research: [ADR-0010](../decisions/adr/0010-cockpit-triggers-core-queue-claim.md#supplemental-research-input-registered-2026-10-11)
+owns delegated claims, [ADR-0016](../decisions/adr/0016-watch-store-and-scheduled-job.md#supplemental-research-input-registered-2026-10-11)
+owns the local watch ledger, and [proposed ADR-0014](../decisions/adr/0014-persistent-precomputed-read-model.md#supplemental-research-input-registered-2026-10-11)
+holds the open persisted-view questions. Register later findings through these records
+and the linked issues before proposing contract or roadmap changes.
