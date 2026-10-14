@@ -15,19 +15,47 @@ function fakeSnapshot(): CockpitSnapshot {
     lanes: { overnight: [], pickup: [], available: [] },
     health: [],
     summaries: {
-      overnight: { ...empty, source: 'deterministic', lane: 'overnight', action: '' },
+      overnight: {
+        ...empty,
+        source: 'deterministic',
+        lane: 'overnight',
+        action: '',
+      },
       pickup: { ...empty, source: 'deterministic', lane: 'pickup', action: '' },
-      available: { ...empty, source: 'deterministic', lane: 'available', action: '' },
+      available: {
+        ...empty,
+        source: 'deterministic',
+        lane: 'available',
+        action: '',
+      },
     },
     meta: { totalItems: 0, skipped: 0 },
   };
 }
 
 const fixtureStore = new EvidenceStore();
-const fixtureSummary = fixtureStore.capture(emptyCockpitEvidence({ status: 'complete', repositoriesObserved: 0, skippedRecords: 0, unreadableRepositories: 0 }), '2026-10-13T00:00:00Z');
+const fixtureSummary = fixtureStore.capture(
+  {
+    dolt: {
+      status: 'unavailable',
+      source: 'dolt-bead',
+      scope: 'Fixture Dolt',
+      reason: 'Fixture absent',
+    },
+    handoffCollectedAt: '2026-10-13T00:00:00Z',
+    handoff: emptyCockpitEvidence({
+      status: 'complete',
+      repositoriesObserved: 0,
+      skippedRecords: 0,
+      unreadableRepositories: 0,
+      reason: null,
+    }),
+  },
+  '2026-10-13T00:00:00Z',
+);
 const fakeSource: ReadModelSource = {
   evidenceSummary: async () => fixtureSummary,
-  evidenceIndex: id => fixtureStore.index(id),
+  evidenceIndex: (id) => fixtureStore.index(id),
   evidenceRecord: (id, key) => fixtureStore.record(id, key),
   snapshot: async () => fakeSnapshot(),
   briefing: async () => ({
@@ -55,7 +83,11 @@ describe('read-model GraphQL facade — fleet resolver', () => {
     const { data, errors } = await run('{ fleet { name liveness here } }');
 
     expect(errors).toBeUndefined();
-    const fleet = data?.fleet as Array<{ name: string; liveness: string; here: boolean | null }>;
+    const fleet = data?.fleet as Array<{
+      name: string;
+      liveness: string;
+      here: boolean | null;
+    }>;
     expect(fleet.length).toBeGreaterThan(0);
     const home = fleet.find((r) => r.name === 'morning-cockpit');
     expect(home?.here).toBe(true);

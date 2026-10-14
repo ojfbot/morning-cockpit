@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CockpitSnapshot } from '@cockpit/shared';
 import { fetchCockpit } from './api.js';
 import { Lane } from './components/Lane.js';
@@ -12,13 +12,22 @@ import { FleetSection } from './components/FleetSection.js';
 import { CriticalPathSection } from './components/CriticalPathSection.js';
 import { DeliverySection } from './components/DeliverySection.js';
 import { LoopSection } from './components/LoopSection.js';
-import { EvidenceView } from './components/EvidenceView.js';
+import {
+  EvidenceView,
+  type EvidenceViewHandle,
+} from './components/EvidenceView.js';
 import { ChatSidebar } from './components/chat/ChatSidebar.js';
-import { applyRootAttributes, loadState, saveState, type CockpitUiState } from './cockpitState.js';
+import {
+  applyRootAttributes,
+  loadState,
+  saveState,
+  type CockpitUiState,
+} from './cockpitState.js';
 
 const POLL_MS = 60_000;
 
 export function App() {
+  const evidenceRef = useRef<EvidenceViewHandle>(null);
   const [snapshot, setSnapshot] = useState<CockpitSnapshot | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [ui, setUi] = useState<CockpitUiState>(loadState);
@@ -30,11 +39,16 @@ export function App() {
   }, [ui]);
 
   const toggleTheme = useCallback(
-    () => setUi((s) => ({ ...s, theme: s.theme === 'dark' ? 'light' : 'dark' })),
+    () =>
+      setUi((s) => ({ ...s, theme: s.theme === 'dark' ? 'light' : 'dark' })),
     [],
   );
   const toggleDensity = useCallback(
-    () => setUi((s) => ({ ...s, density: s.density === 'compact' ? 'comfortable' : 'compact' })),
+    () =>
+      setUi((s) => ({
+        ...s,
+        density: s.density === 'compact' ? 'comfortable' : 'compact',
+      })),
     [],
   );
 
@@ -72,7 +86,9 @@ export function App() {
           <Briefing ui={ui} setUi={setUi} />
           <FleetSection
             selectedRepo={ui.selectedRepo}
-            onSelectRepo={(name) => setUi((s) => ({ ...s, selectedRepo: name }))}
+            onSelectRepo={(name) =>
+              setUi((s) => ({ ...s, selectedRepo: name }))
+            }
           />
           <CriticalPathSection setUi={setUi} />
           <DeliverySection />
@@ -89,13 +105,38 @@ export function App() {
             }
           >
             <EvidenceView
+              ref={evidenceRef}
               summary={snapshot?.evidenceSummary}
-              onFocusRepository={(selectedRepo) => setUi((state) => ({ ...state, selectedRepo }))}
+              onFocusRepository={(selectedRepo) =>
+                setUi((state) => ({ ...state, selectedRepo }))
+              }
             />
             <div className="lanes">
-              <Lane lane="overnight" items={snapshot?.lanes.overnight ?? []} summary={snapshot?.summaries.overnight} />
-              <Lane lane="pickup" items={snapshot?.lanes.pickup ?? []} summary={snapshot?.summaries.pickup} />
-              <Lane lane="available" items={snapshot?.lanes.available ?? []} summary={snapshot?.summaries.available} onClaimed={reload} />
+              <Lane
+                onInspect={(target, opener) =>
+                  evidenceRef.current?.inspect(target, opener)
+                }
+                lane="overnight"
+                items={snapshot?.lanes.overnight ?? []}
+                summary={snapshot?.summaries.overnight}
+              />
+              <Lane
+                onInspect={(target, opener) =>
+                  evidenceRef.current?.inspect(target, opener)
+                }
+                lane="pickup"
+                items={snapshot?.lanes.pickup ?? []}
+                summary={snapshot?.summaries.pickup}
+              />
+              <Lane
+                onInspect={(target, opener) =>
+                  evidenceRef.current?.inspect(target, opener)
+                }
+                lane="available"
+                items={snapshot?.lanes.available ?? []}
+                summary={snapshot?.summaries.available}
+                onClaimed={reload}
+              />
             </div>
           </Section>
           <ReadingSection />
@@ -107,7 +148,9 @@ export function App() {
           open={ui.chatOpen}
           onOpenChange={(open) => setUi((s) => ({ ...s, chatOpen: open }))}
           tab={ui.activeChatTab}
-          onTabChange={(activeChatTab) => setUi((s) => ({ ...s, activeChatTab }))}
+          onTabChange={(activeChatTab) =>
+            setUi((s) => ({ ...s, activeChatTab }))
+          }
           selectedRepo={ui.selectedRepo}
         />
       </div>

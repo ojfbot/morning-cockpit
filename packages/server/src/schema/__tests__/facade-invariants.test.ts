@@ -17,22 +17,54 @@ function fakeSnapshot(): CockpitSnapshot {
     lanes: { overnight: [], pickup: [], available: [] },
     health: [],
     summaries: {
-      overnight: { ...empty, source: 'deterministic', lane: 'overnight', action: '' },
+      overnight: {
+        ...empty,
+        source: 'deterministic',
+        lane: 'overnight',
+        action: '',
+      },
       pickup: { ...empty, source: 'deterministic', lane: 'pickup', action: '' },
-      available: { ...empty, source: 'deterministic', lane: 'available', action: '' },
+      available: {
+        ...empty,
+        source: 'deterministic',
+        lane: 'available',
+        action: '',
+      },
     },
     meta: { totalItems: 0, skipped: 0 },
   };
 }
 
 const fixtureStore = new EvidenceStore();
-const fixtureSummary = fixtureStore.capture(emptyCockpitEvidence({ status: 'complete', repositoriesObserved: 0, skippedRecords: 0, unreadableRepositories: 0 }), '2026-10-13T00:00:00Z');
+const fixtureSummary = fixtureStore.capture(
+  {
+    dolt: {
+      status: 'unavailable',
+      source: 'dolt-bead',
+      scope: 'Fixture Dolt',
+      reason: 'Fixture absent',
+    },
+    handoffCollectedAt: '2026-10-13T00:00:00Z',
+    handoff: emptyCockpitEvidence({
+      status: 'complete',
+      repositoriesObserved: 0,
+      skippedRecords: 0,
+      unreadableRepositories: 0,
+      reason: null,
+    }),
+  },
+  '2026-10-13T00:00:00Z',
+);
 const source: ReadModelSource = {
   evidenceSummary: async () => fixtureSummary,
-  evidenceIndex: id => fixtureStore.index(id),
+  evidenceIndex: (id) => fixtureStore.index(id),
   evidenceRecord: (id, key) => fixtureStore.record(id, key),
   snapshot: async () => fakeSnapshot(),
-  briefing: async () => ({ generatedAt: 'x', threads: [], source: 'deterministic' }),
+  briefing: async () => ({
+    generatedAt: 'x',
+    threads: [],
+    source: 'deterministic',
+  }),
   agentLiveness: async () => [],
   agentEvents: async () => [],
 };
@@ -77,9 +109,20 @@ describe('facade C2 — read-only proof', () => {
 
   it('the resolver + source modules import no write path', () => {
     const dir = fileURLToPath(new URL('../', import.meta.url));
-    const src = readFileSync(`${dir}resolvers.ts`, 'utf8') + readFileSync(`${dir}source.ts`, 'utf8');
-    for (const forbidden of ['handoff-emit', 'queue-claim', 'queue-post', 'DOLT_COMMIT', 'child_process', "from 'gh'"]) {
-      expect(src, `read-only: must not reference ${forbidden}`).not.toContain(forbidden);
+    const src =
+      readFileSync(`${dir}resolvers.ts`, 'utf8') +
+      readFileSync(`${dir}source.ts`, 'utf8');
+    for (const forbidden of [
+      'handoff-emit',
+      'queue-claim',
+      'queue-post',
+      'DOLT_COMMIT',
+      'child_process',
+      "from 'gh'",
+    ]) {
+      expect(src, `read-only: must not reference ${forbidden}`).not.toContain(
+        forbidden,
+      );
     }
   });
 });

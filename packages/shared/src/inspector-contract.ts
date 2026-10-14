@@ -1,0 +1,21 @@
+// Neutral generated consumer models. No operation or framework wrappers are public.
+export type {
+  DoltRecordSummary,
+  HandoffRecordSummary,
+  EvidenceCoverage,
+  RepositoryEvidenceCount,
+  EvidenceSourceSummary,
+  UnresolvedRelationDiagnostic,
+  DoltEvidenceIndex,
+  HandoffEvidenceIndex,
+  TaskDocumentTarget,
+  ObservedEvidenceRecord,
+  SourceRecord,
+  EvidenceSummary,
+  EvidenceIndexResult,
+  EvidenceRecordResult,
+  InspectionTarget,
+  DocumentProduction,
+  ProductionInteraction,
+  TaskDocumentResolution,
+} from './internal/inspector-model.js';

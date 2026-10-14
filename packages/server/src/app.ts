@@ -4,7 +4,10 @@ import { createYoga } from 'graphql-yoga';
 import type { CockpitSnapshot } from '@cockpit/shared';
 import { buildSnapshot } from './aggregate.js';
 import { buildReadModelGraphSchema } from './schema/graph.js';
-import { cockpitReadModelSource, type ReadModelSource } from './schema/source.js';
+import {
+  cockpitReadModelSource,
+  type ReadModelSource,
+} from './schema/source.js';
 import { summaryRouter } from './routes/summary.js';
 import { readingRouter } from './routes/reading.js';
 import { papersRouter } from './routes/papers.js';
@@ -19,8 +22,12 @@ import { claimRouter } from './routes/claim.js';
 export type SnapshotBuilder = () => Promise<CockpitSnapshot>;
 
 /** Construct the HTTP app without listening; the optional seam is test-only and adds no route. */
-export function createApp(snapshot: SnapshotBuilder = buildSnapshot, readModel: ReadModelSource = cockpitReadModelSource): Express {
+export function createApp(
+  snapshot: SnapshotBuilder = buildSnapshot,
+  readModel: ReadModelSource = cockpitReadModelSource,
+): Express {
   const yoga = createYoga({
+    context: () => ({}),
     schema: buildReadModelGraphSchema(readModel),
     graphqlEndpoint: '/graphql',
     graphiql: process.env.NODE_ENV !== 'production',
@@ -44,7 +51,11 @@ export function createApp(snapshot: SnapshotBuilder = buildSnapshot, readModel: 
     try {
       res.json(await snapshot());
     } catch (error) {
-      res.status(500).json({ error: error instanceof Error ? error.message : String(error) });
+      res
+        .status(500)
+        .json({
+          error: error instanceof Error ? error.message : String(error),
+        });
     }
   });
   app.get('/api/health', async (_req, res) => {
@@ -52,7 +63,11 @@ export function createApp(snapshot: SnapshotBuilder = buildSnapshot, readModel: 
       const result = await snapshot();
       res.json({ generatedAt: result.generatedAt, health: result.health });
     } catch (error) {
-      res.status(500).json({ error: error instanceof Error ? error.message : String(error) });
+      res
+        .status(500)
+        .json({
+          error: error instanceof Error ? error.message : String(error),
+        });
     }
   });
   return app;

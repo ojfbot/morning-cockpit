@@ -1,4 +1,9 @@
-import type { LaneSummary, WorkItem, WorkItemLane } from '@cockpit/shared';
+import type {
+  LaneSummary,
+  InspectionTarget,
+  WorkItem,
+  WorkItemLane,
+} from '@cockpit/shared';
 import { WorkItemCard } from './WorkItemCard.js';
 import { LaneSummaryPanel } from './LaneSummaryPanel.js';
 
@@ -11,7 +16,8 @@ const SUBTITLE: Record<WorkItemLane, string> = {
 const EMPTY: Record<WorkItemLane, string> = {
   overnight: 'No fresh overnight activity.',
   pickup: 'Nothing flagged for pickup.',
-  available: 'Queue is empty (no real unassigned pool exists yet — see ADR-0002).',
+  available:
+    'Queue is empty (no real unassigned pool exists yet — see ADR-0002).',
 };
 
 export function Lane({
@@ -19,12 +25,17 @@ export function Lane({
   items,
   summary,
   onClaimed,
+  onInspect,
 }: {
   lane: WorkItemLane;
   items: WorkItem[];
   summary: LaneSummary | undefined;
   /** Refetch callback passed to cards so a claim reflects immediately (Available lane). */
   onClaimed?: () => void;
+  onInspect?: (
+    target: InspectionTarget | undefined,
+    opener: HTMLButtonElement,
+  ) => void;
 }) {
   return (
     <section className="lane">
@@ -37,10 +48,19 @@ export function Lane({
         {items.length === 0 ? (
           <div className="lane-empty">{EMPTY[lane]}</div>
         ) : (
-          items.map((item) => <WorkItemCard key={item.sourceRecordKey ?? item.id} item={item} onClaimed={onClaimed} />)
+          items.map((item) => (
+            <WorkItemCard
+              key={item.sourceRecordKey ?? item.id}
+              item={item}
+              onClaimed={onClaimed}
+              onInspect={onInspect}
+            />
+          ))
         )}
       </div>
-      {summary && <LaneSummaryPanel lane={lane} items={items} deterministic={summary} />}
+      {summary && (
+        <LaneSummaryPanel lane={lane} items={items} deterministic={summary} />
+      )}
     </section>
   );
 }

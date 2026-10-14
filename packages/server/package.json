@@ -11,7 +11,7 @@
     "test": "vitest run",
     "contract:sync": "node scripts/sync-sdl.mjs",
     "contract:codegen": "graphql-codegen --config codegen.ts",
-    "contract:check": "graphql-codegen --config codegen.ts && git diff --exit-code -- src/schema/__generated__"
+    "contract:check": "graphql-codegen --config codegen.ts && git diff --exit-code -- src/schema/__generated__ ../shared/src/internal/inspector-model.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",

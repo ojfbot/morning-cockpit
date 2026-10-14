@@ -6,7 +6,12 @@ import path from 'node:path';
 
 const roots: string[] = [];
 
-function brief(id: string, title: string, refs: string[] = [], createdAt = '2026-10-10T09:00:00Z'): string {
+function brief(
+  id: string,
+  title: string,
+  refs: string[] = [],
+  createdAt = '2026-10-10T09:00:00Z',
+): string {
   return `---
 id: ${id}
 type: brief
@@ -23,7 +28,9 @@ body that the inspector must not expose
 `;
 }
 
-async function rootWith(records: Array<{ repo: string; file: string; body: string }>): Promise<string> {
+async function rootWith(
+  records: Array<{ repo: string; file: string; body: string }>,
+): Promise<string> {
   const root = await mkdtemp(path.join(os.tmpdir(), 'cockpit-evidence-'));
   roots.push(root);
   for (const record of records) {
@@ -39,24 +46,36 @@ async function collect(root: string) {
   vi.resetModules();
   const { fetchHandoff } = await import('../adapters/handoff.js');
   const now = new Date('2026-10-10T12:00:00.000Z');
-  return fetchHandoff({ now, overnightSince: '2026-10-09T18:00:00.000Z', staleThresholdDays: 14 });
+  return fetchHandoff({
+    now,
+    overnightSince: '2026-10-09T18:00:00.000Z',
+    staleThresholdDays: 14,
+  });
 }
 
 afterEach(async () => {
   delete process.env.COCKPIT_REPO_ROOT;
-  await Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
+  await Promise.all(
+    roots.splice(0).map((root) => rm(root, { recursive: true, force: true })),
+  );
 });
 
 describe('handoff REST evidence contract', () => {
   it('preserves colliding native ids and derives one named population with literal counts', async () => {
     const root = await rootWith([
-      { repo: 'alpha', file: 'brief.md', body: brief('same-id', 'Alpha brief') },
+      {
+        repo: 'alpha',
+        file: 'brief.md',
+        body: brief('same-id', 'Alpha brief'),
+      },
       { repo: 'beta', file: 'brief.md', body: brief('same-id', 'Beta brief') },
     ]);
     const result = await collect(root);
 
     expect(result.items).toHaveLength(2);
-    expect(new Set(result.items.map((item) => item.sourceRecordKey)).size).toBe(2);
+    expect(new Set(result.items.map((item) => item.sourceRecordKey)).size).toBe(
+      2,
+    );
     expect(result.evidence.coverage.status).toBe('complete');
     expect(result.evidence.standaloneUnansweredBriefs).toMatchObject({
       name: 'standaloneUnansweredBriefs',
@@ -66,16 +85,34 @@ describe('handoff REST evidence contract', () => {
         { repository: 'beta', count: 1 },
       ],
     });
-    expect(result.evidence.standaloneUnansweredBriefs.recordKeys).toHaveLength(2);
-    expect(result.evidence.records[0]?.sourceRecord.sourcePath).toBe('.handoff/brief.md');
-    expect(JSON.stringify(result.evidence)).not.toContain('body that the inspector must not expose');
+    expect(result.evidence.standaloneUnansweredBriefs.recordKeys).toHaveLength(
+      2,
+    );
+    expect(result.evidence.records[0]?.sourceRecord.sourcePath).toBe(
+      '.handoff/brief.md',
+    );
+    expect(JSON.stringify(result.evidence)).not.toContain(
+      'body that the inspector must not expose',
+    );
   });
 
   it('reports an ambiguous bare closes target and excludes every affected record from lanes and counts', async () => {
     const root = await rootWith([
-      { repo: 'alpha', file: 'target.md', body: brief('shared-target', 'Alpha target') },
-      { repo: 'beta', file: 'target.md', body: brief('shared-target', 'Beta target') },
-      { repo: 'gamma', file: 'successor.md', body: brief('successor', 'Successor', ['closes:shared-target']) },
+      {
+        repo: 'alpha',
+        file: 'target.md',
+        body: brief('shared-target', 'Alpha target'),
+      },
+      {
+        repo: 'beta',
+        file: 'target.md',
+        body: brief('shared-target', 'Beta target'),
+      },
+      {
+        repo: 'gamma',
+        file: 'successor.md',
+        body: brief('successor', 'Successor', ['closes:shared-target']),
+      },
     ]);
     const result = await collect(root);
 
@@ -88,7 +125,9 @@ describe('handoff REST evidence contract', () => {
         targetNativeId: 'shared-target',
       }),
     ]);
-    expect(diagnosticRecordKeys(result.evidence.unresolvedRelations[0]!)).toHaveLength(3);
+    expect(
+      diagnosticRecordKeys(result.evidence.unresolvedRelations[0]!),
+    ).toHaveLength(3);
   });
 
   it('does not hide an otherwise valid predecessor behind a successor with another unresolved ref', async () => {
@@ -97,15 +136,31 @@ describe('handoff REST evidence contract', () => {
       {
         repo: 'alpha',
         file: 'successor.md',
-        body: brief('successor', 'Successor', ['closes:target', 'closes:not-observed'], '2026-10-10T10:00:00Z'),
+        body: brief(
+          'successor',
+          'Successor',
+          ['closes:target', 'closes:not-observed'],
+          '2026-10-10T10:00:00Z',
+        ),
       },
     ]);
     const result = await collect(root);
 
     expect(result.items.map((item) => item.nativeId)).toEqual(['target']);
-    expect(result.evidence.records.filter(entry => result.evidence.standaloneUnansweredBriefs.recordKeys.includes(entry.sourceRecordKey)).map(entry => entry.sourceRecord.nativeId)).toEqual(['target']);
+    expect(
+      result.evidence.records
+        .filter((entry) =>
+          result.evidence.standaloneUnansweredBriefs.recordKeys.includes(
+            entry.sourceRecordKey,
+          ),
+        )
+        .map((entry) => entry.sourceRecord.nativeId),
+    ).toEqual(['target']);
     expect(result.evidence.unresolvedRelations).toEqual([
-      expect.objectContaining({ reason: 'target-not-observed', targetNativeId: 'not-observed' }),
+      expect.objectContaining({
+        reason: 'target-not-observed',
+        targetNativeId: 'not-observed',
+      }),
     ]);
   });
 
@@ -115,6 +170,7 @@ describe('handoff REST evidence contract', () => {
     expect(empty.health.status).toBe('up');
     expect(empty.evidence.coverage).toEqual({
       status: 'complete',
+      reason: null,
       repositoriesObserved: 0,
       skippedRecords: 0,
       unreadableRepositories: 0,
@@ -126,7 +182,9 @@ describe('handoff REST evidence contract', () => {
   });
 
   it('reports partial coverage when a repository candidate cannot be inspected', async () => {
-    const root = await rootWith([{ repo: 'alpha', file: 'brief.md', body: brief('alpha', 'Alpha') }]);
+    const root = await rootWith([
+      { repo: 'alpha', file: 'brief.md', body: brief('alpha', 'Alpha') },
+    ]);
     const restricted = path.join(root, 'restricted');
     await mkdir(restricted);
     await chmod(restricted, 0o000);

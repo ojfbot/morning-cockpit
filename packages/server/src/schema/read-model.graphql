@@ -100,6 +100,7 @@ type BriefingSnapshot {
 
 # ── WorkItem — the unified lane view-model (mirrors work-item.ts `WorkItem`, core fields) ──
 type WorkItem {
+  inspectionTarget: InspectionTarget!
   id: String!
   nativeId: String!
   sourceRecordKey: String
@@ -139,29 +140,41 @@ type Query {
   workItems(lane: String!): [WorkItem!]!
 }
 
-# Existing Dolt/handoff observations only. Production metadata is separate from resource identity.
-interface SourceRecord {
-  kind: String!
-  source: String!
-  repository: String
-  nativeId: String
-  sourcePath: String
+# Existing-source metadata only. Proposed local inspection; never execution authority.
+"Always null; a Dolt coordinate never has a filesystem path."
+scalar Absent
+enum DoltRecordKind {
+  dolt_bead_v1
 }
-type DoltBeadSourceRecord implements SourceRecord {
-  kind: String!
-  source: String!
+enum HandoffRecordKind {
+  handoff_document_v1
+}
+enum DoltSource {
+  dolt_bead
+}
+enum HandoffSource {
+  handoff_bead
+}
+enum EvidenceSource {
+  dolt_bead
+  handoff_bead
+}
+type DoltBeadSourceRecord {
+  kind: DoltRecordKind!
+  source: DoltSource!
   repository: String
   nativeId: String!
-  sourcePath: String
+  sourcePath: Absent
 }
-type HandoffDocumentSourceRecord implements SourceRecord {
-  kind: String!
-  source: String!
+type HandoffDocumentSourceRecord {
+  kind: HandoffRecordKind!
+  source: HandoffSource!
   repository: String!
   nativeId: String
   sourcePath: String!
 }
-
+union SourceRecord = DoltBeadSourceRecord | HandoffDocumentSourceRecord
+# The union closes concrete source coordinates. SourceRecord remains a legacy name for inspection queries.
 enum ReferenceRelation {
   closes
   responding_to
@@ -169,29 +182,41 @@ enum ReferenceRelation {
 enum ClosingRelation {
   closes
 }
+enum MissingTargetDiagnosticReason {
+  target_not_observed
+}
 type MissingTargetDiagnostic {
-  reason: String!
+  reason: MissingTargetDiagnosticReason!
   relation: ReferenceRelation!
   targetNativeId: String!
   referrerKey: String!
 }
+enum AmbiguousTargetDiagnosticReason {
+  target_matches_multiple_records
+}
 type AmbiguousTargetDiagnostic {
-  reason: String!
+  reason: AmbiguousTargetDiagnosticReason!
   relation: ReferenceRelation!
   targetNativeId: String!
   referrerKey: String!
   candidateTargetKeys: [String!]!
 }
+enum SuccessorOrderDiagnosticReason {
+  successor_order_unresolved
+}
 type SuccessorOrderDiagnostic {
-  reason: String!
+  reason: SuccessorOrderDiagnosticReason!
   relation: ClosingRelation!
   targetNativeId: String
   predecessorKey: String!
   candidateSuccessorKeys: [String!]!
 }
 "Directed keys, canonically rotated to the least key; never member-sorted."
+enum RelationCycleDiagnosticReason {
+  relation_cycle
+}
 type RelationCycleDiagnostic {
-  reason: String!
+  reason: RelationCycleDiagnosticReason!
   relation: ClosingRelation!
   cycleKeys: [String!]!
 }
@@ -201,8 +226,59 @@ union UnresolvedRelationDiagnostic =
   | SuccessorOrderDiagnostic
   | RelationCycleDiagnostic
 
-type ProductionInteraction {
-  kind: String!
+enum ModelGenerationKind {
+  model_generation
+}
+enum HumanInteractionKind {
+  human_edit
+  human_approval
+}
+enum EmissionKind {
+  emission
+}
+enum RecordedStatus {
+  recorded
+}
+enum LegacyUnknownStatus {
+  legacy_unknown
+}
+enum UnavailableStatus {
+  unavailable
+}
+type ModelGenerationInteraction {
+  kind: ModelGenerationKind!
+  interactionId: String!
+  parentInteractionId: String
+  principalId: String
+  agentId: String!
+  runtimeId: String!
+  sessionProvider: String!
+  sessionId: String!
+  modelProvider: String!
+  modelId: String!
+  traceId: String
+  hostId: String!
+  startedAt: String!
+  completedAt: String!
+}
+type HumanProductionInteraction {
+  kind: HumanInteractionKind!
+  interactionId: String!
+  parentInteractionId: String
+  principalId: String!
+  agentId: Absent
+  runtimeId: String!
+  sessionProvider: String
+  sessionId: String
+  modelProvider: Absent
+  modelId: Absent
+  traceId: String
+  hostId: String!
+  startedAt: String!
+  completedAt: String!
+}
+type EmissionProductionInteraction {
+  kind: EmissionKind!
   interactionId: String!
   parentInteractionId: String
   principalId: String
@@ -210,32 +286,35 @@ type ProductionInteraction {
   runtimeId: String!
   sessionProvider: String
   sessionId: String
-  modelProvider: String
-  modelId: String
+  modelProvider: Absent
+  modelId: Absent
   traceId: String
   hostId: String!
   startedAt: String!
   completedAt: String!
 }
-"Self-recorded trace, never proof of authenticated authority. See inspector-contract.md; emission enforcement inactive."
+union ProductionInteraction =
+  | ModelGenerationInteraction
+  | HumanProductionInteraction
+  | EmissionProductionInteraction
+"Self-recorded metadata, never authentication, delivery or approval enforcement."
 type RecordedDocumentProduction {
-  status: String!
+  status: RecordedStatus!
   schemaVersion: Int!
   interactions: [ProductionInteraction!]!
 }
 type LegacyUnknownDocumentProduction {
-  status: String!
+  status: LegacyUnknownStatus!
   reason: String!
 }
 type UnavailableDocumentProduction {
-  status: String!
+  status: UnavailableStatus!
   reason: String!
 }
 union DocumentProduction =
   | RecordedDocumentProduction
   | LegacyUnknownDocumentProduction
   | UnavailableDocumentProduction
-
 type HandoffLiteralMetadata {
   type: String
   status: String
@@ -245,60 +324,283 @@ type HandoffLiteralMetadata {
   refs: [String!]!
   authoredCreatedAt: String
 }
+type DoltLiteralMetadata {
+  type: String!
+  status: String!
+  actor: String!
+  hook: String
+  refs: [String!]!
+  createdAt: String
+  updatedAt: String
+  closedAt: String
+}
+"Whitelisted string-valued labels, preserved literally; not current eligibility or ownership."
+type DoltLiteralLabels {
+  "Observed labels.queue; no lane-policy inference."
+  queueDisposition: String
+  "Observed labels.claimed_by_kind."
+  claimedByKind: String
+  "Observed labels.lease_until; never interpreted as a renewed lease."
+  leaseUntil: String
+  "Observed labels.expires_at; not a claimability decision."
+  expiresAt: String
+}
+enum RepositoryCoordinateReason {
+  missing
+  invalid
+  conflict
+}
+type RepositoryCoordinateDiagnostic {
+  reason: RepositoryCoordinateReason!
+  fieldPath: String!
+}
+type DoltRecordSummary {
+  sourceRecordKey: String!
+  sourceRecord: DoltBeadSourceRecord!
+  title: String!
+}
 type HandoffRecordSummary {
   sourceRecordKey: String!
-  sourceRecord: SourceRecord!
+  sourceRecord: HandoffDocumentSourceRecord!
   title: String!
+}
+type DoltRecordEvidence {
+  sourceRecordKey: String!
+  sourceRecord: DoltBeadSourceRecord!
+  title: String!
+  native: DoltLiteralMetadata!
+  literalLabels: DoltLiteralLabels!
+  collectedAt: String!
+  coordinateDiagnostics: [RepositoryCoordinateDiagnostic!]!
+  declaredLinks: [TaskDocumentResolution!]!
 }
 type HandoffRecordEvidence {
   sourceRecordKey: String!
-  sourceRecord: SourceRecord!
+  sourceRecord: HandoffDocumentSourceRecord!
   title: String!
   literal: HandoffLiteralMetadata!
   observedModifiedAt: String!
   collectedAt: String!
   documentProduction: DocumentProduction!
+  declaredLinks: [TaskDocumentResolution!]!
+}
+union ObservedEvidenceRecord = DoltRecordEvidence | HandoffRecordEvidence
+enum EvidenceCoverageStatus {
+  complete
+  partial
+  unavailable
 }
 type EvidenceCoverage {
-  status: String!
+  status: EvidenceCoverageStatus!
   repositoriesObserved: Int!
   skippedRecords: Int!
   unreadableRepositories: Int!
   reason: String
 }
 type RepositoryEvidenceCount {
-  repository: String!
+  repository: String
   count: Int!
+}
+type EvidenceSourceSummary {
+  source: EvidenceSource!
+  scope: String!
+  collectedAt: String
+  coverage: EvidenceCoverage!
+  total: Int
+  byRepository: [RepositoryEvidenceCount!]!
+}
+type HandoffEvidenceSummary {
+  inventory: EvidenceSourceSummary!
+  populationCount: Int
+  populationByRepository: [RepositoryEvidenceCount!]!
 }
 type EvidenceSummary {
   snapshotId: String!
   generatedAt: String!
-  coverage: EvidenceCoverage!
-  total: Int!
-  byRepository: [RepositoryEvidenceCount!]!
+  expiresAt: String!
+  dolt: EvidenceSourceSummary!
+  handoff: HandoffEvidenceSummary!
   unresolvedCount: Int!
 }
-type EvidenceIndex {
-  status: String!
-  snapshotId: String!
+enum ObservedStatus {
+  observed
+}
+type ObservedDoltIndex {
+  status: ObservedStatus!
+  source: DoltSource!
+  scope: String!
+  collectedAt: String!
+  coverage: EvidenceCoverage!
+  records: [DoltRecordSummary!]!
+}
+type ObservedHandoffIndex {
+  status: ObservedStatus!
+  source: HandoffSource!
+  scope: String!
+  collectedAt: String!
+  coverage: EvidenceCoverage!
   records: [HandoffRecordSummary!]!
   populationRecordKeys: [String!]!
   unresolvedRelations: [UnresolvedRelationDiagnostic!]!
 }
-type EvidenceRecord {
-  status: String!
+type UnavailableDoltIndex {
+  status: UnavailableStatus!
+  source: DoltSource!
+  scope: String!
+  reason: String!
+}
+type UnavailableHandoffIndex {
+  status: UnavailableStatus!
+  source: HandoffSource!
+  scope: String!
+  reason: String!
+}
+union DoltEvidenceIndex = ObservedDoltIndex | UnavailableDoltIndex
+union HandoffEvidenceIndex = ObservedHandoffIndex | UnavailableHandoffIndex
+enum ReadyStatus {
+  ready
+}
+enum RefreshStatus {
+  refresh_required
+}
+enum MissingStatus {
+  record_not_observed
+}
+enum InvalidReferenceStatus {
+  invalid_reference
+}
+enum SourceUnavailableStatus {
+  source_unavailable
+}
+type EvidenceIndex {
+  status: ReadyStatus!
   snapshotId: String!
-  record: HandoffRecordEvidence!
+  dolt: DoltEvidenceIndex!
+  handoff: HandoffEvidenceIndex!
+}
+type EvidenceRecord {
+  status: ReadyStatus!
+  snapshotId: String!
+  record: ObservedEvidenceRecord!
 }
 type EvidenceRefreshRequired {
-  status: String!
+  status: RefreshStatus!
   snapshotId: String!
   reason: String!
 }
 type EvidenceRecordNotObserved {
-  status: String!
+  status: MissingStatus!
   snapshotId: String!
   sourceRecordKey: String!
+  source: EvidenceSource!
+  scope: String!
+}
+type EvidenceInvalidReference {
+  status: InvalidReferenceStatus!
+  snapshotId: String!
+  sourceRecordKey: String!
+  reason: String!
+}
+type EvidenceSourceUnavailable {
+  status: SourceUnavailableStatus!
+  snapshotId: String!
+  source: EvidenceSource!
+  reason: String!
 }
 union EvidenceIndexResult = EvidenceIndex | EvidenceRefreshRequired
-union EvidenceRecordResult = EvidenceRecord | EvidenceRefreshRequired | EvidenceRecordNotObserved
+union EvidenceRecordResult =
+  | EvidenceRecord
+  | EvidenceRefreshRequired
+  | EvidenceRecordNotObserved
+  | EvidenceInvalidReference
+  | EvidenceSourceUnavailable
+type AvailableInspectionTarget {
+  generatedAt: String!
+  expiresAt: String!
+  snapshotId: String!
+  sourceRecordKey: String!
+  sourceRecord: SourceRecord!
+}
+type UnavailableInspectionTarget {
+  reason: String!
+}
+union InspectionTarget = AvailableInspectionTarget | UnavailableInspectionTarget
+"A proposed v1 declaration physically present on the referring resource. Navigation only."
+type DoltTaskTarget {
+  source: DoltSource!
+  nativeId: String!
+}
+type HandoffDocumentTarget {
+  source: HandoffSource!
+  repository: String!
+  sourcePath: String!
+}
+union TaskDocumentTarget = DoltTaskTarget | HandoffDocumentTarget
+enum ResolvedTaskDocumentLinkStatus {
+  resolved
+}
+type ResolvedTaskDocumentLink {
+  status: ResolvedTaskDocumentLinkStatus!
+  referrer: SourceRecord!
+  fieldPath: String!
+  target: TaskDocumentTarget!
+  task: DoltBeadSourceRecord!
+  taskRecordKey: String!
+  document: HandoffDocumentSourceRecord!
+  documentRecordKey: String!
+}
+enum UnavailableTaskDocumentLinkStatus {
+  target_source_unavailable
+}
+type UnavailableTaskDocumentLink {
+  status: UnavailableTaskDocumentLinkStatus!
+  referrer: SourceRecord!
+  fieldPath: String!
+  target: TaskDocumentTarget!
+}
+enum AbsentTaskDocumentLinkStatus {
+  target_not_observed_in_scope
+}
+type AbsentTaskDocumentLink {
+  status: AbsentTaskDocumentLinkStatus!
+  referrer: SourceRecord!
+  fieldPath: String!
+  target: TaskDocumentTarget!
+}
+enum AmbiguousTaskDocumentLinkStatus {
+  target_ambiguous
+}
+type AmbiguousTaskDocumentLink {
+  status: AmbiguousTaskDocumentLinkStatus!
+  referrer: SourceRecord!
+  fieldPath: String!
+  target: TaskDocumentTarget!
+  candidates: [SourceRecord!]!
+}
+enum IncompatibleTaskDocumentLinkStatus {
+  target_kind_incompatible
+}
+type IncompatibleTaskDocumentLink {
+  status: IncompatibleTaskDocumentLinkStatus!
+  referrer: SourceRecord!
+  fieldPath: String!
+  target: TaskDocumentTarget!
+  observed: SourceRecord!
+  nativeType: String!
+}
+enum InvalidTaskDocumentLinkStatus {
+  invalid_declaration
+}
+type InvalidTaskDocumentLink {
+  status: InvalidTaskDocumentLinkStatus!
+  referrer: SourceRecord!
+  fieldPath: String!
+  reason: String!
+}
+union TaskDocumentResolution =
+  | ResolvedTaskDocumentLink
+  | UnavailableTaskDocumentLink
+  | AbsentTaskDocumentLink
+  | AmbiguousTaskDocumentLink
+  | IncompatibleTaskDocumentLink
+  | InvalidTaskDocumentLink

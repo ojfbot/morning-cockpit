@@ -1,4 +1,7 @@
-import { diagnosticRecordKeys, type UnresolvedRelationDiagnostic } from './source-record.js';
+import {
+  diagnosticRecordKeys,
+  type UnresolvedRelationDiagnostic,
+} from './source-record.js';
 
 /**
  * Decided-in-flight derivation (rm:rm-l1-morning-cockpit#S8) — the read side of the
@@ -60,7 +63,10 @@ export interface ChainedPredecessor {
  * closes the pick-up brief which closes the northstar brief). Nearest link first; within one
  * depth, sorted by id for determinism. Cycle-safe via the seen set.
  */
-export function foldedChainFor(successorId: string, decided: ReadonlyMap<string, string>): string[] {
+export function foldedChainFor(
+  successorId: string,
+  decided: ReadonlyMap<string, string>,
+): string[] {
   const out: string[] = [];
   const seen = new Set<string>([successorId]);
   let frontier = [successorId];
@@ -94,18 +100,23 @@ function diagnosticKey(diagnostic: UnresolvedRelationDiagnostic): string {
  * Resolve supported read-side folds while retaining ambiguous observations as typed diagnostics.
  * Bare authored ids are only resolved when exactly one live source record carries that id.
  */
-export function resolveDecidedInFlight(beads: readonly DecidedBead[]): DecidedResolution {
-  const liveByNativeId = new Map<string, DecidedBead[]>();
+export function resolveDecidedInFlight(
+  beads: readonly DecidedBead[],
+): DecidedResolution {
+  const observedByNativeId = new Map<string, DecidedBead[]>();
   for (const bead of beads) {
-    if (!bead.id || bead.status !== 'live') continue;
-    const candidates = liveByNativeId.get(bead.id) ?? [];
+    if (!bead.id) continue;
+    const candidates = observedByNativeId.get(bead.id) ?? [];
     candidates.push(bead);
-    liveByNativeId.set(bead.id, candidates);
+    observedByNativeId.set(bead.id, candidates);
   }
 
   const diagnostics: UnresolvedRelationDiagnostic[] = [];
   const affected = new Set<string>();
-  const proposals = new Map<string, Array<{ successorKey: string; createdAt: number | null }>>();
+  const proposals = new Map<
+    string,
+    Array<{ successorKey: string; createdAt: number | null }>
+  >();
 
   const addDiagnostic = (diagnostic: UnresolvedRelationDiagnostic) => {
     diagnostics.push(diagnostic);
@@ -115,7 +126,7 @@ export function resolveDecidedInFlight(beads: readonly DecidedBead[]): DecidedRe
   for (const bead of beads) {
     if (!bead.open) continue;
     for (const targetNativeId of parseClosesRefs(bead.refs)) {
-      const candidates = liveByNativeId.get(targetNativeId) ?? [];
+      const candidates = observedByNativeId.get(targetNativeId) ?? [];
       if (candidates.length === 0) {
         addDiagnostic({
           reason: 'target-not-observed',
@@ -131,11 +142,15 @@ export function resolveDecidedInFlight(beads: readonly DecidedBead[]): DecidedRe
           relation: 'closes',
           targetNativeId,
           referrerKey: bead.sourceRecordKey,
-          candidateTargetKeys: candidates.map(candidate => candidate.sourceRecordKey).sort(),
+          candidateTargetKeys: candidates
+            .map((candidate) => candidate.sourceRecordKey)
+            .sort(),
         });
         continue;
       }
 
+      // A closed predecessor is observed, but cannot be folded into live work.
+      if (candidates[0]?.status !== 'live') continue;
       // Zero and multiple candidates returned above; exactly one remains.
       const predecessorKey = candidates[0]!.sourceRecordKey;
       const parsedCreatedAt = Date.parse(bead.createdAt ?? '');
@@ -144,7 +159,10 @@ export function resolveDecidedInFlight(beads: readonly DecidedBead[]): DecidedRe
         createdAt: Number.isNaN(parsedCreatedAt) ? null : parsedCreatedAt,
       };
       const current = proposals.get(predecessorKey) ?? [];
-      if (!current.some((entry) => entry.successorKey === candidate.successorKey)) current.push(candidate);
+      if (
+        !current.some((entry) => entry.successorKey === candidate.successorKey)
+      )
+        current.push(candidate);
       proposals.set(predecessorKey, current);
     }
   }
@@ -156,17 +174,28 @@ export function resolveDecidedInFlight(beads: readonly DecidedBead[]): DecidedRe
       decided.set(predecessorKey, candidates[0]!.successorKey);
       continue;
     }
-    const ordered = [...candidates].sort((a, b) => (b.createdAt ?? -Infinity) - (a.createdAt ?? -Infinity));
+    const ordered = [...candidates].sort(
+      (a, b) => (b.createdAt ?? -Infinity) - (a.createdAt ?? -Infinity),
+    );
     const top = ordered[0];
     const second = ordered[1];
-    if (!top || top.createdAt === null || candidates.some((candidate) => candidate.createdAt === null) || top.createdAt === second?.createdAt) {
-      const predecessor = beads.find((bead) => bead.sourceRecordKey === predecessorKey);
+    if (
+      !top ||
+      top.createdAt === null ||
+      candidates.some((candidate) => candidate.createdAt === null) ||
+      top.createdAt === second?.createdAt
+    ) {
+      const predecessor = beads.find(
+        (bead) => bead.sourceRecordKey === predecessorKey,
+      );
       addDiagnostic({
         reason: 'successor-order-unresolved',
         relation: 'closes',
         targetNativeId: predecessor?.id ?? null,
         predecessorKey,
-        candidateSuccessorKeys: candidates.map(candidate => candidate.successorKey).sort(),
+        candidateSuccessorKeys: candidates
+          .map((candidate) => candidate.successorKey)
+          .sort(),
       });
       continue;
     }
@@ -201,12 +230,21 @@ export function resolveDecidedInFlight(beads: readonly DecidedBead[]): DecidedRe
     for (const key of path) visited.add(key);
   }
 
-  const uniqueDiagnostics = [...new Map(diagnostics.map((entry) => [diagnosticKey(entry), entry])).values()]
-    .sort((a, b) => diagnosticKey(a).localeCompare(diagnosticKey(b)));
-  return { decided, diagnostics: uniqueDiagnostics, affectedSourceRecordKeys: affected };
+  const uniqueDiagnostics = [
+    ...new Map(
+      diagnostics.map((entry) => [diagnosticKey(entry), entry]),
+    ).values(),
+  ].sort((a, b) => diagnosticKey(a).localeCompare(diagnosticKey(b)));
+  return {
+    decided,
+    diagnostics: uniqueDiagnostics,
+    affectedSourceRecordKeys: affected,
+  };
 }
 
 /** Compatibility helper for callers that need only the supported folds. */
-export function deriveDecidedInFlight(beads: readonly DecidedBead[]): Map<string, string> {
+export function deriveDecidedInFlight(
+  beads: readonly DecidedBead[],
+): Map<string, string> {
   return resolveDecidedInFlight(beads).decided;
 }
