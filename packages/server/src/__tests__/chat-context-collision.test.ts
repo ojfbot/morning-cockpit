@@ -16,6 +16,7 @@ function handoffItem(repository: string, sourceRecordKey: string, sourcePath: st
     nativeId: 'same-id',
     sourceRecordKey,
     sourceRecord: {
+      kind: 'handoff-document-v1',
       source: 'handoff-bead',
       repository,
       nativeId: 'same-id',

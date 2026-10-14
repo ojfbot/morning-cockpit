@@ -8,21 +8,31 @@ upstream write path stays Handoff Emission (ADR-0005).
 
 Field shapes mirror morning-cockpit `@cockpit/shared` view-models; an SDL<->shared parity test in the
 cockpit keeps them from diverging (a deliberate drift breaks CI).
-"""
-
-# ── Liveness (mirrors fleet.ts `Liveness`, liveness.ts `AgentLivenessState`) ──
-enum Liveness { LIVE STALE DARK }
-enum AgentLivenessState { LIVE IDLE DARK }
+""" # ── Liveness (mirrors fleet.ts `Liveness`, liveness.ts `AgentLivenessState`) ──
+enum Liveness {
+  LIVE
+  STALE
+  DARK
+}
+enum AgentLivenessState {
+  LIVE
+  IDLE
+  DARK
+}
 
 # ── Fleet (01) — RepoCard (mirrors fleet.ts `RepoCard`) ──
-"""A per-tile launch link. `links` is forward-declared for Slice L1 (extensible list)."""
+"""
+A per-tile launch link. `links` is forward-declared for Slice L1 (extensible list).
+"""
 type RepoLink {
   kind: String!
   url: String!
   label: String!
 }
 
-"""Hover/focus popover payload. Contents are deferred to the L3s spike (ADR-0012 #7) — placeholder."""
+"""
+Hover/focus popover payload. Contents are deferred to the L3s spike (ADR-0012 #7) — placeholder.
+"""
 type RepoPopover {
   placeholder: Boolean!
 }
@@ -92,6 +102,8 @@ type BriefingSnapshot {
 type WorkItem {
   id: String!
   nativeId: String!
+  sourceRecordKey: String
+  sourceRecord: SourceRecord
   source: String!
   kind: String!
   status: String!
@@ -113,6 +125,10 @@ type WorkItem {
 
 # ── The read surface (query-only) ──
 type Query {
+  "Counts and coverage for one captured evidence observation."
+  evidenceSummary: EvidenceSummary!
+  evidenceIndex(snapshotId: String!): EvidenceIndexResult!
+  evidenceRecord(snapshotId: String!, sourceRecordKey: String!): EvidenceRecordResult!
   "Fleet (01) repo cards."
   fleet: [RepoCard!]!
   "Briefing (00). `repo` arg forward-declared for Slice F2 (repo-scoped briefing); null = global."
@@ -122,3 +138,167 @@ type Query {
   "Lane work-items: overnight | pickup | available."
   workItems(lane: String!): [WorkItem!]!
 }
+
+# Existing Dolt/handoff observations only. Production metadata is separate from resource identity.
+interface SourceRecord {
+  kind: String!
+  source: String!
+  repository: String
+  nativeId: String
+  sourcePath: String
+}
+type DoltBeadSourceRecord implements SourceRecord {
+  kind: String!
+  source: String!
+  repository: String
+  nativeId: String!
+  sourcePath: String
+}
+type HandoffDocumentSourceRecord implements SourceRecord {
+  kind: String!
+  source: String!
+  repository: String!
+  nativeId: String
+  sourcePath: String!
+}
+
+enum ReferenceRelation {
+  closes
+  responding_to
+}
+enum ClosingRelation {
+  closes
+}
+type MissingTargetDiagnostic {
+  reason: String!
+  relation: ReferenceRelation!
+  targetNativeId: String!
+  referrerKey: String!
+}
+type AmbiguousTargetDiagnostic {
+  reason: String!
+  relation: ReferenceRelation!
+  targetNativeId: String!
+  referrerKey: String!
+  candidateTargetKeys: [String!]!
+}
+type SuccessorOrderDiagnostic {
+  reason: String!
+  relation: ClosingRelation!
+  targetNativeId: String
+  predecessorKey: String!
+  candidateSuccessorKeys: [String!]!
+}
+"Directed keys, canonically rotated to the least key; never member-sorted."
+type RelationCycleDiagnostic {
+  reason: String!
+  relation: ClosingRelation!
+  cycleKeys: [String!]!
+}
+union UnresolvedRelationDiagnostic =
+  | MissingTargetDiagnostic
+  | AmbiguousTargetDiagnostic
+  | SuccessorOrderDiagnostic
+  | RelationCycleDiagnostic
+
+type ProductionInteraction {
+  kind: String!
+  interactionId: String!
+  parentInteractionId: String
+  principalId: String
+  agentId: String
+  runtimeId: String!
+  sessionProvider: String
+  sessionId: String
+  modelProvider: String
+  modelId: String
+  traceId: String
+  hostId: String!
+  startedAt: String!
+  completedAt: String!
+}
+"Self-recorded trace, never proof of authenticated authority. See inspector-contract.md; emission enforcement inactive."
+type RecordedDocumentProduction {
+  status: String!
+  schemaVersion: Int!
+  interactions: [ProductionInteraction!]!
+}
+type LegacyUnknownDocumentProduction {
+  status: String!
+  reason: String!
+}
+type UnavailableDocumentProduction {
+  status: String!
+  reason: String!
+}
+union DocumentProduction =
+  | RecordedDocumentProduction
+  | LegacyUnknownDocumentProduction
+  | UnavailableDocumentProduction
+
+type HandoffLiteralMetadata {
+  type: String
+  status: String
+  actor: String
+  to: String
+  respondingTo: String
+  refs: [String!]!
+  authoredCreatedAt: String
+}
+type HandoffRecordSummary {
+  sourceRecordKey: String!
+  sourceRecord: SourceRecord!
+  title: String!
+}
+type HandoffRecordEvidence {
+  sourceRecordKey: String!
+  sourceRecord: SourceRecord!
+  title: String!
+  literal: HandoffLiteralMetadata!
+  observedModifiedAt: String!
+  collectedAt: String!
+  documentProduction: DocumentProduction!
+}
+type EvidenceCoverage {
+  status: String!
+  repositoriesObserved: Int!
+  skippedRecords: Int!
+  unreadableRepositories: Int!
+  reason: String
+}
+type RepositoryEvidenceCount {
+  repository: String!
+  count: Int!
+}
+type EvidenceSummary {
+  snapshotId: String!
+  generatedAt: String!
+  coverage: EvidenceCoverage!
+  total: Int!
+  byRepository: [RepositoryEvidenceCount!]!
+  unresolvedCount: Int!
+}
+type EvidenceIndex {
+  status: String!
+  snapshotId: String!
+  records: [HandoffRecordSummary!]!
+  populationRecordKeys: [String!]!
+  unresolvedRelations: [UnresolvedRelationDiagnostic!]!
+}
+type EvidenceRecord {
+  status: String!
+  snapshotId: String!
+  record: HandoffRecordEvidence!
+}
+type EvidenceRefreshRequired {
+  status: String!
+  snapshotId: String!
+  reason: String!
+}
+type EvidenceRecordNotObserved {
+  status: String!
+  snapshotId: String!
+  sourceRecordKey: String!
+}
+union EvidenceIndexResult = EvidenceIndex | EvidenceRefreshRequired
+union EvidenceRecordResult = EvidenceRecord | EvidenceRefreshRequired | EvidenceRecordNotObserved

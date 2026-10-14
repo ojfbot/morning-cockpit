@@ -1,4 +1,6 @@
 import type { AgentLiveness, BeadEventRow, BriefingSnapshot, CockpitSnapshot } from '@cockpit/shared';
+import type { EvidenceSummary, EvidenceIndexResult, EvidenceRecordResult } from '@cockpit/shared';
+import { evidenceStore } from '../evidence-store.js';
 import { buildSnapshot } from '../aggregate.js';
 import { generateBriefing } from '../briefing-generate.js';
 
@@ -10,6 +12,9 @@ import { generateBriefing } from '../briefing-generate.js';
  */
 export interface ReadModelSource {
   snapshot(): Promise<CockpitSnapshot>;
+  evidenceSummary(): Promise<EvidenceSummary>;
+  evidenceIndex(snapshotId: string): EvidenceIndexResult;
+  evidenceRecord(snapshotId: string, sourceRecordKey: string): EvidenceRecordResult;
   /**
    * The Chief-of-Staff briefing (ADR-0007). Kept behind the port so the LLM/generation logic stays
    * out of the resolvers (and out of the future lean graph service). `repo` is forward-declared for
@@ -25,6 +30,13 @@ export interface ReadModelSource {
 /** Production source — backed by the cockpit aggregate (today's data path). */
 export const cockpitReadModelSource: ReadModelSource = {
   snapshot: () => buildSnapshot(),
+  evidenceSummary: async () => {
+    const snapshot = await buildSnapshot();
+    if (!snapshot.evidenceSummary) throw new Error("Evidence summary unavailable");
+    return snapshot.evidenceSummary;
+  },
+  evidenceIndex: snapshotId => evidenceStore.index(snapshotId),
+  evidenceRecord: (snapshotId, key) => evidenceStore.record(snapshotId, key),
   // Delegates to the same generator REST `/api/briefing` uses → parity is structural. `repo` scopes
   // the briefing to that repo (F2); undefined = global.
   briefing: async (repo?: string) => {

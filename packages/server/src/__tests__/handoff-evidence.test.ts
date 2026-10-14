@@ -1,3 +1,4 @@
+import { diagnosticRecordKeys } from '@cockpit/shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { chmod, mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
@@ -65,7 +66,7 @@ describe('handoff REST evidence contract', () => {
         { repository: 'beta', count: 1 },
       ],
     });
-    expect(result.evidence.standaloneUnansweredBriefs.records).toHaveLength(2);
+    expect(result.evidence.standaloneUnansweredBriefs.recordKeys).toHaveLength(2);
     expect(result.evidence.records[0]?.sourceRecord.sourcePath).toBe('.handoff/brief.md');
     expect(JSON.stringify(result.evidence)).not.toContain('body that the inspector must not expose');
   });
@@ -87,7 +88,7 @@ describe('handoff REST evidence contract', () => {
         targetNativeId: 'shared-target',
       }),
     ]);
-    expect(result.evidence.unresolvedRelations[0]?.affectedSourceRecordKeys).toHaveLength(3);
+    expect(diagnosticRecordKeys(result.evidence.unresolvedRelations[0]!)).toHaveLength(3);
   });
 
   it('does not hide an otherwise valid predecessor behind a successor with another unresolved ref', async () => {
@@ -102,7 +103,7 @@ describe('handoff REST evidence contract', () => {
     const result = await collect(root);
 
     expect(result.items.map((item) => item.nativeId)).toEqual(['target']);
-    expect(result.evidence.standaloneUnansweredBriefs.records.map((entry) => entry.sourceRecord.nativeId)).toEqual(['target']);
+    expect(result.evidence.records.filter(entry => result.evidence.standaloneUnansweredBriefs.recordKeys.includes(entry.sourceRecordKey)).map(entry => entry.sourceRecord.nativeId)).toEqual(['target']);
     expect(result.evidence.unresolvedRelations).toEqual([
       expect.objectContaining({ reason: 'target-not-observed', targetNativeId: 'not-observed' }),
     ]);

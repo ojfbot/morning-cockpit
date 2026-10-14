@@ -1,3 +1,5 @@
+import { emptyCockpitEvidence } from '@cockpit/shared';
+import { EvidenceStore } from '../../evidence-store.js';
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -23,7 +25,12 @@ function fakeSnapshot(): CockpitSnapshot {
   };
 }
 
+const fixtureStore = new EvidenceStore();
+const fixtureSummary = fixtureStore.capture(emptyCockpitEvidence({ status: 'complete', repositoriesObserved: 0, skippedRecords: 0, unreadableRepositories: 0 }), '2026-10-13T00:00:00Z');
 const source: ReadModelSource = {
+  evidenceSummary: async () => fixtureSummary,
+  evidenceIndex: id => fixtureStore.index(id),
+  evidenceRecord: (id, key) => fixtureStore.record(id, key),
   snapshot: async () => fakeSnapshot(),
   briefing: async () => ({ generatedAt: 'x', threads: [], source: 'deterministic' }),
   agentLiveness: async () => [],

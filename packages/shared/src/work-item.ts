@@ -4,7 +4,7 @@
  */
 
 import type { ChainedPredecessor } from './decided.js';
-import type { CockpitEvidence, SourceRecordRef } from './source-record.js';
+import type { EvidenceSummary, SourceRecordRef } from './source-record.js';
 
 export type WorkItemSource = 'dolt-bead' | 'handoff-bead' | 'github' | 'standup';
 
@@ -124,7 +124,7 @@ export interface CockpitSnapshot {
   };
   health: AdapterHealth[];
   /** REST-only cockpit observation contract. It is not a fleet-runner command or receipt. */
-  evidence?: CockpitEvidence;
+  evidenceSummary?: EvidenceSummary;
   /** Deterministic per-lane summaries (always present; LLM version fetched separately). */
   summaries: {
     overnight: LaneSummary;

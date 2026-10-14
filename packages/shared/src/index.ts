@@ -197,3 +197,9 @@ export {
   buildEdges,
   buildStats,
 } from './fleet-structure.js';
+
+export { diagnosticRecordKeys } from './source-record.js';
+export { parseDocumentProduction } from './document-production.js';
+export type { EvidenceSummary, EvidenceIndex, EvidenceRecord, EvidenceIndexResult, EvidenceRecordResult, EvidenceRefreshRequired, DocumentProduction } from './source-record.js';
+
+export type { HandoffRecordSummary } from './source-record.js';

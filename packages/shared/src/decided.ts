@@ -1,4 +1,4 @@
-import type { UnresolvedRelationDiagnostic } from './source-record.js';
+import { diagnosticRecordKeys, type UnresolvedRelationDiagnostic } from './source-record.js';
 
 /**
  * Decided-in-flight derivation (rm:rm-l1-morning-cockpit#S8) — the read side of the
@@ -87,12 +87,7 @@ export interface DecidedResolution {
 }
 
 function diagnosticKey(diagnostic: UnresolvedRelationDiagnostic): string {
-  return JSON.stringify([
-    diagnostic.reason,
-    diagnostic.relation,
-    diagnostic.targetNativeId,
-    diagnostic.affectedSourceRecordKeys,
-  ]);
+  return JSON.stringify(diagnostic);
 }
 
 /**
@@ -113,9 +108,8 @@ export function resolveDecidedInFlight(beads: readonly DecidedBead[]): DecidedRe
   const proposals = new Map<string, Array<{ successorKey: string; createdAt: number | null }>>();
 
   const addDiagnostic = (diagnostic: UnresolvedRelationDiagnostic) => {
-    diagnostic.affectedSourceRecordKeys = [...new Set(diagnostic.affectedSourceRecordKeys)].sort();
     diagnostics.push(diagnostic);
-    for (const key of diagnostic.affectedSourceRecordKeys) affected.add(key);
+    for (const key of diagnosticRecordKeys(diagnostic)) affected.add(key);
   };
 
   for (const bead of beads) {
@@ -127,7 +121,7 @@ export function resolveDecidedInFlight(beads: readonly DecidedBead[]): DecidedRe
           reason: 'target-not-observed',
           relation: 'closes',
           targetNativeId,
-          affectedSourceRecordKeys: [bead.sourceRecordKey],
+          referrerKey: bead.sourceRecordKey,
         });
         continue;
       }
@@ -136,11 +130,13 @@ export function resolveDecidedInFlight(beads: readonly DecidedBead[]): DecidedRe
           reason: 'target-matches-multiple-records',
           relation: 'closes',
           targetNativeId,
-          affectedSourceRecordKeys: [bead.sourceRecordKey, ...candidates.map((candidate) => candidate.sourceRecordKey)],
+          referrerKey: bead.sourceRecordKey,
+          candidateTargetKeys: candidates.map(candidate => candidate.sourceRecordKey).sort(),
         });
         continue;
       }
 
+      // Zero and multiple candidates returned above; exactly one remains.
       const predecessorKey = candidates[0]!.sourceRecordKey;
       const parsedCreatedAt = Date.parse(bead.createdAt ?? '');
       const candidate = {
@@ -156,6 +152,7 @@ export function resolveDecidedInFlight(beads: readonly DecidedBead[]): DecidedRe
   const decided = new Map<string, string>();
   for (const [predecessorKey, candidates] of proposals) {
     if (candidates.length === 1) {
+      // This branch establishes the single candidate used below.
       decided.set(predecessorKey, candidates[0]!.successorKey);
       continue;
     }
@@ -168,7 +165,8 @@ export function resolveDecidedInFlight(beads: readonly DecidedBead[]): DecidedRe
         reason: 'successor-order-unresolved',
         relation: 'closes',
         targetNativeId: predecessor?.id ?? null,
-        affectedSourceRecordKeys: [predecessorKey, ...candidates.map((candidate) => candidate.successorKey)],
+        predecessorKey,
+        candidateSuccessorKeys: candidates.map(candidate => candidate.successorKey).sort(),
       });
       continue;
     }
@@ -185,12 +183,13 @@ export function resolveDecidedInFlight(beads: readonly DecidedBead[]): DecidedRe
     while (current && !visited.has(current)) {
       const cycleAt = position.get(current);
       if (cycleAt !== undefined) {
-        const cycle = path.slice(cycleAt).sort();
+        const directed = path.slice(cycleAt);
+        const first = directed.indexOf([...directed].sort()[0] ?? start);
+        const cycle = [...directed.slice(first), ...directed.slice(0, first)];
         addDiagnostic({
           reason: 'relation-cycle',
           relation: 'closes',
-          targetNativeId: null,
-          affectedSourceRecordKeys: cycle,
+          cycleKeys: cycle,
         });
         for (const key of cycle) decided.delete(key);
         break;

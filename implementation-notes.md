@@ -315,3 +315,19 @@ a number down. A deviation logged is the plan telling us what it didn't know.
   Added REST-only server-derived claimable thread IDs, restricted queue-claim to those confirmed
   Dolt records, and derived LLM thread identity, target, and closes from an opaque record token;
   the core-owned GraphQL artifact contract remains unchanged.
+
+## Deviations
+
+- Decision11 replay encountered conflicting implementation-note history on current main; preserved both histories and replayed all original PR56 commits linearly in an independent repository. No shared worktree registrations or primary branch metadata were changed.
+
+- Serena initial instructions and temporary-project activation succeeded, but its targeted editing tool was inactive; used scoped file edits in the independent temporary repository.
+
+- Adding production disclosure revealed that its summary was outside the existing modal focus trap and lost keyboard targeting in the DOM harness; made that summary an explicit tab stop and retained Escape focus return.
+
+- The actual browser exposed GraphQL fragment response-name conflicts between the role-specific nullable/enumerated variants; used explicit query aliases and normalized them at the client boundary while preserving the stronger SDL variants.
+
+- The renderer-client integration regression crossed the server compiler rootDir; kept the same executable behavior check under verification, outside either package compiler, instead of broadening source ownership.
+
+- Independent reviews found that background polls cleared an observed expiry gate and Date.parse normalized impossible calendar dates; added failing regressions, preserved the explicit refresh gate, and validated zoned timestamp components before parsing.
+
+- The proposed schema-v1 contract assumed nullable declarations were explicit and capture summaries were independent of retained observations; coordinator controls found omitted fields normalized to null and nested summary aliases. Enforced explicit declarations and cloned the returned summary, with native failing-before/passing-after controls; no shipped summary-mutating caller or production corruption was demonstrated.

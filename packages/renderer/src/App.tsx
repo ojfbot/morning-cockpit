@@ -89,7 +89,7 @@ export function App() {
             }
           >
             <EvidenceView
-              evidence={snapshot?.evidence}
+              summary={snapshot?.evidenceSummary}
               onFocusRepository={(selectedRepo) => setUi((state) => ({ ...state, selectedRepo }))}
             />
             <div className="lanes">
