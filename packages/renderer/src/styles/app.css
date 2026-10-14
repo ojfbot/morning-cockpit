@@ -1947,3 +1947,11 @@ a.card-chain-pred:hover {
 .health-dot.down { background: var(--red); }
 .health-dot.degraded { background: var(--amber); }
 .health-dot.disabled { background: var(--ink-3); }
+
+.evidence-production { margin: 1rem 0; max-width: 100%; }
+.evidence-production summary { cursor: pointer; }
+.evidence-production dl { font-size: 0.85rem; }
+.evidence-production dd, .evidence-caveat, .evidence-affected code { overflow-wrap: anywhere; }
+@media (prefers-reduced-motion: reduce) {
+  .evidence-view *, .evidence-dialog { animation: none !important; transition: none !important; }
+}

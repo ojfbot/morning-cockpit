@@ -26,6 +26,14 @@ export type AgentLivenessState =
   | 'IDLE'
   | 'LIVE';
 
+export type AmbiguousTargetDiagnostic = {
+  candidateTargetKeys: Array<Scalars['String']['output']>;
+  reason: Scalars['String']['output'];
+  referrerKey: Scalars['String']['output'];
+  relation: ReferenceRelation;
+  targetNativeId: Scalars['String']['output'];
+};
+
 export type BriefingArtifact = {
   align: Scalars['String']['output'];
   closes: Scalars['String']['output'];
@@ -64,6 +72,105 @@ export type BriefingThread = {
   whyNow: Scalars['String']['output'];
 };
 
+export type ClosingRelation =
+  | 'closes';
+
+export type DocumentProduction = LegacyUnknownDocumentProduction | RecordedDocumentProduction | UnavailableDocumentProduction;
+
+export type DoltBeadSourceRecord = SourceRecord & {
+  kind: Scalars['String']['output'];
+  nativeId: Scalars['String']['output'];
+  repository?: Maybe<Scalars['String']['output']>;
+  source: Scalars['String']['output'];
+  sourcePath?: Maybe<Scalars['String']['output']>;
+};
+
+export type EvidenceCoverage = {
+  reason?: Maybe<Scalars['String']['output']>;
+  repositoriesObserved: Scalars['Int']['output'];
+  skippedRecords: Scalars['Int']['output'];
+  status: Scalars['String']['output'];
+  unreadableRepositories: Scalars['Int']['output'];
+};
+
+export type EvidenceIndex = {
+  populationRecordKeys: Array<Scalars['String']['output']>;
+  records: Array<HandoffRecordSummary>;
+  snapshotId: Scalars['String']['output'];
+  status: Scalars['String']['output'];
+  unresolvedRelations: Array<UnresolvedRelationDiagnostic>;
+};
+
+export type EvidenceIndexResult = EvidenceIndex | EvidenceRefreshRequired;
+
+export type EvidenceRecord = {
+  record: HandoffRecordEvidence;
+  snapshotId: Scalars['String']['output'];
+  status: Scalars['String']['output'];
+};
+
+export type EvidenceRecordNotObserved = {
+  snapshotId: Scalars['String']['output'];
+  sourceRecordKey: Scalars['String']['output'];
+  status: Scalars['String']['output'];
+};
+
+export type EvidenceRecordResult = EvidenceRecord | EvidenceRecordNotObserved | EvidenceRefreshRequired;
+
+export type EvidenceRefreshRequired = {
+  reason: Scalars['String']['output'];
+  snapshotId: Scalars['String']['output'];
+  status: Scalars['String']['output'];
+};
+
+export type EvidenceSummary = {
+  byRepository: Array<RepositoryEvidenceCount>;
+  coverage: EvidenceCoverage;
+  generatedAt: Scalars['String']['output'];
+  snapshotId: Scalars['String']['output'];
+  total: Scalars['Int']['output'];
+  unresolvedCount: Scalars['Int']['output'];
+};
+
+export type HandoffDocumentSourceRecord = SourceRecord & {
+  kind: Scalars['String']['output'];
+  nativeId?: Maybe<Scalars['String']['output']>;
+  repository: Scalars['String']['output'];
+  source: Scalars['String']['output'];
+  sourcePath: Scalars['String']['output'];
+};
+
+export type HandoffLiteralMetadata = {
+  actor?: Maybe<Scalars['String']['output']>;
+  authoredCreatedAt?: Maybe<Scalars['String']['output']>;
+  refs: Array<Scalars['String']['output']>;
+  respondingTo?: Maybe<Scalars['String']['output']>;
+  status?: Maybe<Scalars['String']['output']>;
+  to?: Maybe<Scalars['String']['output']>;
+  type?: Maybe<Scalars['String']['output']>;
+};
+
+export type HandoffRecordEvidence = {
+  collectedAt: Scalars['String']['output'];
+  documentProduction: DocumentProduction;
+  literal: HandoffLiteralMetadata;
+  observedModifiedAt: Scalars['String']['output'];
+  sourceRecord: SourceRecord;
+  sourceRecordKey: Scalars['String']['output'];
+  title: Scalars['String']['output'];
+};
+
+export type HandoffRecordSummary = {
+  sourceRecord: SourceRecord;
+  sourceRecordKey: Scalars['String']['output'];
+  title: Scalars['String']['output'];
+};
+
+export type LegacyUnknownDocumentProduction = {
+  reason: Scalars['String']['output'];
+  status: Scalars['String']['output'];
+};
+
 /**
  * Canonical read-model contract — the fleet-wide GraphQL SDL (ADR-0013).
  *
@@ -80,11 +187,39 @@ export type Liveness =
   | 'LIVE'
   | 'STALE';
 
+export type MissingTargetDiagnostic = {
+  reason: Scalars['String']['output'];
+  referrerKey: Scalars['String']['output'];
+  relation: ReferenceRelation;
+  targetNativeId: Scalars['String']['output'];
+};
+
+export type ProductionInteraction = {
+  agentId?: Maybe<Scalars['String']['output']>;
+  completedAt: Scalars['String']['output'];
+  hostId: Scalars['String']['output'];
+  interactionId: Scalars['String']['output'];
+  kind: Scalars['String']['output'];
+  modelId?: Maybe<Scalars['String']['output']>;
+  modelProvider?: Maybe<Scalars['String']['output']>;
+  parentInteractionId?: Maybe<Scalars['String']['output']>;
+  principalId?: Maybe<Scalars['String']['output']>;
+  runtimeId: Scalars['String']['output'];
+  sessionId?: Maybe<Scalars['String']['output']>;
+  sessionProvider?: Maybe<Scalars['String']['output']>;
+  startedAt: Scalars['String']['output'];
+  traceId?: Maybe<Scalars['String']['output']>;
+};
+
 export type Query = {
   /** Derived agent liveness (ADR-0008). */
   agentLiveness: Array<AgentLiveness>;
   /** Briefing (00). `repo` arg forward-declared for Slice F2 (repo-scoped briefing); null = global. */
   briefing: BriefingSnapshot;
+  evidenceIndex: EvidenceIndexResult;
+  evidenceRecord: EvidenceRecordResult;
+  /** Counts and coverage for one captured evidence observation. */
+  evidenceSummary: EvidenceSummary;
   /** Fleet (01) repo cards. */
   fleet: Array<RepoCard>;
   /** Lane work-items: overnight | pickup | available. */
@@ -97,8 +232,37 @@ export type QueryBriefingArgs = {
 };
 
 
+export type QueryEvidenceIndexArgs = {
+  snapshotId: Scalars['String']['input'];
+};
+
+
+export type QueryEvidenceRecordArgs = {
+  snapshotId: Scalars['String']['input'];
+  sourceRecordKey: Scalars['String']['input'];
+};
+
+
 export type QueryWorkItemsArgs = {
   lane: Scalars['String']['input'];
+};
+
+/** Self-recorded trace, never proof of authenticated authority. See inspector-contract.md; emission enforcement inactive. */
+export type RecordedDocumentProduction = {
+  interactions: Array<ProductionInteraction>;
+  schemaVersion: Scalars['Int']['output'];
+  status: Scalars['String']['output'];
+};
+
+export type ReferenceRelation =
+  | 'closes'
+  | 'responding_to';
+
+/** Directed keys, canonically rotated to the least key; never member-sorted. */
+export type RelationCycleDiagnostic = {
+  cycleKeys: Array<Scalars['String']['output']>;
+  reason: Scalars['String']['output'];
+  relation: ClosingRelation;
 };
 
 export type RepoCard = {
@@ -127,6 +291,34 @@ export type RepoPopover = {
   placeholder: Scalars['Boolean']['output'];
 };
 
+export type RepositoryEvidenceCount = {
+  count: Scalars['Int']['output'];
+  repository: Scalars['String']['output'];
+};
+
+export type SourceRecord = {
+  kind: Scalars['String']['output'];
+  nativeId?: Maybe<Scalars['String']['output']>;
+  repository?: Maybe<Scalars['String']['output']>;
+  source: Scalars['String']['output'];
+  sourcePath?: Maybe<Scalars['String']['output']>;
+};
+
+export type SuccessorOrderDiagnostic = {
+  candidateSuccessorKeys: Array<Scalars['String']['output']>;
+  predecessorKey: Scalars['String']['output'];
+  reason: Scalars['String']['output'];
+  relation: ClosingRelation;
+  targetNativeId?: Maybe<Scalars['String']['output']>;
+};
+
+export type UnavailableDocumentProduction = {
+  reason: Scalars['String']['output'];
+  status: Scalars['String']['output'];
+};
+
+export type UnresolvedRelationDiagnostic = AmbiguousTargetDiagnostic | MissingTargetDiagnostic | RelationCycleDiagnostic | SuccessorOrderDiagnostic;
+
 export type WorkItem = {
   activityAt: Scalars['String']['output'];
   actor?: Maybe<Scalars['String']['output']>;
@@ -142,6 +334,8 @@ export type WorkItem = {
   posted?: Maybe<Scalars['Boolean']['output']>;
   repo?: Maybe<Scalars['String']['output']>;
   source: Scalars['String']['output'];
+  sourceRecord?: Maybe<SourceRecord>;
+  sourceRecordKey?: Maybe<Scalars['String']['output']>;
   staleDays?: Maybe<Scalars['Int']['output']>;
   status: Scalars['String']['output'];
   title: Scalars['String']['output'];

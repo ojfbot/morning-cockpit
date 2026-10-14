@@ -17,6 +17,9 @@ function up<T extends string>(v: T): string {
 export function makeResolvers(source: ReadModelSource) {
   return {
     Query: {
+      evidenceSummary: () => source.evidenceSummary(),
+      evidenceIndex: (_p: unknown, args: { snapshotId: string }) => source.evidenceIndex(args.snapshotId),
+      evidenceRecord: (_p: unknown, args: { snapshotId: string; sourceRecordKey: string }) => source.evidenceRecord(args.snapshotId, args.sourceRecordKey),
       fleet: async () => {
         const snap = await source.snapshot();
         const now = Date.parse(snap.generatedAt) || Date.now();
@@ -34,6 +37,11 @@ export function makeResolvers(source: ReadModelSource) {
         return list.map((a: AgentLiveness) => ({ ...a, state: up(a.state) }));
       },
     },
+    SourceRecord: { __resolveType: (record: { kind: string }) => record.kind === 'dolt-bead-v1' ? 'DoltBeadSourceRecord' : record.kind === 'handoff-document-v1' ? 'HandoffDocumentSourceRecord' : null },
+    UnresolvedRelationDiagnostic: { __resolveType: (record: { reason: string }) => ({ 'target-not-observed': 'MissingTargetDiagnostic', 'target-matches-multiple-records': 'AmbiguousTargetDiagnostic', 'successor-order-unresolved': 'SuccessorOrderDiagnostic', 'relation-cycle': 'RelationCycleDiagnostic' })[record.reason] ?? null },
+    DocumentProduction: { __resolveType: (record: { status: string }) => ({ recorded: 'RecordedDocumentProduction', 'legacy-unknown': 'LegacyUnknownDocumentProduction', unavailable: 'UnavailableDocumentProduction' })[record.status] ?? null },
+    EvidenceIndexResult: { __resolveType: (record: { status: string }) => record.status === 'ready' ? 'EvidenceIndex' : 'EvidenceRefreshRequired' },
+    EvidenceRecordResult: { __resolveType: (record: { status: string }) => record.status === 'ready' ? 'EvidenceRecord' : record.status === 'record-not-observed' ? 'EvidenceRecordNotObserved' : 'EvidenceRefreshRequired' },
     RepoCard: {
       // Forward-declared seams (G0): honest defaults until L1/L3 fill them, so the non-null `links`
       // list never crashes a query and `popover` reads null.

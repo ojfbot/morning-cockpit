@@ -156,7 +156,7 @@ export async function fetchDolt(ctx: LaneContext): Promise<{ items: WorkItem[]; 
 
       const kind = row.type as WorkItemKind;
       const repo = labels['app'] ?? labels['repo'] ?? beadPrefix(row.id);
-      const sourceRecord = { source: 'dolt-bead' as const, repository: repo, nativeId: row.id, sourcePath: null };
+      const sourceRecord = { kind: 'dolt-bead-v1' as const, source: 'dolt-bead' as const, repository: repo, nativeId: row.id, sourcePath: null };
       const input: LaneInput = {
         source: 'dolt-bead',
         kind,
@@ -251,7 +251,7 @@ export async function fetchDolt(ctx: LaneContext): Promise<{ items: WorkItem[]; 
       const labels = parseJsonColumn<Record<string, string>>(row.labels, {});
       const activityAt = derived.get(row.id)?.lastEventAt ?? toIso(row.updated_at) ?? ctx.now.toISOString();
       const repo = labels['app'] ?? labels['repo'] ?? beadPrefix(row.id);
-      const sourceRecord = { source: 'dolt-bead' as const, repository: repo, nativeId: row.id, sourcePath: null };
+      const sourceRecord = { kind: 'dolt-bead-v1' as const, source: 'dolt-bead' as const, repository: repo, nativeId: row.id, sourcePath: null };
       items.push({
         id: `dolt-bead:${row.id}`,
         nativeId: row.id,

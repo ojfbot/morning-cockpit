@@ -16,7 +16,7 @@ describe('aggregate evidence fallback', () => {
   it('fails evidence coverage closed when the handoff adapter throws unexpectedly', async () => {
     const snapshot = await buildSnapshot(new Date('2026-10-10T12:00:00.000Z'));
 
-    expect(snapshot.evidence?.coverage).toEqual({
+    expect(snapshot.evidenceSummary?.coverage).toEqual({
       status: 'unavailable',
       repositoriesObserved: 0,
       skippedRecords: 0,

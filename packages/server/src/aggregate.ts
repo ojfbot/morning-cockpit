@@ -10,6 +10,7 @@ import {
   type LaneContext,
   type WorkItem,
 } from '@cockpit/shared';
+import { evidenceStore } from './evidence-store.js';
 import { config } from './config.js';
 import { TtlCache } from './cache.js';
 import { fetchDolt } from './adapters/dolt.js';
@@ -93,7 +94,7 @@ export async function buildSnapshot(nowDate = new Date()): Promise<CockpitSnapsh
     overnightSince,
     lanes,
     health,
-    evidence,
+    evidenceSummary: evidenceStore.capture(evidence, nowDate.toISOString()),
     summaries: {
       overnight: summarizeLane('overnight', lanes.overnight),
       pickup: summarizeLane('pickup', lanes.pickup),

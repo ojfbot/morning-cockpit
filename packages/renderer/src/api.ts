@@ -343,3 +343,54 @@ export async function claimTask(beadId: string): Promise<ClaimResponse> {
   if (!res.ok && res.status !== 409) throw new Error(`claim ${res.status}`);
   return (await res.json()) as ClaimResponse;
 }
+
+const EVIDENCE_SOURCE = 'kind source repository nativeId sourcePath';
+const EVIDENCE_SUMMARY = 'snapshotId generatedAt total unresolvedCount byRepository { repository count } coverage { status repositoriesObserved skippedRecords unreadableRepositories reason }';
+const EVIDENCE_DIAGNOSTICS = `... on MissingTargetDiagnostic { reason referenceRelation: relation requestedTarget: targetNativeId referrerKey }
+ ... on AmbiguousTargetDiagnostic { reason referenceRelation: relation requestedTarget: targetNativeId referrerKey candidateTargetKeys }
+ ... on SuccessorOrderDiagnostic { reason closingRelation: relation predecessorNativeId: targetNativeId predecessorKey candidateSuccessorKeys }
+ ... on RelationCycleDiagnostic { reason closingRelation: relation cycleKeys }`;
+const PRODUCTION = `... on LegacyUnknownDocumentProduction { status reason }
+ ... on UnavailableDocumentProduction { status reason }
+ ... on RecordedDocumentProduction { status schemaVersion interactions { kind interactionId parentInteractionId principalId agentId runtimeId sessionProvider sessionId modelProvider modelId traceId hostId startedAt completedAt } }`;
+
+async function evidenceQuery<T>(query: string, variables: Record<string, string> = {}, signal?: AbortSignal): Promise<T> {
+  const response = await fetch('/graphql', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ query, variables }), signal });
+  if (!response.ok) throw new Error(`Evidence read failed (${response.status})`);
+  const result: { data?: T; errors?: Array<{ message: string }> } = await response.json();
+  if (result.errors?.length || !result.data) throw new Error(result.errors?.map(error => error.message).join('; ') ?? 'Evidence read returned no data');
+  return result.data;
+}
+export async function fetchEvidenceSummary(signal?: AbortSignal): Promise<import('@cockpit/shared').EvidenceSummary> {
+  return (await evidenceQuery<{ evidenceSummary: import('@cockpit/shared').EvidenceSummary }>(`{ evidenceSummary { ${EVIDENCE_SUMMARY} } }`, {}, signal)).evidenceSummary;
+}
+type Diagnostic = import('@cockpit/shared').UnresolvedRelationDiagnostic;
+type MissingWire = Omit<Extract<Diagnostic, { reason: 'target-not-observed' }>, 'relation' | 'targetNativeId'> & { referenceRelation: 'closes' | 'responding_to'; requestedTarget: string };
+type AmbiguousWire = Omit<Extract<Diagnostic, { reason: 'target-matches-multiple-records' }>, 'relation' | 'targetNativeId'> & { referenceRelation: 'closes' | 'responding_to'; requestedTarget: string };
+type SuccessorWire = Omit<Extract<Diagnostic, { reason: 'successor-order-unresolved' }>, 'relation' | 'targetNativeId'> & { closingRelation: 'closes'; predecessorNativeId: string | null };
+type CycleWire = Omit<Extract<Diagnostic, { reason: 'relation-cycle' }>, 'relation'> & { closingRelation: 'closes' };
+type IndexWire = Omit<import('@cockpit/shared').EvidenceIndex, 'unresolvedRelations'> & { unresolvedRelations: Array<MissingWire | AmbiguousWire | SuccessorWire | CycleWire> };
+function diagnosticFromQuery(value: MissingWire | AmbiguousWire | SuccessorWire | CycleWire): Diagnostic {
+  switch (value.reason) {
+    case 'target-not-observed': return { reason: value.reason, relation: value.referenceRelation, targetNativeId: value.requestedTarget, referrerKey: value.referrerKey };
+    case 'target-matches-multiple-records': return { reason: value.reason, relation: value.referenceRelation, targetNativeId: value.requestedTarget, referrerKey: value.referrerKey, candidateTargetKeys: value.candidateTargetKeys };
+    case 'successor-order-unresolved': return { reason: value.reason, relation: value.closingRelation, targetNativeId: value.predecessorNativeId, predecessorKey: value.predecessorKey, candidateSuccessorKeys: value.candidateSuccessorKeys };
+    case 'relation-cycle': return { reason: value.reason, relation: value.closingRelation, cycleKeys: value.cycleKeys };
+  }
+}
+export async function fetchEvidenceIndex(snapshotId: string, signal?: AbortSignal): Promise<import('@cockpit/shared').EvidenceIndexResult> {
+  const query = `query EvidenceIndex($snapshotId:String!) { evidenceIndex(snapshotId:$snapshotId) {
+    ... on EvidenceIndex { status snapshotId records { sourceRecordKey title sourceRecord { ${EVIDENCE_SOURCE} } } populationRecordKeys unresolvedRelations { ${EVIDENCE_DIAGNOSTICS} } }
+    ... on EvidenceRefreshRequired { status snapshotId reason }
+  } }`;
+  const result = (await evidenceQuery<{ evidenceIndex: IndexWire | import('@cockpit/shared').EvidenceRefreshRequired }>(query, { snapshotId }, signal)).evidenceIndex;
+  return result.status === 'ready' ? { ...result, unresolvedRelations: result.unresolvedRelations.map(diagnosticFromQuery) } : result;
+}
+export async function fetchEvidenceRecord(snapshotId: string, sourceRecordKey: string, signal?: AbortSignal): Promise<import('@cockpit/shared').EvidenceRecordResult> {
+  const query = `query EvidenceRecord($snapshotId:String!,$sourceRecordKey:String!) { evidenceRecord(snapshotId:$snapshotId,sourceRecordKey:$sourceRecordKey) {
+    ... on EvidenceRecord { status snapshotId record { sourceRecordKey title sourceRecord { ${EVIDENCE_SOURCE} } literal { type status actor to respondingTo refs authoredCreatedAt } observedModifiedAt collectedAt documentProduction { ${PRODUCTION} } } }
+    ... on EvidenceRefreshRequired { status snapshotId reason }
+    ... on EvidenceRecordNotObserved { status snapshotId sourceRecordKey }
+  } }`;
+  return (await evidenceQuery<{ evidenceRecord: import('@cockpit/shared').EvidenceRecordResult }>(query, { snapshotId, sourceRecordKey }, signal)).evidenceRecord;
+}

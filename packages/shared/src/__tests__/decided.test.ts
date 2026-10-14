@@ -127,7 +127,7 @@ describe('resolveDecidedInFlight diagnostics', () => {
     }]);
     expect(result.decided.size).toBe(0);
     expect(result.diagnostics).toEqual([
-      expect.objectContaining({ reason: 'relation-cycle', affectedSourceRecordKeys: ['alpha/self.md'] }),
+      expect.objectContaining({ reason: 'relation-cycle', cycleKeys: ['alpha/self.md'] }),
     ]);
   });
 
@@ -140,7 +140,7 @@ describe('resolveDecidedInFlight diagnostics', () => {
       expect.objectContaining({
         reason: 'successor-order-unresolved',
         targetNativeId: PREDECESSOR.id,
-        affectedSourceRecordKeys: ['alpha/first.md', 'alpha/predecessor.md', 'alpha/second.md'],
+        predecessorKey: 'alpha/predecessor.md', candidateSuccessorKeys: ['alpha/first.md', 'alpha/second.md'],
       }),
     ]);
   });
@@ -152,7 +152,7 @@ describe('resolveDecidedInFlight diagnostics', () => {
     expect(result.diagnostics).toEqual([
       expect.objectContaining({
         reason: 'target-matches-multiple-records',
-        affectedSourceRecordKeys: ['alpha/predecessor.md', 'alpha/successor.md', 'beta/predecessor.md'],
+        referrerKey: 'alpha/successor.md', candidateTargetKeys: ['alpha/predecessor.md', 'beta/predecessor.md'],
       }),
     ]);
   });

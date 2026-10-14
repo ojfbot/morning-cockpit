@@ -5,6 +5,8 @@ import { createInterface } from 'node:readline';
 import { parse as parseYaml } from 'yaml';
 import {
   classifyLane,
+  diagnosticRecordKeys,
+  parseDocumentProduction,
   emptyCockpitEvidence,
   foldedChainFor,
   resolveDecidedInFlight,
@@ -38,6 +40,7 @@ interface ParsedBead {
   filePath: string;
   relativePath: string;
   mtimeIso: string;
+  documentProduction: unknown;
 }
 
 interface ScannedBead {
@@ -101,20 +104,6 @@ async function readFrontmatter(filePath: string): Promise<string | null> {
   }
 }
 
-function makeDiagnostic(
-  reason: UnresolvedRelationDiagnostic['reason'],
-  relation: UnresolvedRelationDiagnostic['relation'],
-  targetNativeId: string | null,
-  keys: string[],
-): UnresolvedRelationDiagnostic {
-  return {
-    reason,
-    relation,
-    targetNativeId,
-    affectedSourceRecordKeys: [...new Set(keys)].sort(),
-  };
-}
-
 function sortDiagnostics(diagnostics: UnresolvedRelationDiagnostic[]): UnresolvedRelationDiagnostic[] {
   const keyed = diagnostics.map((diagnostic) => [JSON.stringify(diagnostic), diagnostic] as const);
   return [...new Map(keyed).values()].sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
@@ -129,7 +118,7 @@ function buildPopulation(records: HandoffRecordEvidence[]) {
   }
   return {
     name: 'standaloneUnansweredBriefs' as const,
-    records: sorted,
+    recordKeys: sorted.map(record => record.sourceRecordKey),
     total: sorted.length,
     byRepository: [...counts]
       .sort(([left], [right]) => left.localeCompare(right))
@@ -207,6 +196,7 @@ export async function fetchHandoff(ctx: LaneContext): Promise<HandoffAdapterResu
         }
         const rawRefs = frontmatter['refs'];
         parsed.push({
+          documentProduction: frontmatter['document_production'],
           id: literalString(frontmatter['id']),
           type: literalString(frontmatter['type']),
           title: literalString(frontmatter['title']),
@@ -230,6 +220,7 @@ export async function fetchHandoff(ctx: LaneContext): Promise<HandoffAdapterResu
       const createdIso = toIso(bead.created_at, bead.mtimeIso);
       const activityAt = Date.parse(bead.mtimeIso) > Date.parse(createdIso) ? bead.mtimeIso : createdIso;
       const sourceRecord: SourceRecordRef = {
+        kind: 'handoff-document-v1',
         source: 'handoff-bead',
         repository: repo,
         nativeId: bead.id ?? null,
@@ -251,6 +242,7 @@ export async function fetchHandoff(ctx: LaneContext): Promise<HandoffAdapterResu
         },
         observedModifiedAt: bead.mtimeIso,
         collectedAt,
+        documentProduction: parseDocumentProduction(bead.documentProduction),
       };
       scanned.push({
         bead,
@@ -273,21 +265,21 @@ export async function fetchHandoff(ctx: LaneContext): Promise<HandoffAdapterResu
 
   // responding_to resolves only within a repository; the authored token carries no repo.
   for (const report of scanned.filter((record) => record.kind === 'report' && record.bead.responding_to)) {
+    // The filter above keeps only reports with an authored responding_to token.
     const targetNativeId = report.bead.responding_to!;
     const candidates = scanned.filter(
       (record) => record.repo === report.repo && record.kind === 'brief' && record.bead.id === targetNativeId,
     );
     if (candidates.length === 1) {
+      // The length guard establishes one candidate at index zero.
       respondedKeys.add(candidates[0]!.sourceRecordKey);
     } else {
-      const diagnostic = makeDiagnostic(
-        candidates.length === 0 ? 'target-not-observed' : 'target-matches-multiple-records',
-        'responding_to',
-        targetNativeId,
-        [report.sourceRecordKey, ...candidates.map((candidate) => candidate.sourceRecordKey)],
-      );
+      const base = { relation: 'responding_to' as const, targetNativeId, referrerKey: report.sourceRecordKey };
+      const diagnostic: UnresolvedRelationDiagnostic = candidates.length === 0
+        ? { ...base, reason: 'target-not-observed' }
+        : { ...base, reason: 'target-matches-multiple-records', candidateTargetKeys: candidates.map(candidate => candidate.sourceRecordKey).sort() };
       diagnostics.push(diagnostic);
-      for (const key of diagnostic.affectedSourceRecordKeys) affected.add(key);
+      for (const key of diagnosticRecordKeys(diagnostic)) affected.add(key);
     }
   }
 

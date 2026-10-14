@@ -10,7 +10,7 @@ const vendoredSdl = readFileSync(
 
 const sharedDir = fileURLToPath(new URL('../../../../shared/src/', import.meta.url));
 const shared = sharedInterfaceFields(
-  ['fleet.ts', 'briefing.ts', 'liveness.ts', 'work-item.ts'].map((f) => sharedDir + f),
+  ['fleet.ts', 'briefing.ts', 'liveness.ts', 'work-item.ts', 'source-record.ts'].map((f) => sharedDir + f),
 );
 
 describe('SDL ↔ @cockpit/shared parity', () => {
@@ -29,4 +29,9 @@ describe('SDL ↔ @cockpit/shared parity', () => {
       expect.objectContaining({ type: 'RepoCard', field: 'phantomUnbackedField' }),
     );
   });
+});
+
+it('rejects shared-only public coordinates instead of accepting a one-way match', () => {
+  const changed = { ...shared, WorkItem: new Set([...(shared.WorkItem ?? []), 'sharedOnlyPublicField']) };
+  expect(compareSdlToShared(vendoredSdl, changed)).toContainEqual({ type: 'WorkItem', field: 'sharedOnlyPublicField', reason: 'shared field missing from SDL' });
 });

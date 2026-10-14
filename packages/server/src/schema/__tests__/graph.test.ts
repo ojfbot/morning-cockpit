@@ -1,3 +1,5 @@
+import { emptyCockpitEvidence } from '@cockpit/shared';
+import { EvidenceStore } from '../../evidence-store.js';
 import { describe, it, expect } from 'vitest';
 import { createYoga } from 'graphql-yoga';
 import type { CockpitSnapshot } from '@cockpit/shared';
@@ -21,7 +23,12 @@ function fakeSnapshot(): CockpitSnapshot {
   };
 }
 
+const fixtureStore = new EvidenceStore();
+const fixtureSummary = fixtureStore.capture(emptyCockpitEvidence({ status: 'complete', repositoriesObserved: 0, skippedRecords: 0, unreadableRepositories: 0 }), '2026-10-13T00:00:00Z');
 const fakeSource: ReadModelSource = {
+  evidenceSummary: async () => fixtureSummary,
+  evidenceIndex: id => fixtureStore.index(id),
+  evidenceRecord: (id, key) => fixtureStore.record(id, key),
   snapshot: async () => fakeSnapshot(),
   briefing: async () => ({
     generatedAt: '2026-06-27T05:00:00.000Z',

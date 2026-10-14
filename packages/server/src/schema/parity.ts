@@ -17,6 +17,11 @@ import { buildSchema, isObjectType, type GraphQLObjectType } from 'graphql';
 export const MIRRORED_TYPES = [
   'RepoCard', 'AgentLiveness', 'BriefingArtifact', 'BriefingBranch',
   'BriefingThread', 'BriefingSnapshot', 'WorkItem',
+  'DoltBeadSourceRecord', 'HandoffDocumentSourceRecord', 'HandoffLiteralMetadata',
+  'HandoffRecordSummary', 'HandoffRecordEvidence', 'ProductionInteraction',
+  'RecordedDocumentProduction', 'LegacyUnknownDocumentProduction', 'UnavailableDocumentProduction',
+  'MissingTargetDiagnostic', 'AmbiguousTargetDiagnostic', 'SuccessorOrderDiagnostic', 'RelationCycleDiagnostic',
+  'EvidenceCoverage', 'RepositoryEvidenceCount', 'EvidenceSummary', 'EvidenceIndex', 'EvidenceRecord', 'EvidenceRefreshRequired', 'EvidenceRecordNotObserved',
 ] as const;
 
 /**
@@ -39,18 +44,24 @@ export interface Mismatch {
 /** Extract `interface` name → property names from the given `@cockpit/shared` source files. */
 export function sharedInterfaceFields(sourceFiles: string[]): Record<string, Set<string>> {
   const out: Record<string, Set<string>> = {};
+  const bases: Record<string, string[]> = {};
+  const aliases: Record<string, string[]> = {};
+  const members = (nodes: ts.NodeArray<ts.TypeElement>): Set<string> => new Set(nodes.flatMap(node => ts.isPropertySignature(node) && node.name && ts.isIdentifier(node.name) ? [node.name.text] : []));
   for (const file of sourceFiles) {
     const sf = ts.createSourceFile(file, readFileSync(file, 'utf8'), ts.ScriptTarget.Latest, true);
-    sf.forEachChild((node) => {
+    sf.forEachChild(node => {
       if (ts.isInterfaceDeclaration(node)) {
-        const fields = new Set<string>();
-        for (const m of node.members) {
-          if (ts.isPropertySignature(m) && m.name && ts.isIdentifier(m.name)) fields.add(m.name.text);
-        }
-        out[node.name.text] = fields;
+        out[node.name.text] = members(node.members);
+        bases[node.name.text] = node.heritageClauses?.flatMap(clause => clause.types.map(type => type.expression.getText(sf))) ?? [];
+      } else if (ts.isTypeAliasDeclaration(node) && ts.isUnionTypeNode(node.type)) {
+        const objectVariants = node.type.types.filter(ts.isTypeLiteralNode);
+        if (objectVariants.length) out[node.name.text] = new Set(objectVariants.flatMap(type => [...members(type.members)]));
+        aliases[node.name.text] = node.type.types.filter(ts.isTypeReferenceNode).map(type => type.typeName.getText(sf));
       }
     });
   }
+  for (const [name, parents] of Object.entries(bases)) for (const parent of parents) for (const field of out[parent] ?? []) out[name]?.add(field);
+  for (const [name, variants] of Object.entries(aliases)) if (variants.length) out[name] = new Set(variants.flatMap(variant => [...(out[variant] ?? [])]));
   return out;
 }
 
@@ -73,6 +84,9 @@ export function compareSdlToShared(
 ): Mismatch[] {
   const sdlFields = sdlObjectFields(sdl);
   const mismatches: Mismatch[] = [];
+  // Pre-existing rich REST WorkItem details are outside the accepted SDL core-field surface.
+  // New source/evidence fields are not exempt. Adding another exception requires owner review.
+  const restOnly = new Set(['WorkItem.chain', 'WorkItem.detail', 'WorkItem.provenance']);
   for (const type of MIRRORED_TYPES) {
     const sdlSet = sdlFields[type];
     if (!sdlSet) {
@@ -83,6 +97,9 @@ export function compareSdlToShared(
     if (!sharedSet) {
       mismatches.push({ type, field: '*', reason: 'mirrored type missing from @cockpit/shared' });
       continue;
+    }
+    for (const field of sharedSet) {
+      if (!sdlSet.has(field) && !restOnly.has(`${type}.${field}`)) mismatches.push({ type, field, reason: 'shared field missing from SDL' });
     }
     for (const field of sdlSet) {
       if (FORWARD_DECLARED.has(`${type}.${field}`)) continue; // SDL ahead by design (F2/L1/L3)
