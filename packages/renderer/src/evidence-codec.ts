@@ -1,4 +1,22 @@
-import type * as G from '@cockpit/shared/inspector-contract';
+import type {
+  DocumentProduction,
+  DoltEvidenceIndex,
+  DoltRecordSummary,
+  EvidenceCoverage,
+  EvidenceIndexResult,
+  EvidenceRecordResult,
+  EvidenceSourceSummary,
+  EvidenceSummary,
+  HandoffEvidenceIndex,
+  HandoffRecordSummary,
+  ObservedEvidenceRecord,
+  ProductionInteraction,
+  RepositoryEvidenceCount,
+  SourceRecord,
+  TaskDocumentResolution,
+  TaskDocumentTarget,
+  UnresolvedRelationDiagnostic,
+} from '@cockpit/shared/inspector-contract';
 import { sourceRecordKey, parseDocumentProduction } from '@cockpit/shared';
 // Unknown GraphQL JSON stops here. Constructors are checked against generated SDL models.
 function object(v: unknown): Record<string, unknown> {
@@ -43,25 +61,24 @@ function same(v: unknown, requested: string): string {
   return requested;
 }
 
-function ref(v: unknown): G.SourceRecord {
+function ref(v: unknown): SourceRecord {
   const o = object(v);
   switch (o.__typename) {
     case 'DoltBeadSourceRecord': {
-      const r: Extract<G.SourceRecord, { __typename: 'DoltBeadSourceRecord' }> =
-        {
-          __typename: 'DoltBeadSourceRecord',
-          kind: tag(o.doltKind, 'dolt_bead_v1', 'dolt-bead-v1'),
-          source: tag(o.doltSource, 'dolt_bead', 'dolt-bead'),
-          nativeId: nonempty(o.doltId),
-          repository: o.doltRepo === null ? null : nonempty(o.doltRepo),
-          sourcePath: nil(o.doltPath),
-        };
+      const r: Extract<SourceRecord, { __typename: 'DoltBeadSourceRecord' }> = {
+        __typename: 'DoltBeadSourceRecord',
+        kind: tag(o.doltKind, 'dolt_bead_v1', 'dolt-bead-v1'),
+        source: tag(o.doltSource, 'dolt_bead', 'dolt-bead'),
+        nativeId: nonempty(o.doltId),
+        repository: o.doltRepo === null ? null : nonempty(o.doltRepo),
+        sourcePath: nil(o.doltPath),
+      };
       sourceRecordKey(r);
       return r;
     }
     case 'HandoffDocumentSourceRecord': {
       const r: Extract<
-        G.SourceRecord,
+        SourceRecord,
         { __typename: 'HandoffDocumentSourceRecord' }
       > = {
         __typename: 'HandoffDocumentSourceRecord',
@@ -91,7 +108,7 @@ function summaryRecord(v: unknown) {
       sourceRecord,
       sourceRecordKey: key,
       title: text(o.title),
-    } satisfies G.DoltRecordSummary;
+    } satisfies DoltRecordSummary;
   if (
     o.__typename === 'HandoffRecordSummary' &&
     sourceRecord.__typename === 'HandoffDocumentSourceRecord'
@@ -101,10 +118,10 @@ function summaryRecord(v: unknown) {
       sourceRecord,
       sourceRecordKey: key,
       title: text(o.title),
-    } satisfies G.HandoffRecordSummary;
+    } satisfies HandoffRecordSummary;
   throw new Error('Record/source mismatch');
 }
-function coverage(v: unknown): G.EvidenceCoverage {
+function coverage(v: unknown): EvidenceCoverage {
   const o = object(v);
   const status = o.status;
   if (status !== 'complete' && status !== 'partial' && status !== 'unavailable')
@@ -118,7 +135,7 @@ function coverage(v: unknown): G.EvidenceCoverage {
     reason: nullable(o.reason),
   };
 }
-function counts(v: unknown): G.RepositoryEvidenceCount[] {
+function counts(v: unknown): RepositoryEvidenceCount[] {
   return list(v, (v) => {
     const o = object(v);
     return {
@@ -132,7 +149,7 @@ function counts(v: unknown): G.RepositoryEvidenceCount[] {
     };
   });
 }
-function sourceSummary(v: unknown): G.EvidenceSourceSummary {
+function sourceSummary(v: unknown): EvidenceSourceSummary {
   const o = object(v);
   let source: 'dolt-bead' | 'handoff-bead';
   if (o.source === 'dolt_bead') source = 'dolt-bead';
@@ -156,7 +173,7 @@ function sourceSummary(v: unknown): G.EvidenceSourceSummary {
     byRepository: counts(o.byRepository),
   };
 }
-export function decodeSummary(v: unknown): G.EvidenceSummary {
+export function decodeSummary(v: unknown): EvidenceSummary {
   const o = object(v),
     h = object(o.handoff);
   const dolt = sourceSummary(o.dolt),
@@ -183,7 +200,7 @@ export function decodeSummary(v: unknown): G.EvidenceSummary {
     unresolvedCount: number(o.unresolvedCount),
   };
 }
-function diagnostic(v: unknown): G.UnresolvedRelationDiagnostic {
+function diagnostic(v: unknown): UnresolvedRelationDiagnostic {
   const o = object(v);
   const relation = () => {
     if (
@@ -246,7 +263,7 @@ function diagnostic(v: unknown): G.UnresolvedRelationDiagnostic {
 export function decodeIndex(
   v: unknown,
   snapshotId: string,
-): G.EvidenceIndexResult {
+): EvidenceIndexResult {
   const o = object(v);
   same(o.snapshotId, snapshotId);
   if (o.__typename === 'EvidenceRefreshRequired')
@@ -259,7 +276,7 @@ export function decodeIndex(
   if (o.__typename !== 'EvidenceIndex') throw new Error('Unknown index result');
   const d = object(o.dolt),
     h = object(o.handoff);
-  const dolt: G.DoltEvidenceIndex =
+  const dolt: DoltEvidenceIndex =
     d.__typename === 'UnavailableDoltIndex'
       ? {
           __typename: d.__typename,
@@ -286,7 +303,7 @@ export function decodeIndex(
             return r;
           }),
         };
-  const handoff: G.HandoffEvidenceIndex =
+  const handoff: HandoffEvidenceIndex =
     h.__typename === 'UnavailableHandoffIndex'
       ? {
           __typename: h.__typename,
@@ -323,7 +340,7 @@ export function decodeIndex(
     handoff,
   };
 }
-function production(v: unknown): G.DocumentProduction {
+function production(v: unknown): DocumentProduction {
   const o = object(v);
   switch (o.__typename) {
     case 'LegacyUnknownDocumentProduction':
@@ -341,7 +358,7 @@ function production(v: unknown): G.DocumentProduction {
     case 'RecordedDocumentProduction': {
       if (o.schemaVersion !== 1)
         throw new Error('Unsupported production version');
-      const interactions: G.ProductionInteraction[] = list(
+      const interactions: ProductionInteraction[] = list(
         o.interactions,
         (v) => {
           const i = object(v);
@@ -419,7 +436,7 @@ function production(v: unknown): G.DocumentProduction {
       throw new Error('Unknown document production');
   }
 }
-function target(v: unknown): G.TaskDocumentTarget {
+function target(v: unknown): TaskDocumentTarget {
   const o = object(v);
   switch (o.__typename) {
     case 'DoltTaskTarget':
@@ -439,7 +456,7 @@ function target(v: unknown): G.TaskDocumentTarget {
       throw new Error('Unknown declared target');
   }
 }
-function link(v: unknown): G.TaskDocumentResolution {
+function link(v: unknown): TaskDocumentResolution {
   const o = object(v),
     referrer = ref(o.referrer),
     fieldPath = text(o.fieldPath);
@@ -561,7 +578,7 @@ export function decodeRecord(
   v: unknown,
   snapshotId: string,
   key: string,
-): G.EvidenceRecordResult {
+): EvidenceRecordResult {
   const o = object(v);
   same(o.snapshotId, snapshotId);
   switch (o.__typename) {
@@ -632,7 +649,7 @@ export function decodeRecord(
           throw new Error(
             'Declaration origin does not match containing record',
           );
-      let record: G.ObservedEvidenceRecord;
+      let record: ObservedEvidenceRecord;
       if (
         r.__typename === 'DoltRecordEvidence' &&
         sourceRecord.__typename === 'DoltBeadSourceRecord'

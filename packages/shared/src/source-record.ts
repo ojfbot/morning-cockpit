@@ -1,5 +1,41 @@
 import { isSafeRepoName } from './handoff-brief.js';
-import type * as Contract from './internal/inspector-model.js';
+import type {
+  AmbiguousTargetDiagnostic as ContractAmbiguousTargetDiagnostic,
+  DocumentProduction as ContractDocumentProduction,
+  DoltBeadSourceRecord as ContractDoltBeadSourceRecord,
+  DoltEvidenceIndex as ContractDoltEvidenceIndex,
+  DoltRecordEvidence as ContractDoltRecordEvidence,
+  DoltRecordSummary as ContractDoltRecordSummary,
+  EmissionProductionInteraction as ContractEmissionProductionInteraction,
+  EvidenceCoverage as ContractEvidenceCoverage,
+  EvidenceIndex as ContractEvidenceIndex,
+  EvidenceIndexResult as ContractEvidenceIndexResult,
+  EvidenceRecord as ContractEvidenceRecord,
+  EvidenceRecordNotObserved as ContractEvidenceRecordNotObserved,
+  EvidenceRecordResult as ContractEvidenceRecordResult,
+  EvidenceRefreshRequired as ContractEvidenceRefreshRequired,
+  EvidenceSourceSummary as ContractEvidenceSourceSummary,
+  EvidenceSummary as ContractEvidenceSummary,
+  HandoffDocumentSourceRecord as ContractHandoffDocumentSourceRecord,
+  HandoffEvidenceIndex as ContractHandoffEvidenceIndex,
+  HandoffLiteralMetadata as ContractHandoffLiteralMetadata,
+  HandoffRecordEvidence as ContractHandoffRecordEvidence,
+  HandoffRecordSummary as ContractHandoffRecordSummary,
+  HumanProductionInteraction as ContractHumanProductionInteraction,
+  InspectionTarget as ContractInspectionTarget,
+  LegacyUnknownDocumentProduction as ContractLegacyUnknownDocumentProduction,
+  MissingTargetDiagnostic as ContractMissingTargetDiagnostic,
+  ModelGenerationInteraction as ContractModelGenerationInteraction,
+  ProductionInteraction as ContractProductionInteraction,
+  RecordedDocumentProduction as ContractRecordedDocumentProduction,
+  RelationCycleDiagnostic as ContractRelationCycleDiagnostic,
+  RepositoryEvidenceCount as ContractRepositoryEvidenceCount,
+  SuccessorOrderDiagnostic as ContractSuccessorOrderDiagnostic,
+  TaskDocumentResolution as ContractTaskDocumentResolution,
+  TaskDocumentTarget as ContractTaskDocumentTarget,
+  UnavailableDocumentProduction as ContractUnavailableDocumentProduction,
+  UnresolvedRelationDiagnostic as ContractUnresolvedRelationDiagnostic,
+} from './internal/inspector-model.js';
 /** Collected native metadata has no GraphQL type tags; field shapes come from the SDL. */
 type Collected<T> =
   T extends Array<infer U>
@@ -9,56 +45,56 @@ type Collected<T> =
           [K in keyof T as K extends '__typename' ? never : K]: Collected<T[K]>;
         }
       : T;
-export type DoltBeadSourceRecord = Collected<Contract.DoltBeadSourceRecord>;
+export type DoltBeadSourceRecord = Collected<ContractDoltBeadSourceRecord>;
 export type HandoffDocumentSourceRecord =
-  Collected<Contract.HandoffDocumentSourceRecord>;
-export type ProductionInteraction = Collected<Contract.ProductionInteraction>;
+  Collected<ContractHandoffDocumentSourceRecord>;
+export type ProductionInteraction = Collected<ContractProductionInteraction>;
 export type ModelGenerationInteraction =
-  Collected<Contract.ModelGenerationInteraction>;
+  Collected<ContractModelGenerationInteraction>;
 export type HumanProductionInteraction =
-  Collected<Contract.HumanProductionInteraction>;
+  Collected<ContractHumanProductionInteraction>;
 export type EmissionProductionInteraction =
-  Collected<Contract.EmissionProductionInteraction>;
+  Collected<ContractEmissionProductionInteraction>;
 export type LegacyUnknownDocumentProduction =
-  Collected<Contract.LegacyUnknownDocumentProduction>;
+  Collected<ContractLegacyUnknownDocumentProduction>;
 export type UnavailableDocumentProduction =
-  Collected<Contract.UnavailableDocumentProduction>;
-export type DocumentProduction = Collected<Contract.DocumentProduction>;
-export type HandoffLiteralMetadata = Collected<Contract.HandoffLiteralMetadata>;
-export type HandoffRecordSummary = Collected<Contract.HandoffRecordSummary>;
-export type HandoffRecordEvidence = Collected<Contract.HandoffRecordEvidence>;
-export type DoltRecordSummary = Collected<Contract.DoltRecordSummary>;
-export type DoltRecordEvidence = Collected<Contract.DoltRecordEvidence>;
+  Collected<ContractUnavailableDocumentProduction>;
+export type DocumentProduction = Collected<ContractDocumentProduction>;
+export type HandoffLiteralMetadata = Collected<ContractHandoffLiteralMetadata>;
+export type HandoffRecordSummary = Collected<ContractHandoffRecordSummary>;
+export type HandoffRecordEvidence = Collected<ContractHandoffRecordEvidence>;
+export type DoltRecordSummary = Collected<ContractDoltRecordSummary>;
+export type DoltRecordEvidence = Collected<ContractDoltRecordEvidence>;
 export type MissingTargetDiagnostic =
-  Collected<Contract.MissingTargetDiagnostic>;
+  Collected<ContractMissingTargetDiagnostic>;
 export type AmbiguousTargetDiagnostic =
-  Collected<Contract.AmbiguousTargetDiagnostic>;
+  Collected<ContractAmbiguousTargetDiagnostic>;
 export type SuccessorOrderDiagnostic =
-  Collected<Contract.SuccessorOrderDiagnostic>;
+  Collected<ContractSuccessorOrderDiagnostic>;
 export type RelationCycleDiagnostic =
-  Collected<Contract.RelationCycleDiagnostic>;
+  Collected<ContractRelationCycleDiagnostic>;
 export type UnresolvedRelationDiagnostic =
-  Collected<Contract.UnresolvedRelationDiagnostic>;
-export type EvidenceCoverage = Collected<Contract.EvidenceCoverage>;
+  Collected<ContractUnresolvedRelationDiagnostic>;
+export type EvidenceCoverage = Collected<ContractEvidenceCoverage>;
 export type RepositoryEvidenceCount =
-  Collected<Contract.RepositoryEvidenceCount>;
-export type EvidenceSummary = Collected<Contract.EvidenceSummary>;
-export type EvidenceIndex = Collected<Contract.EvidenceIndex>;
-export type EvidenceRecord = Collected<Contract.EvidenceRecord>;
+  Collected<ContractRepositoryEvidenceCount>;
+export type EvidenceSummary = Collected<ContractEvidenceSummary>;
+export type EvidenceIndex = Collected<ContractEvidenceIndex>;
+export type EvidenceRecord = Collected<ContractEvidenceRecord>;
 export type EvidenceRefreshRequired =
-  Collected<Contract.EvidenceRefreshRequired>;
+  Collected<ContractEvidenceRefreshRequired>;
 export type EvidenceRecordNotObserved =
-  Collected<Contract.EvidenceRecordNotObserved>;
-export type EvidenceIndexResult = Collected<Contract.EvidenceIndexResult>;
-export type EvidenceRecordResult = Collected<Contract.EvidenceRecordResult>;
-export type InspectionTarget = Collected<Contract.InspectionTarget>;
-export type TaskDocumentTarget = Collected<Contract.TaskDocumentTarget>;
-export type TaskDocumentResolution = Collected<Contract.TaskDocumentResolution>;
-export type DoltEvidenceIndex = Collected<Contract.DoltEvidenceIndex>;
-export type HandoffEvidenceIndex = Collected<Contract.HandoffEvidenceIndex>;
-export type EvidenceSourceSummary = Collected<Contract.EvidenceSourceSummary>;
+  Collected<ContractEvidenceRecordNotObserved>;
+export type EvidenceIndexResult = Collected<ContractEvidenceIndexResult>;
+export type EvidenceRecordResult = Collected<ContractEvidenceRecordResult>;
+export type InspectionTarget = Collected<ContractInspectionTarget>;
+export type TaskDocumentTarget = Collected<ContractTaskDocumentTarget>;
+export type TaskDocumentResolution = Collected<ContractTaskDocumentResolution>;
+export type DoltEvidenceIndex = Collected<ContractDoltEvidenceIndex>;
+export type HandoffEvidenceIndex = Collected<ContractHandoffEvidenceIndex>;
+export type EvidenceSourceSummary = Collected<ContractEvidenceSourceSummary>;
 export type RecordedDocumentProduction =
-  Collected<Contract.RecordedDocumentProduction> & { schemaVersion: 1 };
+  Collected<ContractRecordedDocumentProduction> & { schemaVersion: 1 };
 export type SourceRecordRef =
   | DoltBeadSourceRecord
   | HandoffDocumentSourceRecord;

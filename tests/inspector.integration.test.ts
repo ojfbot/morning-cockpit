@@ -14,6 +14,11 @@ import { createYoga } from 'graphql-yoga';
 const audit =
   process.env.COCKPIT_INSPECTOR_RECEIPT_DIR ??
   (await mkdtemp(path.join(tmpdir(), 'cockpit-inspector-')));
+function required<T>(value: T | null | undefined): T {
+  if (value === null || value === undefined)
+    throw new Error('Required fixture value absent');
+  return value;
+}
 const facts: Record<string, unknown> = {};
 const now = new Date('2026-10-13T12:00:00Z');
 const ctx = {
@@ -176,13 +181,13 @@ describe('frozen-candidate integration audit; SQL boundary fake, no sockets or p
     const wire = await app.query(
       `query($id:String!,$key:String!){ workItems(lane:"available"){id sourceRecordKey inspectionTarget { __typename ... on AvailableInspectionTarget { snapshotId sourceRecordKey } } sourceRecord{__typename ... on DoltBeadSourceRecord { kind repository nativeId }}} evidenceIndex(snapshotId:$id){... on EvidenceIndex{dolt { ... on ObservedDoltIndex { records{sourceRecordKey} } }}} evidenceRecord(snapshotId:$id,sourceRecordKey:$key){__typename} }`,
       {
-        id: app.snapshot.evidenceSummary!.snapshotId,
-        key: item!.sourceRecordKey,
+        id: required(app.snapshot.evidenceSummary).snapshotId,
+        key: required(item).sourceRecordKey,
       },
     );
     const decoded = await app.reader.fetchEvidenceRecord(
-      app.snapshot.evidenceSummary!.snapshotId,
-      item!.sourceRecordKey!,
+      required(app.snapshot.evidenceSummary).snapshotId,
+      required(required(item).sourceRecordKey),
     );
     expect(decoded).toMatchObject({
       status: 'ready',
@@ -192,17 +197,17 @@ describe('frozen-candidate integration audit; SQL boundary fake, no sockets or p
       },
     });
     const decodedIndex = await app.reader.fetchEvidenceIndex(
-      app.snapshot.evidenceSummary!.snapshotId,
+      required(app.snapshot.evidenceSummary).snapshotId,
     );
     expect(decodedIndex).toMatchObject({
       dolt: {
         status: 'observed',
-        records: [{ sourceRecordKey: item!.sourceRecordKey }],
+        records: [{ sourceRecordKey: required(item).sourceRecordKey }],
       },
     });
-    expect(item!.inspectionTarget).toMatchObject({
-      snapshotId: app.snapshot.evidenceSummary!.snapshotId,
-      sourceRecordKey: item!.sourceRecordKey,
+    expect(required(item).inspectionTarget).toMatchObject({
+      snapshotId: required(app.snapshot.evidenceSummary).snapshotId,
+      sourceRecordKey: required(item).sourceRecordKey,
     });
     facts.doltInspector = {
       item,
@@ -227,12 +232,12 @@ describe('frozen-candidate integration audit; SQL boundary fake, no sockets or p
     expect(
       app.snapshot.health.find((health) => health.name === 'dolt-bead')?.status,
     ).toBe('down');
-    expect(app.snapshot.evidenceSummary!.dolt.coverage.status).toBe(
+    expect(required(app.snapshot.evidenceSummary).dolt.coverage.status).toBe(
       'unavailable',
     );
-    expect(app.snapshot.evidenceSummary!.dolt.total).toBeNull();
+    expect(required(app.snapshot.evidenceSummary).dolt.total).toBeNull();
     expect(
-      app.snapshot.evidenceSummary!.handoff.inventory.coverage.status,
+      required(app.snapshot.evidenceSummary).handoff.inventory.coverage.status,
     ).toBe('complete');
   });
   it('handoff failure degrades honestly and preserves supported Dolt lanes', async () => {
@@ -243,7 +248,7 @@ describe('frozen-candidate integration audit; SQL boundary fake, no sockets or p
       items: app.snapshot.lanes.available,
     };
     expect(
-      app.snapshot.evidenceSummary!.handoff.inventory.coverage.status,
+      required(app.snapshot.evidenceSummary).handoff.inventory.coverage.status,
     ).toBe('unavailable');
     expect(app.snapshot.lanes.available).toHaveLength(1);
   });
@@ -255,12 +260,16 @@ describe('frozen-candidate integration audit; SQL boundary fake, no sockets or p
     );
     facts.partialCoverage = {
       summary: app.snapshot.evidenceSummary,
-      index: app.source.evidenceIndex(app.snapshot.evidenceSummary!.snapshotId),
+      index: app.source.evidenceIndex(
+        required(app.snapshot.evidenceSummary).snapshotId,
+      ),
     };
     expect(
-      app.snapshot.evidenceSummary!.handoff.inventory.coverage.status,
+      required(app.snapshot.evidenceSummary).handoff.inventory.coverage.status,
     ).toBe('partial');
-    expect(app.snapshot.evidenceSummary!.handoff.populationCount).toBe(1);
+    expect(required(app.snapshot.evidenceSummary).handoff.populationCount).toBe(
+      1,
+    );
   });
   it('an observed closed predecessor is not a missing target and must not hide its live successor', async () => {
     const app = await boot(
@@ -308,7 +317,7 @@ describe('frozen-candidate integration audit; SQL boundary fake, no sockets or p
       ],
     );
     const index = app.source.evidenceIndex(
-      app.snapshot.evidenceSummary!.snapshotId,
+      required(app.snapshot.evidenceSummary).snapshotId,
     );
     facts.taskCrosslink = { items: app.snapshot.lanes.available, index };
     expect(
@@ -410,8 +419,8 @@ describe('frozen-candidate integration audit; SQL boundary fake, no sockets or p
     const literals: Record<string, unknown> = {};
     for (const item of Object.values(app.snapshot.lanes).flat()) {
       const detail = await app.reader.fetchEvidenceRecord(
-        app.snapshot.evidenceSummary!.snapshotId,
-        item.sourceRecordKey!,
+        required(app.snapshot.evidenceSummary).snapshotId,
+        required(item.sourceRecordKey),
       );
       if (detail.status !== 'ready' || !('native' in detail.record))
         throw Error('Missing native detail');
@@ -466,7 +475,7 @@ describe('frozen-candidate integration audit; SQL boundary fake, no sockets or p
       ],
     );
     const index = app.source.evidenceIndex(
-      app.snapshot.evidenceSummary!.snapshotId,
+      required(app.snapshot.evidenceSummary).snapshotId,
     );
     facts.reportVersusSettlement = {
       summary: app.snapshot.evidenceSummary,
@@ -474,7 +483,9 @@ describe('frozen-candidate integration audit; SQL boundary fake, no sockets or p
       index,
       producerRowUnchanged: original.status === 'live',
     };
-    expect(app.snapshot.evidenceSummary!.handoff.populationCount).toBe(0);
+    expect(required(app.snapshot.evidenceSummary).handoff.populationCount).toBe(
+      0,
+    );
     expect(
       app.snapshot.lanes.available.find(
         (item) => item.nativeId === 'core-task-native',
@@ -487,11 +498,11 @@ describe('frozen-candidate integration audit; SQL boundary fake, no sockets or p
       [],
       [{ id: 'active', type: 'brief', status: 'live', title: 'Before' }],
     );
-    const id = app.snapshot.evidenceSummary!.snapshotId;
+    const id = required(app.snapshot.evidenceSummary).snapshotId;
     const index = app.source.evidenceIndex(id);
     if (index.status !== 'ready') throw Error('Fixture missing');
     if (index.handoff.status !== 'observed') throw Error('Fixture unavailable');
-    const key = index.handoff.records[0]!.sourceRecordKey;
+    const key = required(index.handoff.records[0]).sourceRecordKey;
     await writeFile(
       path.join(app.root, 'core/.handoff/active.md'),
       `---
@@ -550,7 +561,6 @@ title: After
     };
   });
 });
-
 const taskLink = (nativeId: string) => ({
   schemaVersion: 1,
   relation: 'task-document',
@@ -610,13 +620,13 @@ describe('declared navigation is physically bound and source scoped', () => {
         status: 'resolved',
         referrer: document.sourceRecord,
         fieldPath: 'frontmatter.source_links[0]',
-        taskRecordKey: index.dolt.records[0]!.sourceRecordKey,
+        taskRecordKey: required(index.dolt.records[0]).sourceRecordKey,
         documentRecordKey: document.sourceRecordKey,
       },
     ]);
     const taskDetail = await app.reader.fetchEvidenceRecord(
       summary.snapshotId,
-      index.dolt.records[0]!.sourceRecordKey,
+      required(index.dolt.records[0]).sourceRecordKey,
     );
     expect(taskDetail).toMatchObject({
       record: { declaredLinks: [], native: { status: 'live' } },
@@ -692,13 +702,13 @@ describe('declared navigation is physically bound and source scoped', () => {
         options,
       );
       const index = app.source.evidenceIndex(
-        app.snapshot.evidenceSummary!.snapshotId,
+        required(app.snapshot.evidenceSummary).snapshotId,
       );
       if (index.status !== 'ready' || index.handoff.status !== 'observed')
         throw Error('Missing handoff');
       const result = await app.reader.fetchEvidenceRecord(
         index.snapshotId,
-        index.handoff.records[0]!.sourceRecordKey,
+        required(index.handoff.records[0]).sourceRecordKey,
       );
       expect(result).toMatchObject({
         record: {
@@ -728,13 +738,13 @@ describe('declared navigation is physically bound and source scoped', () => {
       ],
     );
     const index = app.source.evidenceIndex(
-      app.snapshot.evidenceSummary!.snapshotId,
+      required(app.snapshot.evidenceSummary).snapshotId,
     );
     if (index.status !== 'ready' || index.handoff.status !== 'observed')
       throw Error('Missing handoff');
     const detail = await app.reader.fetchEvidenceRecord(
       index.snapshotId,
-      index.handoff.records[0]!.sourceRecordKey,
+      required(index.handoff.records[0]).sourceRecordKey,
     );
     expect(detail).toMatchObject({
       record: {
@@ -762,8 +772,8 @@ describe('declared navigation is physically bound and source scoped', () => {
       const item = all.find((item) => item.nativeId === 'opaque-' + id);
       expect(item?.sourceRecord?.repository).toBeNull();
       const detail = await app.reader.fetchEvidenceRecord(
-        app.snapshot.evidenceSummary!.snapshotId,
-        item!.sourceRecordKey!,
+        required(app.snapshot.evidenceSummary).snapshotId,
+        required(required(item).sourceRecordKey),
       );
       expect(
         detail.status === 'ready' && 'native' in detail.record
@@ -788,12 +798,12 @@ describe('declared navigation is physically bound and source scoped', () => {
       { id: 'malformed' },
     ]);
     expect(app.snapshot.lanes.overnight).toHaveLength(0);
-    expect(app.snapshot.evidenceSummary!.dolt).toMatchObject({
+    expect(required(app.snapshot.evidenceSummary).dolt).toMatchObject({
       total: 1,
       coverage: { status: 'partial', skippedRecords: 2 },
     });
     const index = app.source.evidenceIndex(
-      app.snapshot.evidenceSummary!.snapshotId,
+      required(app.snapshot.evidenceSummary).snapshotId,
     );
     expect(index).toMatchObject({
       dolt: { records: [{ title: 'Producer-shaped task' }] },
@@ -843,7 +853,6 @@ describe('declared navigation is physically bound and source scoped', () => {
     );
   });
 });
-
 function wireObject(value: unknown): Record<string, unknown> {
   if (typeof value !== 'object' || value === null || Array.isArray(value))
     throw Error('Fixture wire object absent');
@@ -860,7 +869,7 @@ describe('actual GraphQL and selected-field codec boundaries', () => {
     'non-null-path',
   ])('rejects %s in a real selected detail response', async (failure) => {
     const app = await boot([task()]);
-    const item = app.snapshot.lanes.available[0]!;
+    const item = required(app.snapshot.lanes.available[0]);
     const transport = globalThis.fetch;
     vi.stubGlobal('fetch', async (url: string, options: RequestInit) => {
       const response = await transport(url, options);
@@ -888,16 +897,19 @@ describe('actual GraphQL and selected-field codec boundaries', () => {
     });
     await expect(
       app.reader.fetchEvidenceRecord(
-        app.snapshot.evidenceSummary!.snapshotId,
-        item.sourceRecordKey!,
+        required(app.snapshot.evidenceSummary).snapshotId,
+        required(item.sourceRecordKey),
       ),
     ).rejects.toThrow();
   });
   it('the served null-only scalar rejects a non-null Dolt path', async () => {
     const app = await boot([task()]);
-    const item = app.snapshot.lanes.available[0]!;
-    const id = app.snapshot.evidenceSummary!.snapshotId;
-    const result = app.source.evidenceRecord(id, item.sourceRecordKey!);
+    const item = required(app.snapshot.lanes.available[0]);
+    const id = required(app.snapshot.evidenceSummary).snapshotId;
+    const result = app.source.evidenceRecord(
+      id,
+      required(item.sourceRecordKey),
+    );
     if (result.status !== 'ready') throw Error('Missing fixture detail');
     Reflect.set(result.record.sourceRecord, 'sourcePath', 'invalid-path');
     const { buildReadModelGraphSchema } =
@@ -929,7 +941,7 @@ describe('actual GraphQL and selected-field codec boundaries', () => {
   });
   it('keeps legacy-unknown, unavailable and fully explicit human/emission production distinct through the real codec', async () => {
     const human = {
-      ...production.interactions[0]!,
+      ...required(production.interactions[0]),
       kind: 'human-approval',
       interactionId: 'human',
       principalId: 'self-recorded-human',
@@ -965,7 +977,7 @@ describe('actual GraphQL and selected-field codec boundaries', () => {
       ],
     );
     const index = app.source.evidenceIndex(
-      app.snapshot.evidenceSummary!.snapshotId,
+      required(app.snapshot.evidenceSummary).snapshotId,
     );
     if (index.status !== 'ready' || index.handoff.status !== 'observed')
       throw Error('Missing fixture index');
@@ -989,7 +1001,6 @@ describe('actual GraphQL and selected-field codec boundaries', () => {
     });
   });
 });
-
 it('retains established claim-kind labels literally, separately from the WorkItem projection', async () => {
   const app = await boot([
     task({
@@ -1002,11 +1013,11 @@ it('retains established claim-kind labels literally, separately from the WorkIte
       }),
     }),
   ]);
-  const item = app.snapshot.lanes.overnight[0]!;
+  const item = required(app.snapshot.lanes.overnight[0]);
   expect(item).toMatchObject({ claimedByKind: 'agent', status: 'running' });
   const detail = await app.reader.fetchEvidenceRecord(
-    app.snapshot.evidenceSummary!.snapshotId,
-    item.sourceRecordKey!,
+    required(app.snapshot.evidenceSummary).snapshotId,
+    required(item.sourceRecordKey),
   );
   expect(detail).toMatchObject({
     record: {
