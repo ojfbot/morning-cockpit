@@ -24,7 +24,9 @@ import type {
 } from '@cockpit/shared';
 import { streamSse, type SseEvent } from './sse.js';
 
-export async function fetchCockpit(signal?: AbortSignal): Promise<CockpitSnapshot> {
+export async function fetchCockpit(
+  signal?: AbortSignal,
+): Promise<CockpitSnapshot> {
   const res = await fetch('/api/cockpit', { signal });
   if (!res.ok) throw new Error(`cockpit ${res.status}`);
   return (await res.json()) as CockpitSnapshot;
@@ -44,12 +46,17 @@ export async function fetchSummary(
   force = false,
   signal?: AbortSignal,
 ): Promise<SummaryResponse> {
-  const res = await fetch(`/api/summary?lane=${lane}${force ? '&force=1' : ''}`, { signal });
+  const res = await fetch(
+    `/api/summary?lane=${lane}${force ? '&force=1' : ''}`,
+    { signal },
+  );
   if (!res.ok) throw new Error(`summary ${res.status}`);
   return (await res.json()) as SummaryResponse;
 }
 
-export async function fetchReading(signal?: AbortSignal): Promise<ReadingSnapshot> {
+export async function fetchReading(
+  signal?: AbortSignal,
+): Promise<ReadingSnapshot> {
   const res = await fetch('/api/reading', { signal });
   if (!res.ok) throw new Error(`reading ${res.status}`);
   return (await res.json()) as ReadingSnapshot;
@@ -63,15 +70,22 @@ export interface ReadingDigestResponse {
   error?: string;
 }
 
-export async function fetchReadingDigest(force = false, signal?: AbortSignal): Promise<ReadingDigestResponse> {
-  const res = await fetch(`/api/reading/digest${force ? '?force=1' : ''}`, { signal });
+export async function fetchReadingDigest(
+  force = false,
+  signal?: AbortSignal,
+): Promise<ReadingDigestResponse> {
+  const res = await fetch(`/api/reading/digest${force ? '?force=1' : ''}`, {
+    signal,
+  });
   if (!res.ok) throw new Error(`reading digest ${res.status}`);
   return (await res.json()) as ReadingDigestResponse;
 }
 
 // ── Research / papers ──────────────────────────────────────────────────────
 
-export async function fetchPapers(signal?: AbortSignal): Promise<PapersSnapshot> {
+export async function fetchPapers(
+  signal?: AbortSignal,
+): Promise<PapersSnapshot> {
   const res = await fetch('/api/papers', { signal });
   if (!res.ok) throw new Error(`papers ${res.status}`);
   return (await res.json()) as PapersSnapshot;
@@ -85,22 +99,39 @@ export interface ExplainerResponse {
   error?: string;
 }
 
-export async function fetchPaperExplainer(id: string, force = false, signal?: AbortSignal): Promise<ExplainerResponse> {
-  const res = await fetch(`/api/papers/explainer?id=${encodeURIComponent(id)}${force ? '&force=1' : ''}`, { signal });
+export async function fetchPaperExplainer(
+  id: string,
+  force = false,
+  signal?: AbortSignal,
+): Promise<ExplainerResponse> {
+  const res = await fetch(
+    `/api/papers/explainer?id=${encodeURIComponent(id)}${force ? '&force=1' : ''}`,
+    { signal },
+  );
   if (!res.ok) throw new Error(`explainer ${res.status}`);
   return (await res.json()) as ExplainerResponse;
 }
 
-export async function fetchPaperDeepDive(id: string, force = false, signal?: AbortSignal): Promise<ExplainerResponse> {
-  const res = await fetch(`/api/papers/deepdive?id=${encodeURIComponent(id)}${force ? '&force=1' : ''}`, { signal });
+export async function fetchPaperDeepDive(
+  id: string,
+  force = false,
+  signal?: AbortSignal,
+): Promise<ExplainerResponse> {
+  const res = await fetch(
+    `/api/papers/deepdive?id=${encodeURIComponent(id)}${force ? '&force=1' : ''}`,
+    { signal },
+  );
   if (!res.ok) throw new Error(`deepdive ${res.status}`);
   return (await res.json()) as ExplainerResponse;
 }
 
-export async function fetchSuggestions(signal?: AbortSignal): Promise<CrossLinkSuggestion[]> {
+export async function fetchSuggestions(
+  signal?: AbortSignal,
+): Promise<CrossLinkSuggestion[]> {
   const res = await fetch('/api/papers/suggestions', { signal });
   if (!res.ok) throw new Error(`suggestions ${res.status}`);
-  return ((await res.json()) as { suggestions: CrossLinkSuggestion[] }).suggestions;
+  return ((await res.json()) as { suggestions: CrossLinkSuggestion[] })
+    .suggestions;
 }
 
 export async function stageSuggestion(input: {
@@ -121,7 +152,9 @@ export async function stageSuggestion(input: {
 }
 
 export async function dismissSuggestion(id: string): Promise<void> {
-  const res = await fetch(`/api/papers/suggestions/${encodeURIComponent(id)}`, { method: 'DELETE' });
+  const res = await fetch(`/api/papers/suggestions/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+  });
   if (!res.ok) throw new Error(`dismiss ${res.status}`);
 }
 
@@ -148,20 +181,28 @@ function scopeQuery(scope?: ChatScope): string {
   return `?tab=northstar&repo=${encodeURIComponent(scope.repo)}`;
 }
 
-export async function fetchChatContext(scope?: ChatScope, signal?: AbortSignal): Promise<ChatContextResponse> {
+export async function fetchChatContext(
+  scope?: ChatScope,
+  signal?: AbortSignal,
+): Promise<ChatContextResponse> {
   const res = await fetch(`/api/chat/context${scopeQuery(scope)}`, { signal });
   if (!res.ok) throw new Error(`chat context ${res.status}`);
   return (await res.json()) as ChatContextResponse;
 }
 
-export async function fetchChatHistory(scope?: ChatScope, signal?: AbortSignal): Promise<ChatHistoryEntry[]> {
+export async function fetchChatHistory(
+  scope?: ChatScope,
+  signal?: AbortSignal,
+): Promise<ChatHistoryEntry[]> {
   const res = await fetch(`/api/chat/history${scopeQuery(scope)}`, { signal });
   if (!res.ok) throw new Error(`chat history ${res.status}`);
   return ((await res.json()) as { messages: ChatHistoryEntry[] }).messages;
 }
 
 export async function clearChatHistory(scope?: ChatScope): Promise<void> {
-  const res = await fetch(`/api/chat/history${scopeQuery(scope)}`, { method: 'DELETE' });
+  const res = await fetch(`/api/chat/history${scopeQuery(scope)}`, {
+    method: 'DELETE',
+  });
   if (!res.ok) throw new Error(`chat clear ${res.status}`);
 }
 
@@ -179,7 +220,9 @@ export async function streamChat(
   return streamSse(res);
 }
 
-export async function fetchChatRegistry(signal?: AbortSignal): Promise<ChatContextItem[]> {
+export async function fetchChatRegistry(
+  signal?: AbortSignal,
+): Promise<ChatContextItem[]> {
   const res = await fetch('/api/chat/registry', { signal });
   if (!res.ok) throw new Error(`chat registry ${res.status}`);
   return ((await res.json()) as { items: ChatContextItem[] }).items;
@@ -192,13 +235,16 @@ export type DraftHandoffResponse =
   | { status: 'failed_validation'; errors: string[]; raw: string }
   | { status: 'unavailable'; reason: string };
 
-export async function draftHandoff(messages: ChatMessage[]): Promise<DraftHandoffResponse> {
+export async function draftHandoff(
+  messages: ChatMessage[],
+): Promise<DraftHandoffResponse> {
   const res = await fetch('/api/chat/handoff/draft', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ messages }),
   });
-  if (!res.ok && res.status !== 422) throw new Error(`handoff draft ${res.status}`);
+  if (!res.ok && res.status !== 422)
+    throw new Error(`handoff draft ${res.status}`);
   return (await res.json()) as DraftHandoffResponse;
 }
 
@@ -215,22 +261,31 @@ export interface ApproveHandoffResponse {
   errors?: string[];
 }
 
-export async function approveHandoff(draftId: string, edits?: HandoffEdits): Promise<ApproveHandoffResponse> {
+export async function approveHandoff(
+  draftId: string,
+  edits?: HandoffEdits,
+): Promise<ApproveHandoffResponse> {
   const res = await fetch('/api/chat/handoff/approve', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ draftId, edits }),
   });
-  if (!res.ok && res.status !== 400) throw new Error(`handoff approve ${res.status}`);
+  if (!res.ok && res.status !== 400)
+    throw new Error(`handoff approve ${res.status}`);
   return (await res.json()) as ApproveHandoffResponse;
 }
 
 export async function rejectHandoff(draftId: string): Promise<void> {
-  const res = await fetch(`/api/chat/handoff/draft/${encodeURIComponent(draftId)}`, { method: 'DELETE' });
+  const res = await fetch(
+    `/api/chat/handoff/draft/${encodeURIComponent(draftId)}`,
+    { method: 'DELETE' },
+  );
   if (!res.ok) throw new Error(`handoff reject ${res.status}`);
 }
 
-export async function fetchHandoffDrafts(signal?: AbortSignal): Promise<HandoffDraft[]> {
+export async function fetchHandoffDrafts(
+  signal?: AbortSignal,
+): Promise<HandoffDraft[]> {
   const res = await fetch('/api/chat/handoff/drafts', { signal });
   if (!res.ok) throw new Error(`handoff drafts ${res.status}`);
   return ((await res.json()) as { drafts: HandoffDraft[] }).drafts;
@@ -251,7 +306,9 @@ export async function fetchFleet(signal?: AbortSignal): Promise<FleetSnapshot> {
   return (await res.json()) as FleetSnapshot;
 }
 
-export async function fetchDelivery(signal?: AbortSignal): Promise<DeliverySnapshot> {
+export async function fetchDelivery(
+  signal?: AbortSignal,
+): Promise<DeliverySnapshot> {
   const res = await fetch('/api/delivery', { signal });
   if (!res.ok) throw new Error(`delivery ${res.status}`);
   return (await res.json()) as DeliverySnapshot;
@@ -263,7 +320,9 @@ export async function fetchLoop(signal?: AbortSignal): Promise<LoopSnapshot> {
   return (await res.json()) as LoopSnapshot;
 }
 
-export async function fetchCriticalPath(signal?: AbortSignal): Promise<CriticalPathSnapshot> {
+export async function fetchCriticalPath(
+  signal?: AbortSignal,
+): Promise<CriticalPathSnapshot> {
   const res = await fetch('/api/critical-path', { signal });
   if (!res.ok) throw new Error(`critical-path ${res.status}`);
   return (await res.json()) as CriticalPathSnapshot;
@@ -307,20 +366,25 @@ export async function* streamBriefing(
   if (repo) params.set('repo', repo);
   if (force) params.set('force', '1');
   const qs = params.toString();
-  const res = await fetch(`/api/briefing/stream${qs ? `?${qs}` : ''}`, { signal });
+  const res = await fetch(`/api/briefing/stream${qs ? `?${qs}` : ''}`, {
+    signal,
+  });
   for await (const evt of streamSse(res)) {
     if (evt.event === 'briefing') yield evt.data as BriefingResponse;
   }
 }
 
 /** Approve & emit a deliver-branch artifact → POST /api/briefing/emit (validates + writes a brief). */
-export async function emitBriefingArtifact(artifact: BriefingArtifact): Promise<EmitArtifactResponse> {
+export async function emitBriefingArtifact(
+  artifact: BriefingArtifact,
+): Promise<EmitArtifactResponse> {
   const res = await fetch('/api/briefing/emit', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ artifact }),
   });
-  if (!res.ok && res.status !== 422) throw new Error(`briefing emit ${res.status}`);
+  if (!res.ok && res.status !== 422)
+    throw new Error(`briefing emit ${res.status}`);
   return (await res.json()) as EmitArtifactResponse;
 }
 
@@ -344,53 +408,8 @@ export async function claimTask(beadId: string): Promise<ClaimResponse> {
   return (await res.json()) as ClaimResponse;
 }
 
-const EVIDENCE_SOURCE = 'kind source repository nativeId sourcePath';
-const EVIDENCE_SUMMARY = 'snapshotId generatedAt total unresolvedCount byRepository { repository count } coverage { status repositoriesObserved skippedRecords unreadableRepositories reason }';
-const EVIDENCE_DIAGNOSTICS = `... on MissingTargetDiagnostic { reason referenceRelation: relation requestedTarget: targetNativeId referrerKey }
- ... on AmbiguousTargetDiagnostic { reason referenceRelation: relation requestedTarget: targetNativeId referrerKey candidateTargetKeys }
- ... on SuccessorOrderDiagnostic { reason closingRelation: relation predecessorNativeId: targetNativeId predecessorKey candidateSuccessorKeys }
- ... on RelationCycleDiagnostic { reason closingRelation: relation cycleKeys }`;
-const PRODUCTION = `... on LegacyUnknownDocumentProduction { status reason }
- ... on UnavailableDocumentProduction { status reason }
- ... on RecordedDocumentProduction { status schemaVersion interactions { kind interactionId parentInteractionId principalId agentId runtimeId sessionProvider sessionId modelProvider modelId traceId hostId startedAt completedAt } }`;
-
-async function evidenceQuery<T>(query: string, variables: Record<string, string> = {}, signal?: AbortSignal): Promise<T> {
-  const response = await fetch('/graphql', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ query, variables }), signal });
-  if (!response.ok) throw new Error(`Evidence read failed (${response.status})`);
-  const result: { data?: T; errors?: Array<{ message: string }> } = await response.json();
-  if (result.errors?.length || !result.data) throw new Error(result.errors?.map(error => error.message).join('; ') ?? 'Evidence read returned no data');
-  return result.data;
-}
-export async function fetchEvidenceSummary(signal?: AbortSignal): Promise<import('@cockpit/shared').EvidenceSummary> {
-  return (await evidenceQuery<{ evidenceSummary: import('@cockpit/shared').EvidenceSummary }>(`{ evidenceSummary { ${EVIDENCE_SUMMARY} } }`, {}, signal)).evidenceSummary;
-}
-type Diagnostic = import('@cockpit/shared').UnresolvedRelationDiagnostic;
-type MissingWire = Omit<Extract<Diagnostic, { reason: 'target-not-observed' }>, 'relation' | 'targetNativeId'> & { referenceRelation: 'closes' | 'responding_to'; requestedTarget: string };
-type AmbiguousWire = Omit<Extract<Diagnostic, { reason: 'target-matches-multiple-records' }>, 'relation' | 'targetNativeId'> & { referenceRelation: 'closes' | 'responding_to'; requestedTarget: string };
-type SuccessorWire = Omit<Extract<Diagnostic, { reason: 'successor-order-unresolved' }>, 'relation' | 'targetNativeId'> & { closingRelation: 'closes'; predecessorNativeId: string | null };
-type CycleWire = Omit<Extract<Diagnostic, { reason: 'relation-cycle' }>, 'relation'> & { closingRelation: 'closes' };
-type IndexWire = Omit<import('@cockpit/shared').EvidenceIndex, 'unresolvedRelations'> & { unresolvedRelations: Array<MissingWire | AmbiguousWire | SuccessorWire | CycleWire> };
-function diagnosticFromQuery(value: MissingWire | AmbiguousWire | SuccessorWire | CycleWire): Diagnostic {
-  switch (value.reason) {
-    case 'target-not-observed': return { reason: value.reason, relation: value.referenceRelation, targetNativeId: value.requestedTarget, referrerKey: value.referrerKey };
-    case 'target-matches-multiple-records': return { reason: value.reason, relation: value.referenceRelation, targetNativeId: value.requestedTarget, referrerKey: value.referrerKey, candidateTargetKeys: value.candidateTargetKeys };
-    case 'successor-order-unresolved': return { reason: value.reason, relation: value.closingRelation, targetNativeId: value.predecessorNativeId, predecessorKey: value.predecessorKey, candidateSuccessorKeys: value.candidateSuccessorKeys };
-    case 'relation-cycle': return { reason: value.reason, relation: value.closingRelation, cycleKeys: value.cycleKeys };
-  }
-}
-export async function fetchEvidenceIndex(snapshotId: string, signal?: AbortSignal): Promise<import('@cockpit/shared').EvidenceIndexResult> {
-  const query = `query EvidenceIndex($snapshotId:String!) { evidenceIndex(snapshotId:$snapshotId) {
-    ... on EvidenceIndex { status snapshotId records { sourceRecordKey title sourceRecord { ${EVIDENCE_SOURCE} } } populationRecordKeys unresolvedRelations { ${EVIDENCE_DIAGNOSTICS} } }
-    ... on EvidenceRefreshRequired { status snapshotId reason }
-  } }`;
-  const result = (await evidenceQuery<{ evidenceIndex: IndexWire | import('@cockpit/shared').EvidenceRefreshRequired }>(query, { snapshotId }, signal)).evidenceIndex;
-  return result.status === 'ready' ? { ...result, unresolvedRelations: result.unresolvedRelations.map(diagnosticFromQuery) } : result;
-}
-export async function fetchEvidenceRecord(snapshotId: string, sourceRecordKey: string, signal?: AbortSignal): Promise<import('@cockpit/shared').EvidenceRecordResult> {
-  const query = `query EvidenceRecord($snapshotId:String!,$sourceRecordKey:String!) { evidenceRecord(snapshotId:$snapshotId,sourceRecordKey:$sourceRecordKey) {
-    ... on EvidenceRecord { status snapshotId record { sourceRecordKey title sourceRecord { ${EVIDENCE_SOURCE} } literal { type status actor to respondingTo refs authoredCreatedAt } observedModifiedAt collectedAt documentProduction { ${PRODUCTION} } } }
-    ... on EvidenceRefreshRequired { status snapshotId reason }
-    ... on EvidenceRecordNotObserved { status snapshotId sourceRecordKey }
-  } }`;
-  return (await evidenceQuery<{ evidenceRecord: import('@cockpit/shared').EvidenceRecordResult }>(query, { snapshotId, sourceRecordKey }, signal)).evidenceRecord;
-}
+export {
+  fetchEvidenceSummary,
+  fetchEvidenceIndex,
+  fetchEvidenceRecord,
+} from './evidence-reader.js';

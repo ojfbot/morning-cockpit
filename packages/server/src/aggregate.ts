@@ -7,6 +7,7 @@ import {
   type AdapterHealth,
   type CockpitSnapshot,
   type CockpitEvidence,
+  type DoltCollection,
   type LaneContext,
   type WorkItem,
 } from '@cockpit/shared';
@@ -16,8 +17,16 @@ import { TtlCache } from './cache.js';
 import { fetchDolt } from './adapters/dolt.js';
 import { fetchHandoff } from './adapters/handoff.js';
 
-type AdapterResult = { items: WorkItem[]; health: AdapterHealth; evidence?: CockpitEvidence };
-type Adapter = { key: keyof typeof config.ttl; run: (ctx: LaneContext) => Promise<AdapterResult> };
+type AdapterResult = {
+  items: WorkItem[];
+  health: AdapterHealth;
+  evidence?: CockpitEvidence;
+  dolt?: DoltCollection;
+};
+type Adapter = {
+  key: keyof typeof config.ttl;
+  run: (ctx: LaneContext) => Promise<AdapterResult>;
+};
 
 const adapters: Adapter[] = [
   { key: 'dolt', run: fetchDolt },
@@ -27,7 +36,11 @@ const adapters: Adapter[] = [
 const cache = new TtlCache<AdapterResult>();
 
 /** Run one adapter through the cache; never throws (failure → down health + empty items). */
-async function runAdapter(a: Adapter, ctx: LaneContext, now: number): Promise<AdapterResult> {
+async function runAdapter(
+  a: Adapter,
+  ctx: LaneContext,
+  now: number,
+): Promise<AdapterResult> {
   const cached = cache.get(a.key, now);
   if (cached) return cached;
   let result: AdapterResult;
@@ -59,15 +72,32 @@ async function runAdapter(a: Adapter, ctx: LaneContext, now: number): Promise<Ad
   return result;
 }
 
-export async function buildSnapshot(nowDate = new Date()): Promise<CockpitSnapshot> {
+export async function buildSnapshot(
+  nowDate = new Date(),
+): Promise<CockpitSnapshot> {
   const now = nowDate.getTime();
-  const overnightSince = overnightWindowStart(nowDate, config.overnightBoundaryHour).toISOString();
-  const ctx: LaneContext = { now: nowDate, overnightSince, staleThresholdDays: config.staleThresholdDays };
+  const overnightSince = overnightWindowStart(
+    nowDate,
+    config.overnightBoundaryHour,
+  ).toISOString();
+  const ctx: LaneContext = {
+    now: nowDate,
+    overnightSince,
+    staleThresholdDays: config.staleThresholdDays,
+  };
 
-  const settled = await Promise.allSettled(adapters.map((a) => runAdapter(a, ctx, now)));
+  const settled = await Promise.allSettled(
+    adapters.map((a) => runAdapter(a, ctx, now)),
+  );
 
   const allItems: WorkItem[] = [];
   const health: AdapterHealth[] = [];
+  let dolt: DoltCollection = {
+    status: 'unavailable',
+    source: 'dolt-bead',
+    scope: `Configured Dolt: created/live beads or updated/closed >= ${overnightSince}`,
+    reason: 'Dolt collection did not complete',
+  };
   let evidence = emptyCockpitEvidence({
     status: 'unavailable',
     repositoriesObserved: 0,
@@ -81,20 +111,39 @@ export async function buildSnapshot(nowDate = new Date()): Promise<CockpitSnapsh
       allItems.push(...s.value.items);
       health.push(s.value.health);
       if (s.value.evidence) evidence = s.value.evidence;
+      if (s.value.dolt) dolt = s.value.dolt;
     } else {
-      health.push({ name: 'dolt-bead', status: 'down', itemCount: 0, lastError: String(s.reason) });
+      health.push({
+        name: 'dolt-bead',
+        status: 'down',
+        itemCount: 0,
+        lastError: String(s.reason),
+      });
     }
   }
 
   const finalized = finalizeItems(allItems, ctx);
   const lanes = splitLanes(finalized);
+  const evidenceSummary = evidenceStore.capture(
+    {
+      dolt,
+      handoff: evidence,
+      handoffCollectedAt: evidence.collectedAt ?? nowDate.toISOString(),
+    },
+    nowDate.toISOString(),
+  );
+  for (const item of finalized)
+    item.inspectionTarget = evidenceStore.target(
+      evidenceSummary.snapshotId,
+      item,
+    );
 
   return {
     generatedAt: nowDate.toISOString(),
     overnightSince,
     lanes,
     health,
-    evidenceSummary: evidenceStore.capture(evidence, nowDate.toISOString()),
+    evidenceSummary,
     summaries: {
       overnight: summarizeLane('overnight', lanes.overnight),
       pickup: summarizeLane('pickup', lanes.pickup),

@@ -6,7 +6,20 @@ settings:
 
 importers:
 
-  .: {}
+  .:
+    devDependencies:
+      '@types/node':
+        specifier: 22.19.20
+        version: 22.19.20
+      graphql-yoga:
+        specifier: 5.21.2
+        version: 5.21.2(graphql@16.14.2)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: 2.1.9
+        version: 2.1.9(@types/node@22.19.20)(jsdom@29.1.1)
 
   packages/renderer:
     dependencies:
@@ -3993,7 +4006,7 @@ snapshots:
   '@graphql-tools/optimize@2.0.0(graphql@16.14.2)':
     dependencies:
       graphql: 16.14.2
-      tslib: 2.6.3
+      tslib: 2.8.1
 
   '@graphql-tools/prisma-loader@8.0.17(@types/node@22.19.20)(graphql@16.14.2)':
     dependencies:
@@ -4028,7 +4041,7 @@ snapshots:
       '@ardatan/relay-compiler': 13.0.1(graphql@16.14.2)
       '@graphql-tools/utils': 11.1.0(graphql@16.14.2)
       graphql: 16.14.2
-      tslib: 2.6.3
+      tslib: 2.8.1
 
   '@graphql-tools/schema@10.0.33(graphql@16.14.2)':
     dependencies:
@@ -5159,7 +5172,7 @@ snapshots:
   graphql-tag@2.12.7(graphql@16.14.2):
     dependencies:
       graphql: 16.14.2
-      tslib: 2.6.3
+      tslib: 2.8.1
 
   graphql-ws@6.0.8(graphql@16.14.2)(ws@8.21.0):
     dependencies:

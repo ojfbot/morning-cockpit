@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { WorkItem } from '@cockpit/shared';
+import type { WorkItem, InspectionTarget } from '@cockpit/shared';
 import { StalenessBadge } from './StalenessBadge.js';
 import { claimTask } from '../api.js';
 
@@ -21,10 +21,22 @@ function leaseLabel(iso: string): string {
   return h < 1 ? 'lease <1h' : `lease ${h}h`;
 }
 
-export function WorkItemCard({ item, onClaimed }: { item: WorkItem; onClaimed?: () => void }) {
+export function WorkItemCard({
+  item,
+  onClaimed,
+  onInspect,
+}: {
+  item: WorkItem;
+  onClaimed?: () => void;
+  onInspect?: (
+    target: InspectionTarget | undefined,
+    opener: HTMLButtonElement,
+  ) => void;
+}) {
   const convoy = item.detail.kind === 'convoy' ? item.detail : undefined;
   // A real, unclaimed queue post is claimable; a claimed item shows its owner instead.
-  const claimable = item.posted === true && item.status === 'open' && !item.claimedBy;
+  const claimable =
+    item.posted === true && item.status === 'open' && !item.claimedBy;
 
   return (
     <div className={`card card--${item.status}`}>
@@ -32,12 +44,18 @@ export function WorkItemCard({ item, onClaimed }: { item: WorkItem; onClaimed?: 
         <span className={`dot ${item.status}`} title={item.status} />
         <span className="card-kind">{item.kind.replace('_', ' ')}</span>
         {item.posted ? (
-          <span className="card-queue card-queue--posted" title="Posted to the unassigned queue (queue=available)">
+          <span
+            className="card-queue card-queue--posted"
+            title="Posted to the unassigned queue (queue=available)"
+          >
             POSTED
           </span>
         ) : (
           item.lane === 'available' && (
-            <span className="card-queue card-queue--synth" title="Synthesized from open issues/briefs — not a real queue post">
+            <span
+              className="card-queue card-queue--synth"
+              title="Synthesized from open issues/briefs — not a real queue post"
+            >
               synth
             </span>
           )
@@ -59,11 +77,33 @@ export function WorkItemCard({ item, onClaimed }: { item: WorkItem; onClaimed?: 
       )}
 
       {convoy && (
-        <div className="convoy-bar" title={`${convoy.done}/${convoy.total} done`}>
+        <div
+          className="convoy-bar"
+          title={`${convoy.done}/${convoy.total} done`}
+        >
           <span style={{ width: `${convoy.pct}%` }} />
         </div>
       )}
 
+      <button
+        className="card-inspect"
+        type="button"
+        disabled={
+          !onInspect ||
+          !item.inspectionTarget ||
+          !('snapshotId' in item.inspectionTarget)
+        }
+        title={
+          item.inspectionTarget && 'reason' in item.inspectionTarget
+            ? item.inspectionTarget.reason
+            : undefined
+        }
+        onClick={(event) =>
+          onInspect?.(item.inspectionTarget, event.currentTarget)
+        }
+      >
+        Inspect source
+      </button>
       <div className="card-foot">
         {item.actor && <span>{item.actor}</span>}
         <span>{relativeTime(item.activityAt)}</span>
@@ -81,11 +121,19 @@ export function WorkItemCard({ item, onClaimed }: { item: WorkItem; onClaimed?: 
           <span className="card-chain-preds">
             {item.chain.map((pred) =>
               pred.url ? (
-                <a key={pred.sourceRecordKey ?? pred.nativeId} className="card-chain-pred" href={pred.url} rel="noreferrer">
+                <a
+                  key={pred.sourceRecordKey ?? pred.nativeId}
+                  className="card-chain-pred"
+                  href={pred.url}
+                  rel="noreferrer"
+                >
                   {pred.title}
                 </a>
               ) : (
-                <span key={pred.sourceRecordKey ?? pred.nativeId} className="card-chain-pred">
+                <span
+                  key={pred.sourceRecordKey ?? pred.nativeId}
+                  className="card-chain-pred"
+                >
                   {pred.title}
                 </span>
               ),
@@ -95,12 +143,17 @@ export function WorkItemCard({ item, onClaimed }: { item: WorkItem; onClaimed?: 
       )}
 
       {item.claimedBy ? (
-        <div className="card-claim card-claim--held" title={`held by ${item.claimedBy}`}>
+        <div
+          className="card-claim card-claim--held"
+          title={`held by ${item.claimedBy}`}
+        >
           ● claimed by {item.claimedBy}
           {item.leaseUntil && ` · ${leaseLabel(item.leaseUntil)}`}
         </div>
       ) : (
-        claimable && <ClaimButton beadId={item.nativeId} onClaimed={onClaimed} />
+        claimable && (
+          <ClaimButton beadId={item.nativeId} onClaimed={onClaimed} />
+        )
       )}
     </div>
   );
@@ -112,7 +165,13 @@ type ClaimPhase =
   | { phase: 'lost' }
   | { phase: 'error'; message: string };
 
-function ClaimButton({ beadId, onClaimed }: { beadId: string; onClaimed?: () => void }) {
+function ClaimButton({
+  beadId,
+  onClaimed,
+}: {
+  beadId: string;
+  onClaimed?: () => void;
+}) {
   const [state, setState] = useState<ClaimPhase>({ phase: 'idle' });
 
   const claim = async () => {
@@ -127,12 +186,19 @@ function ClaimButton({ beadId, onClaimed }: { beadId: string; onClaimed?: () => 
         setState({ phase: 'error', message: res.error ?? 'claim failed' });
       }
     } catch (err) {
-      setState({ phase: 'error', message: err instanceof Error ? err.message : String(err) });
+      setState({
+        phase: 'error',
+        message: err instanceof Error ? err.message : String(err),
+      });
     }
   };
 
   if (state.phase === 'lost') {
-    return <div className="card-claim card-claim--lost">already claimed — refresh</div>;
+    return (
+      <div className="card-claim card-claim--lost">
+        already claimed — refresh
+      </div>
+    );
   }
   return (
     <div className="card-claim">
@@ -144,7 +210,9 @@ function ClaimButton({ beadId, onClaimed }: { beadId: string; onClaimed?: () => 
       >
         {state.phase === 'claiming' ? 'Claiming…' : 'Claim →'}
       </button>
-      {state.phase === 'error' && <span className="card-claim-err">{state.message}</span>}
+      {state.phase === 'error' && (
+        <span className="card-claim-err">{state.message}</span>
+      )}
     </div>
   );
 }

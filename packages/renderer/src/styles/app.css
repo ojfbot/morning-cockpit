@@ -41,6 +41,9 @@ html, body { max-width: 100%; overflow-x: hidden; }
 .evidence-panel { border-top: 1px solid var(--rule); padding: var(--gt-space-4); }
 .evidence-filters { display: flex; flex-wrap: wrap; gap: var(--gt-space-2); margin-bottom: var(--gt-space-4); }
 .evidence-filters button,
+.evidence-panel > button,
+.evidence-dialog section button,
+.card-inspect,
 .evidence-focus,
 .evidence-close {
   border: 1px solid var(--rule-strong);
@@ -1955,3 +1958,6 @@ a.card-chain-pred:hover {
 @media (prefers-reduced-motion: reduce) {
   .evidence-view *, .evidence-dialog { animation: none !important; transition: none !important; }
 }
+
+.card-inspect { margin: var(--gt-space-2) 0; }
+.card-inspect:disabled, .evidence-dialog button:disabled { opacity: 0.55; cursor: default; }

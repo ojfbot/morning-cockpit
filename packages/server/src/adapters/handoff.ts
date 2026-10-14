@@ -11,6 +11,7 @@ import {
   foldedChainFor,
   resolveDecidedInFlight,
   sourceRecordKey,
+  parseSourceLinks,
   type AdapterHealth,
   type ChainedPredecessor,
   type CockpitEvidence,
@@ -41,6 +42,7 @@ interface ParsedBead {
   relativePath: string;
   mtimeIso: string;
   documentProduction: unknown;
+  sourceLinks?: unknown;
 }
 
 interface ScannedBead {
@@ -104,13 +106,21 @@ async function readFrontmatter(filePath: string): Promise<string | null> {
   }
 }
 
-function sortDiagnostics(diagnostics: UnresolvedRelationDiagnostic[]): UnresolvedRelationDiagnostic[] {
-  const keyed = diagnostics.map((diagnostic) => [JSON.stringify(diagnostic), diagnostic] as const);
-  return [...new Map(keyed).values()].sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
+function sortDiagnostics(
+  diagnostics: UnresolvedRelationDiagnostic[],
+): UnresolvedRelationDiagnostic[] {
+  const keyed = diagnostics.map(
+    (diagnostic) => [JSON.stringify(diagnostic), diagnostic] as const,
+  );
+  return [...new Map(keyed).values()].sort((a, b) =>
+    JSON.stringify(a).localeCompare(JSON.stringify(b)),
+  );
 }
 
 function buildPopulation(records: HandoffRecordEvidence[]) {
-  const sorted = [...records].sort((a, b) => a.sourceRecordKey.localeCompare(b.sourceRecordKey));
+  const sorted = [...records].sort((a, b) =>
+    a.sourceRecordKey.localeCompare(b.sourceRecordKey),
+  );
   const counts = new Map<string, number>();
   for (const record of sorted) {
     const repository = record.sourceRecord.repository ?? 'unknown';
@@ -118,7 +128,7 @@ function buildPopulation(records: HandoffRecordEvidence[]) {
   }
   return {
     name: 'standaloneUnansweredBriefs' as const,
-    recordKeys: sorted.map(record => record.sourceRecordKey),
+    recordKeys: sorted.map((record) => record.sourceRecordKey),
     total: sorted.length,
     byRepository: [...counts]
       .sort(([left], [right]) => left.localeCompare(right))
@@ -127,8 +137,14 @@ function buildPopulation(records: HandoffRecordEvidence[]) {
 }
 
 /** Read-only handoff collection plus a metadata-only REST evidence projection. */
-export async function fetchHandoff(ctx: LaneContext): Promise<HandoffAdapterResult> {
-  const health: AdapterHealth = { name: 'handoff-bead', status: 'down', itemCount: 0 };
+export async function fetchHandoff(
+  ctx: LaneContext,
+): Promise<HandoffAdapterResult> {
+  const health: AdapterHealth = {
+    name: 'handoff-bead',
+    status: 'down',
+    itemCount: 0,
+  };
   let skipped = 0;
   let unreadableRepositories = 0;
   let repoCount = 0;
@@ -173,7 +189,9 @@ export async function fetchHandoff(ctx: LaneContext): Promise<HandoffAdapterResu
     const repo = path.basename(path.dirname(dir));
     let files: string[];
     try {
-      files = (await readdir(dir)).filter((file) => file.endsWith('.md') && file !== 'README.md').sort();
+      files = (await readdir(dir))
+        .filter((file) => file.endsWith('.md') && file !== 'README.md')
+        .sort();
       repositoriesObserved++;
     } catch {
       unreadableRepositories++;
@@ -197,6 +215,7 @@ export async function fetchHandoff(ctx: LaneContext): Promise<HandoffAdapterResu
         const rawRefs = frontmatter['refs'];
         parsed.push({
           documentProduction: frontmatter['document_production'],
+          sourceLinks: frontmatter['source_links'],
           id: literalString(frontmatter['id']),
           type: literalString(frontmatter['type']),
           title: literalString(frontmatter['title']),
@@ -205,7 +224,9 @@ export async function fetchHandoff(ctx: LaneContext): Promise<HandoffAdapterResu
           status: literalString(frontmatter['status']),
           created_at: literalString(frontmatter['created_at']),
           responding_to: literalString(frontmatter['responding_to']),
-          refs: Array.isArray(rawRefs) ? rawRefs.filter((ref): ref is string => typeof ref === 'string') : undefined,
+          refs: Array.isArray(rawRefs)
+            ? rawRefs.filter((ref): ref is string => typeof ref === 'string')
+            : undefined,
           filePath: full,
           relativePath: path.posix.join('.handoff', file),
           mtimeIso: (await stat(full)).mtime.toISOString(),
@@ -218,7 +239,10 @@ export async function fetchHandoff(ctx: LaneContext): Promise<HandoffAdapterResu
     for (const bead of parsed) {
       const kind = bead.type as WorkItemKind;
       const createdIso = toIso(bead.created_at, bead.mtimeIso);
-      const activityAt = Date.parse(bead.mtimeIso) > Date.parse(createdIso) ? bead.mtimeIso : createdIso;
+      const activityAt =
+        Date.parse(bead.mtimeIso) > Date.parse(createdIso)
+          ? bead.mtimeIso
+          : createdIso;
       const sourceRecord: SourceRecordRef = {
         kind: 'handoff-document-v1',
         source: 'handoff-bead',
@@ -226,8 +250,20 @@ export async function fetchHandoff(ctx: LaneContext): Promise<HandoffAdapterResu
         nativeId: bead.id ?? null,
         sourcePath: bead.relativePath,
       };
-      const key = sourceRecordKey(sourceRecord);
+      let key: string;
+      try {
+        key = sourceRecordKey(sourceRecord);
+      } catch {
+        skipped++;
+        continue;
+      }
       const evidence: HandoffRecordEvidence = {
+        declaredLinks: parseSourceLinks(
+          sourceRecord,
+          bead.sourceLinks,
+          'frontmatter.source_links',
+          bead.type ?? '',
+        ),
         sourceRecordKey: key,
         sourceRecord,
         title: bead.title ?? path.basename(bead.filePath),
@@ -264,20 +300,36 @@ export async function fetchHandoff(ctx: LaneContext): Promise<HandoffAdapterResu
   const respondedKeys = new Set<string>();
 
   // responding_to resolves only within a repository; the authored token carries no repo.
-  for (const report of scanned.filter((record) => record.kind === 'report' && record.bead.responding_to)) {
+  for (const report of scanned.filter(
+    (record) => record.kind === 'report' && record.bead.responding_to,
+  )) {
     // The filter above keeps only reports with an authored responding_to token.
     const targetNativeId = report.bead.responding_to!;
     const candidates = scanned.filter(
-      (record) => record.repo === report.repo && record.kind === 'brief' && record.bead.id === targetNativeId,
+      (record) =>
+        record.repo === report.repo &&
+        record.kind === 'brief' &&
+        record.bead.id === targetNativeId,
     );
     if (candidates.length === 1) {
       // The length guard establishes one candidate at index zero.
       respondedKeys.add(candidates[0]!.sourceRecordKey);
     } else {
-      const base = { relation: 'responding_to' as const, targetNativeId, referrerKey: report.sourceRecordKey };
-      const diagnostic: UnresolvedRelationDiagnostic = candidates.length === 0
-        ? { ...base, reason: 'target-not-observed' }
-        : { ...base, reason: 'target-matches-multiple-records', candidateTargetKeys: candidates.map(candidate => candidate.sourceRecordKey).sort() };
+      const base = {
+        relation: 'responding_to' as const,
+        targetNativeId,
+        referrerKey: report.sourceRecordKey,
+      };
+      const diagnostic: UnresolvedRelationDiagnostic =
+        candidates.length === 0
+          ? { ...base, reason: 'target-not-observed' }
+          : {
+              ...base,
+              reason: 'target-matches-multiple-records',
+              candidateTargetKeys: candidates
+                .map((candidate) => candidate.sourceRecordKey)
+                .sort(),
+            };
       diagnostics.push(diagnostic);
       for (const key of diagnosticRecordKeys(diagnostic)) affected.add(key);
     }
@@ -285,7 +337,9 @@ export async function fetchHandoff(ctx: LaneContext): Promise<HandoffAdapterResu
 
   for (const record of scanned) {
     if (record.kind !== 'brief') continue;
-    record.openHook = record.bead.status === 'live' && !respondedKeys.has(record.sourceRecordKey);
+    record.openHook =
+      record.bead.status === 'live' &&
+      !respondedKeys.has(record.sourceRecordKey);
     record.status = record.openHook ? 'open' : 'done';
   }
 
@@ -304,10 +358,13 @@ export async function fetchHandoff(ctx: LaneContext): Promise<HandoffAdapterResu
   // A supported edge cannot fold into a successor that is itself held outside normal lanes by
   // another unresolved observation. Keep the otherwise-unaffected predecessor standalone.
   for (const [predecessorKey, successorKey] of resolution.decided) {
-    if (affected.has(predecessorKey) || affected.has(successorKey)) resolution.decided.delete(predecessorKey);
+    if (affected.has(predecessorKey) || affected.has(successorKey))
+      resolution.decided.delete(predecessorKey);
   }
 
-  const byKey = new Map(scanned.map((record) => [record.sourceRecordKey, record]));
+  const byKey = new Map(
+    scanned.map((record) => [record.sourceRecordKey, record]),
+  );
   let folded = 0;
   const population: HandoffRecordEvidence[] = [];
 
@@ -318,24 +375,36 @@ export async function fetchHandoff(ctx: LaneContext): Promise<HandoffAdapterResu
       folded++;
       continue;
     }
-    const input: LaneInput = { source: 'handoff-bead', kind, status, activityAt: record.activityAt, openHook };
+    const input: LaneInput = {
+      source: 'handoff-bead',
+      kind,
+      status,
+      activityAt: record.activityAt,
+      openHook,
+    };
     const lane = classifyLane(input, ctx);
     if (!lane) continue;
 
     let chain: ChainedPredecessor[] | undefined;
-    const foldedKeys = foldedChainFor(record.sourceRecordKey, resolution.decided);
+    const foldedKeys = foldedChainFor(
+      record.sourceRecordKey,
+      resolution.decided,
+    );
     if (foldedKeys.length > 0) {
       chain = foldedKeys.flatMap((key) => {
         const predecessor = byKey.get(key);
         if (!predecessor) return [];
-        return [{
-          sourceRecordKey: key,
-          nativeId: predecessor.bead.id ?? path.basename(predecessor.bead.filePath),
-          title: predecessor.evidence.title,
-          url: `file://${predecessor.bead.filePath}`,
-          createdAt: predecessor.createdIso,
-          state: 'decided-in-flight' as const,
-        }];
+        return [
+          {
+            sourceRecordKey: key,
+            nativeId:
+              predecessor.bead.id ?? path.basename(predecessor.bead.filePath),
+            title: predecessor.evidence.title,
+            url: `file://${predecessor.bead.filePath}`,
+            createdAt: predecessor.createdIso,
+            state: 'decided-in-flight' as const,
+          },
+        ];
       });
       if (chain.length === 0) chain = undefined;
     }
@@ -360,7 +429,10 @@ export async function fetchHandoff(ctx: LaneContext): Promise<HandoffAdapterResu
       url: `file://${bead.filePath}`,
       detail: { kind: 'brief', to: bead.to, openHook },
       // Absolute path remains internal for the separately gated chat attachment reader.
-      provenance: { sourcePath: bead.filePath, ...(bead.refs?.length ? { refs: bead.refs } : {}) },
+      provenance: {
+        sourcePath: bead.filePath,
+        ...(bead.refs?.length ? { refs: bead.refs } : {}),
+      },
     });
     if (kind === 'brief' && openHook) population.push(record.evidence);
   }
@@ -375,21 +447,33 @@ export async function fetchHandoff(ctx: LaneContext): Promise<HandoffAdapterResu
     unreadableRepositories ? `${unreadableRepositories} repos unreadable` : '',
     folded ? `${folded} decided-in-flight folded` : '',
     unresolved.length ? `${unresolved.length} unresolved relations` : '',
-  ].filter(Boolean).join(' · ');
+  ]
+    .filter(Boolean)
+    .join(' · ');
 
   return {
     items,
     health,
     evidence: {
+      collectedAt: ctx.now.toISOString(),
       coverage: partial
         ? {
             status: 'partial',
             repositoriesObserved,
             skippedRecords: skipped,
             unreadableRepositories,
+            reason: null,
           }
-        : { status: 'complete', repositoriesObserved: repoCount, skippedRecords: 0, unreadableRepositories: 0 },
-      records: scanned.map((record) => record.evidence).sort((a, b) => a.sourceRecordKey.localeCompare(b.sourceRecordKey)),
+        : {
+            status: 'complete',
+            repositoriesObserved: repoCount,
+            skippedRecords: 0,
+            unreadableRepositories: 0,
+            reason: null,
+          },
+      records: scanned
+        .map((record) => record.evidence)
+        .sort((a, b) => a.sourceRecordKey.localeCompare(b.sourceRecordKey)),
       standaloneUnansweredBriefs: buildPopulation(population),
       unresolvedRelations: unresolved,
     },

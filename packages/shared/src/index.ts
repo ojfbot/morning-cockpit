@@ -40,7 +40,12 @@ export type {
   DomainSeed,
   ProfileInputs,
 } from './papers.js';
-export { normalizeHfDaily, assembleProfile, paperExplainerFloor, profileNodeKeys } from './papers.js';
+export {
+  normalizeHfDaily,
+  assembleProfile,
+  paperExplainerFloor,
+  profileNodeKeys,
+} from './papers.js';
 
 export type {
   FrameBead,
@@ -81,7 +86,12 @@ export {
   CHAT_TABS,
 } from './chat.js';
 
-export type { BriefBody, BriefCandidate, BriefValidation, HandoffDraft } from './handoff-brief.js';
+export type {
+  BriefBody,
+  BriefCandidate,
+  BriefValidation,
+  HandoffDraft,
+} from './handoff-brief.js';
 export {
   briefSlug,
   briefFilename,
@@ -99,10 +109,23 @@ export type {
   BriefingThread,
   BriefingSnapshot,
 } from './briefing.js';
-export { artifactRepo, artifactToCandidate, briefingFallback, scopeSnapshotToRepo } from './briefing.js';
+export {
+  artifactRepo,
+  artifactToCandidate,
+  briefingFallback,
+  scopeSnapshotToRepo,
+} from './briefing.js';
 
-export type { AgentLivenessState, AgentLiveness, LivenessWindows } from './liveness.js';
-export { deriveAgentLiveness, livenessForAgents, DEFAULT_LIVENESS_WINDOWS } from './liveness.js';
+export type {
+  AgentLivenessState,
+  AgentLiveness,
+  LivenessWindows,
+} from './liveness.js';
+export {
+  deriveAgentLiveness,
+  livenessForAgents,
+  DEFAULT_LIVENESS_WINDOWS,
+} from './liveness.js';
 
 export type {
   Liveness,
@@ -130,7 +153,11 @@ export type {
   DeliverySnapshot,
   QueueProjection,
 } from './delivery.js';
-export { parseFrontmatter, deriveSliceState, parseMovementLines } from './delivery.js';
+export {
+  parseFrontmatter,
+  deriveSliceState,
+  parseMovementLines,
+} from './delivery.js';
 
 export type {
   DispositionEvent,
@@ -156,8 +183,17 @@ export {
   buildPopulationFunnels,
 } from './loop.js';
 
-export type { DecidedBead, ChainedPredecessor, DecidedResolution } from './decided.js';
-export { parseClosesRefs, deriveDecidedInFlight, resolveDecidedInFlight, foldedChainFor } from './decided.js';
+export type {
+  DecidedBead,
+  ChainedPredecessor,
+  DecidedResolution,
+} from './decided.js';
+export {
+  parseClosesRefs,
+  deriveDecidedInFlight,
+  resolveDecidedInFlight,
+  foldedChainFor,
+} from './decided.js';
 
 export type { LaneContext, LaneInput, AgeBucket } from './lanes.js';
 export {
@@ -200,6 +236,27 @@ export {
 
 export { diagnosticRecordKeys } from './source-record.js';
 export { parseDocumentProduction } from './document-production.js';
-export type { EvidenceSummary, EvidenceIndex, EvidenceRecord, EvidenceIndexResult, EvidenceRecordResult, EvidenceRefreshRequired, DocumentProduction } from './source-record.js';
+export type {
+  EvidenceSummary,
+  EvidenceIndex,
+  EvidenceRecord,
+  EvidenceIndexResult,
+  EvidenceRecordResult,
+  EvidenceRefreshRequired,
+  DocumentProduction,
+} from './source-record.js';
 
 export type { HandoffRecordSummary } from './source-record.js';
+
+export type {
+  DoltRecordEvidence,
+  DoltRecordSummary,
+  DoltCollection,
+  CapturedEvidence,
+  InspectionTarget,
+  TaskDocumentResolution,
+  TaskDocumentTarget,
+  EvidenceSourceSummary,
+} from './source-record.js';
+
+export { parseSourceLinks } from './source-links.js';

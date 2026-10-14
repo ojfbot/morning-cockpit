@@ -6,6 +6,10 @@ import {
   DEFAULT_LIVENESS_WINDOWS,
   parseJsonColumn,
   sourceRecordKey,
+  parseSourceLinks,
+  isSafeRepoName,
+  type DoltCollection,
+  type DoltRecordEvidence,
   type AdapterHealth,
   type AgentLiveness,
   type ConvoySlot,
@@ -64,7 +68,12 @@ function toIso(v: string | Date | null | undefined): string | undefined {
   return Number.isNaN(d.getTime()) ? undefined : d.toISOString();
 }
 
-function normalizeStatus(type: string, status: string, hook: string | null, convoyStatus?: string): WorkItemStatus {
+function normalizeStatus(
+  type: string,
+  status: string,
+  hook: string | null,
+  convoyStatus?: string,
+): WorkItemStatus {
   if (type === 'convoy') {
     if (convoyStatus === 'active') return 'running';
     if (convoyStatus === 'completed') return 'done';
@@ -80,8 +89,94 @@ function normalizeStatus(type: string, status: string, hook: string | null, conv
   return 'unknown';
 }
 
-export async function fetchDolt(ctx: LaneContext): Promise<{ items: WorkItem[]; health: AdapterHealth }> {
-  const health: AdapterHealth = { name: 'dolt-bead', status: 'down', itemCount: 0 };
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+function parseBeadRow(value: unknown): BeadRow | null {
+  if (!isObject(value)) return null;
+  const {
+    id,
+    type,
+    status,
+    title,
+    actor,
+    hook,
+    created_at,
+    updated_at,
+    closed_at,
+  } = value;
+  if (
+    typeof id !== 'string' ||
+    !id.trim() ||
+    typeof type !== 'string' ||
+    typeof status !== 'string' ||
+    typeof title !== 'string' ||
+    typeof actor !== 'string' ||
+    (hook !== null && typeof hook !== 'string')
+  )
+    return null;
+  const date = (v: unknown): string | null =>
+    typeof v === 'string' ? v : v instanceof Date ? v.toISOString() : null;
+  const created = date(created_at),
+    updated = date(updated_at),
+    closed = date(closed_at);
+  if (!created || !updated || (closed_at !== null && !closed)) return null;
+  return {
+    id,
+    type,
+    status,
+    title,
+    actor,
+    hook,
+    labels: value.labels,
+    refs: value.refs,
+    created_at: created,
+    updated_at: updated,
+    closed_at: closed,
+  };
+}
+function canonicalRepository(labels: Record<string, unknown>): {
+  repository: string | null;
+  diagnostics: DoltRecordEvidence['coordinateDiagnostics'];
+} {
+  const present = ['app', 'repo'].filter(
+    (key) => labels[key] !== undefined && labels[key] !== null,
+  );
+  const valid = present.flatMap((key) =>
+    typeof labels[key] === 'string' && isSafeRepoName(labels[key])
+      ? [labels[key]]
+      : [],
+  );
+  const diagnostics: DoltRecordEvidence['coordinateDiagnostics'] = [];
+  if (!present.length)
+    diagnostics.push({
+      reason: 'missing',
+      fieldPath: 'labels.app|labels.repo',
+    });
+  for (const key of present)
+    if (typeof labels[key] !== 'string' || !isSafeRepoName(labels[key]))
+      diagnostics.push({ reason: 'invalid', fieldPath: `labels.${key}` });
+  const unique = new Set(valid);
+  if (unique.size > 1)
+    diagnostics.push({
+      reason: 'conflict',
+      fieldPath: 'labels.app|labels.repo',
+    });
+  return {
+    repository:
+      diagnostics.length || unique.size !== 1 ? null : (valid[0] ?? null),
+    diagnostics,
+  };
+}
+
+export async function fetchDolt(
+  ctx: LaneContext,
+): Promise<{ items: WorkItem[]; health: AdapterHealth; dolt: DoltCollection }> {
+  const health: AdapterHealth = {
+    name: 'dolt-bead',
+    status: 'down',
+    itemCount: 0,
+  };
   let pool: mysql.Pool | undefined;
   try {
     pool = mysql.createPool({
@@ -96,14 +191,22 @@ export async function fetchDolt(ctx: LaneContext): Promise<{ items: WorkItem[]; 
 
     const since = ctx.overnightSince.slice(0, 19).replace('T', ' '); // DATETIME literal
 
-    const [beadRows] = (await pool.query(
+    const [nativeRows] = await pool.query<mysql.RowDataPacket[]>(
       `SELECT id, type, status, title, labels, actor, hook, refs, created_at, updated_at, closed_at
          FROM beads
         WHERE status IN ('created', 'live')
            OR updated_at >= ?
            OR closed_at >= ?`,
       [since, since],
-    )) as unknown as [BeadRow[], unknown];
+    );
+    const beadRows: BeadRow[] = [];
+    let skippedRecords = 0;
+    for (const raw of nativeRows) {
+      const row = parseBeadRow(raw);
+      if (row && (EMITTED_KINDS.has(row.type) || row.type === 'agent'))
+        beadRows.push(row);
+      else skippedRecords++;
+    }
 
     const [eventRows] = (await pool.query(
       `SELECT bead_id, timestamp FROM bead_events WHERE timestamp >= ? ORDER BY timestamp DESC`,
@@ -131,6 +234,64 @@ export async function fetchDolt(ctx: LaneContext): Promise<{ items: WorkItem[]; 
     }
 
     const items: WorkItem[] = [];
+    const records: DoltRecordEvidence[] = [];
+    const observedReferences = new Map<string, DoltRecordEvidence>();
+    for (const row of beadRows) {
+      const rawLabels = parseJsonColumn<unknown>(row.labels, {});
+      const labels = isObject(rawLabels) ? rawLabels : {};
+      const coordinate = canonicalRepository(labels);
+      const sourceRecord = {
+        kind: 'dolt-bead-v1',
+        source: 'dolt-bead',
+        repository: coordinate.repository,
+        nativeId: row.id,
+        sourcePath: null,
+      } satisfies DoltRecordEvidence['sourceRecord'];
+      const rawRefs = parseJsonColumn<unknown>(row.refs, []);
+      const record: DoltRecordEvidence = {
+        sourceRecordKey: sourceRecordKey(sourceRecord),
+        sourceRecord,
+        title: row.title,
+        native: {
+          type: row.type,
+          status: row.status,
+          actor: row.actor,
+          hook: row.hook,
+          refs: Array.isArray(rawRefs)
+            ? rawRefs.filter((v): v is string => typeof v === 'string')
+            : [],
+          createdAt: toIso(row.created_at) ?? null,
+          updatedAt: toIso(row.updated_at) ?? null,
+          closedAt: toIso(row.closed_at) ?? null,
+        },
+        literalLabels: {
+          queueDisposition:
+            typeof labels['queue'] === 'string' ? labels['queue'] : null,
+          claimedByKind:
+            typeof labels['claimed_by_kind'] === 'string'
+              ? labels['claimed_by_kind']
+              : null,
+          leaseUntil:
+            typeof labels['lease_until'] === 'string'
+              ? labels['lease_until']
+              : null,
+          expiresAt:
+            typeof labels['expires_at'] === 'string'
+              ? labels['expires_at']
+              : null,
+        },
+        collectedAt: ctx.now.toISOString(),
+        coordinateDiagnostics: coordinate.diagnostics,
+        declaredLinks: parseSourceLinks(
+          sourceRecord,
+          labels['source_links'],
+          'labels.source_links',
+          row.type,
+        ),
+      };
+      records.push(record);
+      observedReferences.set(row.id, record);
+    }
     const agentRows: BeadRow[] = [];
     let staleRunningHidden = 0;
 
@@ -144,7 +305,12 @@ export async function fetchDolt(ctx: LaneContext): Promise<{ items: WorkItem[]; 
       const labels = parseJsonColumn<Record<string, string>>(row.labels, {});
       const refs = parseJsonColumn<string[]>(row.refs, []);
       const convoyStatus = labels['convoy_status'];
-      const status = normalizeStatus(row.type, row.status, row.hook, convoyStatus);
+      const status = normalizeStatus(
+        row.type,
+        row.status,
+        row.hook,
+        convoyStatus,
+      );
 
       const eventAt = eventActivity.get(row.id);
       const activityAt =
@@ -155,8 +321,14 @@ export async function fetchDolt(ctx: LaneContext): Promise<{ items: WorkItem[]; 
         ctx.now.toISOString();
 
       const kind = row.type as WorkItemKind;
-      const repo = labels['app'] ?? labels['repo'] ?? beadPrefix(row.id);
-      const sourceRecord = { kind: 'dolt-bead-v1' as const, source: 'dolt-bead' as const, repository: repo, nativeId: row.id, sourcePath: null };
+      const repo =
+        typeof labels['app'] === 'string' && isSafeRepoName(labels['app'])
+          ? labels['app']
+          : typeof labels['repo'] === 'string' && isSafeRepoName(labels['repo'])
+            ? labels['repo']
+            : beadPrefix(row.id);
+      const sourceRecord = observedReferences.get(row.id)?.sourceRecord;
+      if (!sourceRecord) continue;
       const input: LaneInput = {
         source: 'dolt-bead',
         kind,
@@ -209,7 +381,12 @@ export async function fetchDolt(ctx: LaneContext): Promise<{ items: WorkItem[]; 
         posted: labels['queue'] === 'available',
         // Claim state (ADR-0002/S4) — surfaced read-only; the write happens in core via queue-claim.
         claimedBy: row.hook ?? undefined,
-        claimedByKind: labels['claimed_by_kind'] === 'agent' ? 'agent' : labels['claimed_by_kind'] === 'human' ? 'human' : undefined,
+        claimedByKind:
+          labels['claimed_by_kind'] === 'agent'
+            ? 'agent'
+            : labels['claimed_by_kind'] === 'human'
+              ? 'human'
+              : undefined,
         leaseUntil: labels['lease_until'],
         url: `#bead/${row.id}`,
         detail,
@@ -228,11 +405,16 @@ export async function fetchDolt(ctx: LaneContext): Promise<{ items: WorkItem[]; 
       summary: null,
       timestamp: toIso(e.timestamp) ?? ctx.now.toISOString(),
     }));
-    const openClaims = new Set(agentRows.filter((r) => r.hook).map((r) => r.id));
+    const openClaims = new Set(
+      agentRows.filter((r) => r.hook).map((r) => r.id),
+    );
     const derived = new Map<string, AgentLiveness>(
-      deriveAgentLiveness(agentEvents, ctx.now.getTime(), DEFAULT_LIVENESS_WINDOWS, openClaims).map(
-        (a) => [a.agentId, a],
-      ),
+      deriveAgentLiveness(
+        agentEvents,
+        ctx.now.getTime(),
+        DEFAULT_LIVENESS_WINDOWS,
+        openClaims,
+      ).map((a) => [a.agentId, a]),
     );
     let liveAgents = 0;
     let stalledAgents = 0;
@@ -240,7 +422,9 @@ export async function fetchDolt(ctx: LaneContext): Promise<{ items: WorkItem[]; 
     let zombieAgents = 0;
     let darkAgents = 0;
     for (const row of agentRows) {
-      const state = derived.get(row.id)?.state ?? (openClaims.has(row.id) ? 'zombie' : 'dark');
+      const state =
+        derived.get(row.id)?.state ??
+        (openClaims.has(row.id) ? 'zombie' : 'dark');
       if (state === 'live') liveAgents++;
       else if (state === 'stalled') stalledAgents++;
       else if (state === 'idle') idleAgents++;
@@ -249,9 +433,18 @@ export async function fetchDolt(ctx: LaneContext): Promise<{ items: WorkItem[]; 
       if (state !== 'live') continue; // stalled/idle/zombie/dark are tallied in the note, not surfaced as lane items
 
       const labels = parseJsonColumn<Record<string, string>>(row.labels, {});
-      const activityAt = derived.get(row.id)?.lastEventAt ?? toIso(row.updated_at) ?? ctx.now.toISOString();
-      const repo = labels['app'] ?? labels['repo'] ?? beadPrefix(row.id);
-      const sourceRecord = { kind: 'dolt-bead-v1' as const, source: 'dolt-bead' as const, repository: repo, nativeId: row.id, sourcePath: null };
+      const activityAt =
+        derived.get(row.id)?.lastEventAt ??
+        toIso(row.updated_at) ??
+        ctx.now.toISOString();
+      const repo =
+        typeof labels['app'] === 'string' && isSafeRepoName(labels['app'])
+          ? labels['app']
+          : typeof labels['repo'] === 'string' && isSafeRepoName(labels['repo'])
+            ? labels['repo']
+            : beadPrefix(row.id);
+      const sourceRecord = observedReferences.get(row.id)?.sourceRecord;
+      if (!sourceRecord) continue;
       items.push({
         id: `dolt-bead:${row.id}`,
         nativeId: row.id,
@@ -286,13 +479,47 @@ export async function fetchDolt(ctx: LaneContext): Promise<{ items: WorkItem[]; 
       `${beadRows.length} beads scanned · ${liveAgents} live · ${stalledAgents} stalled · ` +
       `${idleAgents} idle · ${zombieAgents} zombie · ${darkAgents} dark agents · ` +
       `${eventRows.length} overnight events` +
-      (staleRunningHidden ? ` · ${staleRunningHidden} stale-"live" hidden` : '');
-    return { items, health };
+      (staleRunningHidden
+        ? ` · ${staleRunningHidden} stale-"live" hidden`
+        : '');
+    return {
+      items,
+      health,
+      dolt: {
+        status: 'observed',
+        source: 'dolt-bead',
+        scope: `Configured Dolt: created/live beads or updated/closed >= ${ctx.overnightSince}`,
+        collectedAt: ctx.now.toISOString(),
+        coverage: {
+          status: skippedRecords ? 'partial' : 'complete',
+          repositoriesObserved: new Set(
+            records.flatMap((record) =>
+              record.sourceRecord.repository === null
+                ? []
+                : [record.sourceRecord.repository],
+            ),
+          ).size,
+          skippedRecords,
+          unreadableRepositories: 0,
+          reason: null,
+        },
+        records,
+      },
+    };
   } catch (err) {
     health.status = 'down';
     health.lastError = err instanceof Error ? err.message : String(err);
     health.note = `Dolt unreachable at ${config.dolt.host}:${config.dolt.port}/${config.dolt.database}`;
-    return { items: [], health };
+    return {
+      items: [],
+      health,
+      dolt: {
+        status: 'unavailable',
+        source: 'dolt-bead',
+        scope: `Configured Dolt: created/live beads or updated/closed >= ${ctx.overnightSince}`,
+        reason: 'Dolt metadata collection unavailable',
+      },
+    };
   } finally {
     await pool?.end().catch(() => {});
   }

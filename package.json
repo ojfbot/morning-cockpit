@@ -10,12 +10,19 @@
   },
   "scripts": {
     "build": "pnpm -r build",
-    "test": "pnpm -r test",
-    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test && pnpm test:inspector",
+    "typecheck": "pnpm -r typecheck && tsc --noEmit -p tsconfig.inspector.json",
     "dev:server": "pnpm --filter @cockpit/server dev",
     "dev:renderer": "pnpm --filter @cockpit/renderer dev",
     "watch:poll": "pnpm --filter @cockpit/watch poll",
     "watch:verify-sources": "pnpm --filter @cockpit/watch verify-sources",
-    "watch:opml": "pnpm --filter @cockpit/watch opml"
+    "watch:opml": "pnpm --filter @cockpit/watch opml",
+    "test:inspector": "vitest run --config vitest.inspector.config.ts"
+  },
+  "devDependencies": {
+    "@types/node": "22.19.20",
+    "graphql-yoga": "5.21.2",
+    "typescript": "5.9.3",
+    "vitest": "2.1.9"
   }
 }

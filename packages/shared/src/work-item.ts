@@ -6,29 +6,57 @@
 import type { ChainedPredecessor } from './decided.js';
 import type { EvidenceSummary, SourceRecordRef } from './source-record.js';
 
-export type WorkItemSource = 'dolt-bead' | 'handoff-bead' | 'github' | 'standup';
+export type WorkItemSource =
+  | 'dolt-bead'
+  | 'handoff-bead'
+  | 'github'
+  | 'standup';
 
 export type WorkItemLane = 'overnight' | 'pickup' | 'available';
 
 export type WorkItemKind =
-  | 'agent' | 'convoy' | 'task' | 'pr' | 'session' // dolt
-  | 'brief' | 'report' | 'decision' | 'discovery'  // handoff
-  | 'issue' | 'pull_request'                        // github
-  | 'priority'                                      // standup
+  | 'agent'
+  | 'convoy'
+  | 'task'
+  | 'pr'
+  | 'session' // dolt
+  | 'brief'
+  | 'report'
+  | 'decision'
+  | 'discovery' // handoff
+  | 'issue'
+  | 'pull_request' // github
+  | 'priority' // standup
   | 'generic';
 
 /** Normalized status across all sources. */
 export type WorkItemStatus =
   | 'running' // active agent/convoy/session, in-flight
-  | 'open'    // live brief, open issue/PR, live task — actionable
-  | 'done'    // closed/merged
-  | 'stale'   // open but past the staleness threshold
+  | 'open' // live brief, open issue/PR, live task — actionable
+  | 'done' // closed/merged
+  | 'stale' // open but past the staleness threshold
   | 'failed'
   | 'unknown';
 
 export type WorkItemDetail =
-  | { kind: 'convoy'; convoyStatus: string; total: number; done: number; active: number; pending: number; failed: number; pct: number }
-  | { kind: 'agent'; role: string; app: string; agentStatus: string; reportsTo?: string; sessionId?: string }
+  | {
+      kind: 'convoy';
+      convoyStatus: string;
+      total: number;
+      done: number;
+      active: number;
+      pending: number;
+      failed: number;
+      pct: number;
+    }
+  | {
+      kind: 'agent';
+      role: string;
+      app: string;
+      agentStatus: string;
+      reportsTo?: string;
+      sessionId?: string;
+    }
   | { kind: 'pr'; prNumber?: number; draft?: boolean }
   | { kind: 'issue'; issueNumber: number; labels: string[]; isNew?: boolean }
   | { kind: 'brief'; to?: string; hook?: string; openHook: boolean }
@@ -36,6 +64,7 @@ export type WorkItemDetail =
   | { kind: 'generic' };
 
 export interface WorkItem {
+  inspectionTarget?: import('./source-record.js').InspectionTarget;
   /** Legacy display id. New read-side consumers use sourceRecordKey. */
   id: string;
   /** Native id in the source system (bead id, `repo#123`, handoff filename). */
