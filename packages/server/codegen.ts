@@ -1,5 +1,5 @@
-import type { CodegenConfig } from '@graphql-codegen/cli';
 import { readFileSync } from 'node:fs';
+import type { CodegenConfig } from '@graphql-codegen/cli';
 import {
   buildSchema,
   getNamedType,
