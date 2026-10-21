@@ -52,9 +52,11 @@ The local PR56 repair candidate keeps Beads inspection metadata-only. `/api/cock
 opening a record loads detail pinned to the same `snapshotId`. Expiry, eviction or server restart
 requires an explicit refresh rather than mixing observations. Keys are opaque and scoped to the
 currently supported Dolt/handoff variants; unsupported GitHub coordinates fail closed.
+The multi-account GitHub identity boundary for source-record contracts is under investigation
+(see issue #57).
 
 Document production is shown in a collapsed disclosure as `recorded`, `legacy-unknown` or
 `unavailable`. Recorded fields are source claims, not authenticated identities or approval.
-The proposed schema is core-owned (`packages/read-model-contract/inspector-contract.md`); its
-owner acceptance and publication are still pending. Required-trace enforcement for emissions
+The proposed schema is core-owned (`packages/read-model-contract/inspector-contract.md`).
+Required-trace enforcement for emissions
 remains inactive, and existing per-emission approval and path checks continue unchanged.
