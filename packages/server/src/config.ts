@@ -109,11 +109,12 @@ export const config = {
   /**
    * Loop pane — the self-improvement telemetry loop, read-only. Capture health + the
    * disposition funnel come from core's shadow-mode OPAV hooks (ADR-0095) writing into
-   * the selfco tracking dir; odometer freshness re-reads status.jsonl (delivery.coreRoot);
+   * the host-local tracking dir; odometer freshness re-reads status.jsonl (delivery.coreRoot);
    * audit freshness is an mtime probe of the weekly skill-architecture-audit output.
    */
   loop: {
-    trackingRoot: process.env.COCKPIT_TRACKING_ROOT ?? path.join(os.homedir(), 'selfco', 'tracking'),
+    trackingRoot:
+      process.env.COCKPIT_TRACKING_ROOT ?? path.join(os.homedir(), '.local', 'state', 'ojfbot', 'tracking'),
     auditFile:
       process.env.COCKPIT_AUDIT_FILE ?? path.join(os.homedir(), '.claude', 'skill-architecture-audit.jsonl'),
     /**

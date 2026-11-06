@@ -6,7 +6,7 @@
  * adapter (packages/server/src/adapters/loop.ts) does the file reads and calls these.
  *
  * Schema source of truth: core's OPAV instrumentation (ADR-0095) writing
- * ~/selfco/tracking/skill-dispositions.jsonl. Per ADR-0001 we mirror, never import core.
+ * ~/.local/state/ojfbot/tracking/skill-dispositions.jsonl. Per ADR-0001 we mirror, never import core.
  */
 
 import type { AdapterHealth } from './work-item.js';

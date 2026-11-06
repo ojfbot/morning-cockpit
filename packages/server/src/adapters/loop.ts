@@ -28,7 +28,7 @@ const HYGIENE_TIMEOUT_MS = 8_000;
  * Loop adapter (read-only) — assembles the self-improvement telemetry loop from three
  * independent sources, each degrading gracefully into its own health entry:
  *
- *   dispositions  ~/selfco/tracking/skill-dispositions.jsonl — core's shadow-mode OPAV
+ *   dispositions  ~/.local/state/ojfbot/tracking/skill-dispositions.jsonl — core's shadow-mode OPAV
  *                 hooks; absent file → empty capture, truthfully labeled
  *   odometer      core/decisions/northstar/status.jsonl — read independently of the
  *                 delivery adapter so the two panes degrade separately
